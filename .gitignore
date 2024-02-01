@@ -5,3 +5,7 @@
 *.gif
 *.jpe?g
 *.bmp
+*.tiff
+*.webp
+*.pnm
+*.heif
