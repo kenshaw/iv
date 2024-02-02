@@ -1,11 +1,23 @@
 /iv
 /iv.exe
 
+/build
+
 *.png
 *.gif
 *.jpe?g
 *.bmp
-*.tiff
+*.tiff?
 *.webp
 *.pnm
 *.heif
+
+*.ttf
+*.ttc
+*.otf
+*.woff
+*.woff2
+
+*.txt
+*.yml
+*.yaml
