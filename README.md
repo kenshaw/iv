@@ -1,6 +1,6 @@
 # iv
 
-`iv` is a command-line font viewer using terminal graphics (Sixel, iTerm,
+`iv` is a command-line image viewer using terminal graphics (Sixel, iTerm,
 Kitty).
 
 <p align="center">
