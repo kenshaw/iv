@@ -3,7 +3,7 @@ module github.com/kenshaw/iv
 go 1.20
 
 require (
-	github.com/kenshaw/colors v0.1.0
+	github.com/kenshaw/colors v0.1.1
 	github.com/kenshaw/rasterm v0.1.10
 	github.com/spf13/cobra v1.8.0
 	github.com/xo/resvg v0.3.0
