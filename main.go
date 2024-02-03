@@ -11,7 +11,6 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
-	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -22,10 +21,9 @@ import (
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
 
+	"github.com/kenshaw/colors"
 	"github.com/kenshaw/rasterm"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"gopkg.in/go-playground/colors.v1"
 )
 
 var (
@@ -41,20 +39,19 @@ func main() {
 }
 
 func run(ctx context.Context, appName, appVersion string, cliargs []string) error {
-	var bg colors.Color = colors.FromStdColor(color.Transparent)
+	bg := colors.FromColor(color.Transparent)
 	c := &cobra.Command{
 		Use:     appName + " [flags] <image1> [image2, ..., imageN]",
 		Short:   appName + ", a command-line image viewer using terminal graphics",
 		Version: appVersion,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			bgColor := convColor(bg)
 			return do(os.Stdout, &Params{
-				BG:   bgColor,
+				BG:   bg,
 				Args: args,
 			})
 		},
 	}
-	c.Flags().Var(NewColor(&bg), "bg", "background color")
+	c.Flags().Var(bg.Pflag(), "bg", "background color")
 	c.SetVersionTemplate("{{ .Name }} {{ .Version }}\n")
 	c.InitDefaultHelpCmd()
 	c.SetArgs(cliargs[1:])
@@ -134,38 +131,6 @@ func renderFile(w io.Writer, file string) error {
 		return fmt.Errorf("can't close %s: %w", file, err)
 	}
 	return rasterm.Encode(w, img)
-}
-
-type Color struct {
-	c *colors.Color
-}
-
-func NewColor(c *colors.Color) pflag.Value {
-	return Color{
-		c: c,
-	}
-}
-
-func (c Color) String() string {
-	return (*c.c).String()
-}
-
-func (c Color) Set(s string) error {
-	clr, err := colors.Parse(s)
-	if err != nil {
-		return colors.ErrBadColor
-	}
-	*c.c = clr
-	return nil
-}
-
-func (c Color) Type() string {
-	return "color"
-}
-
-func convColor(c colors.Color) color.Color {
-	clr := c.ToRGBA()
-	return color.RGBA{R: clr.R, G: clr.G, B: clr.B, A: uint8(math.Round(255 * clr.A))}
 }
 
 /*
