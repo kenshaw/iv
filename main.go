@@ -106,7 +106,7 @@ func open(name string) ([]string, error) {
 	return v, nil
 }
 
-var extRE = regexp.MustCompile(`(?i)\.(jpe?g|gif|png|svg|bmp|bitmap|tiff?|webp)$`)
+var extRE = regexp.MustCompile(`(?i)\.(jpe?g|gif|png|svg|bmp|bitmap|tiff?|hei[vc]|webp)$`)
 
 func render(w io.Writer, files []string) error {
 	for i := 0; i < len(files); i++ {
@@ -134,22 +134,6 @@ func renderFile(w io.Writer, file string) error {
 	}
 	return rasterm.Encode(w, img)
 }
-
-/*
-func init() {
-	"github.com/klippa-app/go-libheif"
-	"github.com/klippa-app/go-libheif/library"
-	err := libheif.Init(libheif.Config{LibraryConfig: library.Config{
-		Command: library.Command{
-			BinPath: "go",
-			Args:    []string{"run", "library/worker_example/main.go"},
-		},
-	}})
-	if err != nil {
-		panic(fmt.Sprintf("could not start libheif worker: %v", err))
-	}
-}
-*/
 
 /*
 func init() {
