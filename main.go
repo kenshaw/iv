@@ -17,7 +17,6 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
-	_ "github.com/xo/heif"
 	"github.com/xo/resvg"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"

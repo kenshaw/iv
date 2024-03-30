@@ -6,7 +6,6 @@ require (
 	github.com/kenshaw/colors v0.1.2
 	github.com/kenshaw/rasterm v0.1.10
 	github.com/spf13/cobra v1.8.0
-	github.com/xo/heif v0.0.0-20240209000458-0b6f298b2b1d
 	github.com/xo/resvg v0.3.0
 	golang.org/x/image v0.15.0
 )
