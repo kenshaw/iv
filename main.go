@@ -39,42 +39,73 @@ func main() {
 	}
 }
 
-func run(ctx context.Context, appName, appVersion string, cliargs []string) error {
+func run(ctx context.Context, name, version string, cliargs []string) error {
 	bg := colors.FromColor(color.Transparent)
+	var (
+		bashCompletion       bool
+		zshCompletion        bool
+		fishCompletion       bool
+		powershellCompletion bool
+		noDescriptions       bool
+	)
 	c := &cobra.Command{
-		Use:     appName + " [flags] <image1> [image2, ..., imageN]",
-		Short:   appName + ", a command-line image viewer using terminal graphics",
-		Version: appVersion,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return do(os.Stdout, &Params{
-				BG:   bg,
-				Args: args,
-			})
+		Use:           name + " [flags] <image1> [image2, ..., imageN]",
+		Short:         name + ", a command-line image viewer using terminal graphics",
+		Version:       version,
+		SilenceErrors: true,
+		SilenceUsage:  false,
+		RunE: func(cmd *cobra.Command, cliargs []string) error {
+			// completions and short circuits
+			switch {
+			case bashCompletion:
+				return cmd.GenBashCompletionV2(os.Stdout, !noDescriptions)
+			case zshCompletion:
+				if noDescriptions {
+					return cmd.GenZshCompletionNoDesc(os.Stdout)
+				}
+				return cmd.GenZshCompletion(os.Stdout)
+			case fishCompletion:
+				return cmd.GenFishCompletion(os.Stdout, !noDescriptions)
+			case powershellCompletion:
+				if noDescriptions {
+					return cmd.GenPowerShellCompletion(os.Stdout)
+				}
+				return cmd.GenPowerShellCompletionWithDesc(os.Stdout)
+			}
+			return do(os.Stdout, bg, cliargs)
 		},
 	}
-	c.Flags().Var(bg.Pflag(), "bg", "background color")
 	c.SetVersionTemplate("{{ .Name }} {{ .Version }}\n")
 	c.InitDefaultHelpCmd()
 	c.SetArgs(cliargs[1:])
-	c.SilenceErrors, c.SilenceUsage = true, false
+	flags := c.Flags()
+	flags.Var(bg.Pflag(), "bg", "background color")
+	// completions
+	flags.BoolVar(&bashCompletion, "completion-script-bash", false, "output bash completion script and exit")
+	flags.BoolVar(&zshCompletion, "completion-script-zsh", false, "output zsh completion script and exit")
+	flags.BoolVar(&fishCompletion, "completion-script-fish", false, "output fish completion script and exit")
+	flags.BoolVar(&powershellCompletion, "completion-script-powershell", false, "output powershell completion script and exit")
+	flags.BoolVar(&noDescriptions, "no-descriptions", false, "disable descriptions in completion scripts")
+	// mark hidden
+	for _, name := range []string{
+		"completion-script-bash", "completion-script-zsh", "completion-script-fish",
+		"completion-script-powershell", "no-descriptions",
+	} {
+		flags.Lookup(name).Hidden = true
+	}
 	return c.ExecuteContext(ctx)
 }
 
-type Params struct {
-	BG   color.Color
-	Args []string
-}
-
 // do renders the specified files to w.
-func do(w io.Writer, params *Params) error {
+func do(w io.Writer, bg color.Color, args []string) error {
 	if !rasterm.Available() {
 		return rasterm.ErrTermGraphicsNotAvailable
 	}
-	resvg.WithBackground(params.BG)(resvg.Default)
+	resvg.WithBackground(bg)(resvg.Default)
 	// collect files
 	var files []string
-	for i := 0; i < len(params.Args); i++ {
-		v, err := open(params.Args[i])
+	for i := 0; i < len(args); i++ {
+		v, err := open(args[i])
 		if err != nil {
 			fmt.Fprintf(w, "error: unable to open arg %d: %v\n", i, err)
 		}
