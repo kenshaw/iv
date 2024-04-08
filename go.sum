@@ -1,8 +1,8 @@
 github.com/cpuguy83/go-md2man/v2 v2.0.3/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
-github.com/kenshaw/colors v0.1.2 h1:qy1V9XzxSbUkFW3WyeTf3+ma3604Qks/S9iWDi3cyqE=
-github.com/kenshaw/colors v0.1.2/go.mod h1:m8LcSiaLgIxtzCHQqxReKkJPP5TfXUZZdQvFdCuQGyY=
+github.com/kenshaw/colors v0.1.4 h1:2IbZLfJJlLuUyHN6/vgMK+1b4g+9GcD6u2pBx9GwviE=
+github.com/kenshaw/colors v0.1.4/go.mod h1:m8LcSiaLgIxtzCHQqxReKkJPP5TfXUZZdQvFdCuQGyY=
 github.com/kenshaw/rasterm v0.1.10 h1:cMCTpBHfqmftt/VqeT6B+9Td+mYi+ZtziN+XBdrTQfA=
 github.com/kenshaw/rasterm v0.1.10/go.mod h1:kL4DCN+wOlQ4BPBCxA+itiVwiObRAj0Hkze7SbCyYaw=
 github.com/kenshaw/snaker v0.2.0 h1:DPlxCtAv9mw1wSsvIN1khUAPJUIbFJUckMIDWSQ7TC8=

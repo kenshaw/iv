@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 	"io"
 	"os"
 	"path/filepath"
@@ -111,7 +112,7 @@ func do(w io.Writer, bg color.Color, args []string) error {
 		}
 		files = append(files, v...)
 	}
-	return render(w, files)
+	return render(w, bg, files)
 }
 
 func open(name string) ([]string, error) {
@@ -138,9 +139,13 @@ func open(name string) ([]string, error) {
 
 var extRE = regexp.MustCompile(`(?i)\.(jpe?g|gif|png|svg|bmp|bitmap|tiff?|hei[vc]|webp)$`)
 
-func render(w io.Writer, files []string) error {
+func render(w io.Writer, bg color.Color, files []string) error {
+	var c color.Color
+	if !colors.Is(bg, colors.Transparent) {
+		c = color.NRGBAModel.Convert(bg).(color.NRGBA)
+	}
 	for i := 0; i < len(files); i++ {
-		if err := renderFile(w, files[i]); err != nil {
+		if err := renderFile(w, c, files[i]); err != nil {
 			fmt.Fprintf(w, "error: unable to render arg %d: %v\n", i, err)
 		}
 	}
@@ -148,13 +153,13 @@ func render(w io.Writer, files []string) error {
 }
 
 // doFile renders the specified file to w.
-func renderFile(w io.Writer, file string) error {
+func renderFile(w io.Writer, bg color.Color, file string) error {
 	fmt.Fprintln(w, file+":")
 	f, err := os.OpenFile(file, os.O_RDONLY, 0)
 	if err != nil {
 		return fmt.Errorf("can't open %s: %w", file, err)
 	}
-	img, _, err := image.Decode(f)
+	img, typ, err := image.Decode(f)
 	if err != nil {
 		defer f.Close()
 		return fmt.Errorf("can't decode %s: %w", file, err)
@@ -162,12 +167,21 @@ func renderFile(w io.Writer, file string) error {
 	if err := f.Close(); err != nil {
 		return fmt.Errorf("can't close %s: %w", file, err)
 	}
+	if typ != "svg" && bg != nil {
+		img = addBackground(bg.(color.NRGBA), img)
+	}
 	return rasterm.Encode(w, img)
 }
 
-/*
-func init() {
-	_ "github.com/jcbritobr/pnm"
-	image.RegisterFormat("pbm", "P?", Decode, DecodeConfig)
+// addBackground adds a background for the image.
+func addBackground(bg color.NRGBA, fg image.Image) image.Image {
+	b := fg.Bounds()
+	img := image.NewNRGBA(b)
+	for i := 0; i < b.Dx(); i++ {
+		for j := 0; j < b.Dy(); j++ {
+			img.SetNRGBA(i, j, bg)
+		}
+	}
+	draw.Draw(img, b, fg, image.Point{}, draw.Over)
+	return img
 }
-*/
