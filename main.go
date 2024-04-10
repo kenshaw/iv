@@ -12,12 +12,15 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
+	"time"
 
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 
+	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/xo/resvg"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
@@ -40,8 +43,20 @@ func main() {
 	}
 }
 
+func init() {
+	// vips.LoggingSettings(func(_ string, _ vips.LogLevel, _ string) {}, vips.LogLevelError)
+	vips.Startup(&vips.Config{
+		ConcurrencyLevel: runtime.NumCPU(),
+		// ConcurrencyLevel: 4,
+	})
+}
+
 func run(ctx context.Context, name, version string, cliargs []string) error {
 	bg := colors.FromColor(color.Transparent)
+	width := uint(0)
+	height := uint(0)
+	sideBySide := false
+	diff := false
 	var (
 		bashCompletion       bool
 		zshCompletion        bool
@@ -73,14 +88,18 @@ func run(ctx context.Context, name, version string, cliargs []string) error {
 				}
 				return cmd.GenPowerShellCompletionWithDesc(os.Stdout)
 			}
-			return do(os.Stdout, bg, cliargs)
+			return do(os.Stdout, bg, sideBySide, diff, width, height, cliargs)
 		},
 	}
 	c.SetVersionTemplate("{{ .Name }} {{ .Version }}\n")
-	c.InitDefaultHelpCmd()
 	c.SetArgs(cliargs[1:])
+	// flags
 	flags := c.Flags()
 	flags.Var(bg.Pflag(), "bg", "background color")
+	flags.BoolVarP(&sideBySide, "side-by-side", "S", false, "toggle side-by-side mode")
+	flags.BoolVar(&diff, "diff", false, "toggle diff mode")
+	flags.UintVarP(&width, "width", "W", 0, "set width")
+	flags.UintVarP(&height, "height", "H", 0, "set height")
 	// completions
 	flags.BoolVar(&bashCompletion, "completion-script-bash", false, "output bash completion script and exit")
 	flags.BoolVar(&zshCompletion, "completion-script-zsh", false, "output zsh completion script and exit")
@@ -98,11 +117,16 @@ func run(ctx context.Context, name, version string, cliargs []string) error {
 }
 
 // do renders the specified files to w.
-func do(w io.Writer, bg color.Color, args []string) error {
+func do(w io.Writer, bg color.Color, sideBySide, diff bool, width, height uint, args []string) error {
 	if !rasterm.Available() {
 		return rasterm.ErrTermGraphicsNotAvailable
 	}
 	resvg.WithBackground(bg)(resvg.Default)
+	if width != 0 || height != 0 {
+		resvg.WithScaleMode(resvg.ScaleBestFit)(resvg.Default)
+		resvg.WithWidth(int(width))(resvg.Default)
+		resvg.WithHeight(int(height))(resvg.Default)
+	}
 	// collect files
 	var files []string
 	for i := 0; i < len(args); i++ {
@@ -155,22 +179,43 @@ func render(w io.Writer, bg color.Color, files []string) error {
 // doFile renders the specified file to w.
 func renderFile(w io.Writer, bg color.Color, file string) error {
 	fmt.Fprintln(w, file+":")
-	f, err := os.OpenFile(file, os.O_RDONLY, 0)
+	now := time.Now()
+	v, err := vips.LoadImageFromFile(file, vips.NewImportParams())
 	if err != nil {
 		return fmt.Errorf("can't open %s: %w", file, err)
 	}
-	img, typ, err := image.Decode(f)
+	fmt.Fprintf(os.Stdout, "load: %v\n", time.Now().Sub(now))
+	now = time.Now()
+	img, err := v.ToImage(&vips.ExportParams{
+		Format: vips.ImageTypePNG,
+	})
 	if err != nil {
-		defer f.Close()
-		return fmt.Errorf("can't decode %s: %w", file, err)
+		return fmt.Errorf("can't export %s: %w", file, err)
 	}
-	if err := f.Close(); err != nil {
-		return fmt.Errorf("can't close %s: %w", file, err)
+	fmt.Fprintf(os.Stdout, "convert: %v\n", time.Now().Sub(now))
+	/*
+		f, err := os.OpenFile(file, os.O_RDONLY, 0)
+		if err != nil {
+			return fmt.Errorf("can't open %s: %w", file, err)
+		}
+		img, typ, err := image.Decode(f)
+		if err != nil {
+			defer f.Close()
+			return fmt.Errorf("can't decode %s: %w", file, err)
+		}
+		if err := f.Close(); err != nil {
+			return fmt.Errorf("can't close %s: %w", file, err)
+		}
+		if typ != "svg" && bg != nil {
+			img = addBackground(bg.(color.NRGBA), img)
+		}
+	*/
+	now = time.Now()
+	if err := rasterm.Encode(w, img); err != nil {
+		return err
 	}
-	if typ != "svg" && bg != nil {
-		img = addBackground(bg.(color.NRGBA), img)
-	}
-	return rasterm.Encode(w, img)
+	fmt.Fprintf(os.Stdout, "out: %v\n", time.Now().Sub(now))
+	return nil
 }
 
 // addBackground adds a background for the image.
