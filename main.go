@@ -3,32 +3,38 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"sort"
+	"strings"
+	"sync"
 	"time"
-
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
+	"unicode"
 
 	"github.com/davidbyttow/govips/v2/vips"
-	"github.com/xo/resvg"
-	_ "golang.org/x/image/bmp"
-	_ "golang.org/x/image/tiff"
-	_ "golang.org/x/image/webp"
-
 	"github.com/kenshaw/colors"
 	"github.com/kenshaw/rasterm"
 	"github.com/spf13/cobra"
+	pdf "github.com/stephenafamo/goldmark-pdf"
+	"github.com/xo/resvg"
+	"github.com/yookoala/realpath"
+	"github.com/yuin/goldmark"
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
+	_ "golang.org/x/image/webp"
 )
 
 var (
@@ -43,20 +49,12 @@ func main() {
 	}
 }
 
-func init() {
-	// vips.LoggingSettings(func(_ string, _ vips.LogLevel, _ string) {}, vips.LogLevelError)
-	vips.Startup(&vips.Config{
-		ConcurrencyLevel: runtime.NumCPU(),
-		// ConcurrencyLevel: 4,
-	})
-}
-
 func run(ctx context.Context, name, version string, cliargs []string) error {
 	bg := colors.FromColor(color.Transparent)
 	width := uint(0)
 	height := uint(0)
-	sideBySide := false
-	diff := false
+	// sideBySide := false
+	// diff := false
 	var (
 		bashCompletion       bool
 		zshCompletion        bool
@@ -88,18 +86,21 @@ func run(ctx context.Context, name, version string, cliargs []string) error {
 				}
 				return cmd.GenPowerShellCompletionWithDesc(os.Stdout)
 			}
-			return do(os.Stdout, bg, sideBySide, diff, width, height, cliargs)
+			return do(os.Stdout, bg /*, sideBySide, diff*/, width, height, cliargs)
 		},
 	}
 	c.SetVersionTemplate("{{ .Name }} {{ .Version }}\n")
 	c.SetArgs(cliargs[1:])
 	// flags
 	flags := c.Flags()
+	flags.BoolVarP(&verbose, "verbose", "v", verbose, "enable verbose")
+	flags.IntVar(&vipsConcurrency, "vips-concurrency", vipsConcurrency, "vips concurrency")
+	flags.Lookup("vips-concurrency").Hidden = true
 	flags.Var(bg.Pflag(), "bg", "background color")
-	flags.BoolVarP(&sideBySide, "side-by-side", "S", false, "toggle side-by-side mode")
-	flags.BoolVar(&diff, "diff", false, "toggle diff mode")
-	flags.UintVarP(&width, "width", "W", 0, "set width")
-	flags.UintVarP(&height, "height", "H", 0, "set height")
+	// flags.BoolVarP(&sideBySide, "side-by-side", "S", sideBySide, "toggle side-by-side mode")
+	// flags.BoolVar(&diff, "diff", diff, "toggle diff mode")
+	flags.UintVarP(&width, "width", "W", width, "set width")
+	flags.UintVarP(&height, "height", "H", height, "set height")
 	// completions
 	flags.BoolVar(&bashCompletion, "completion-script-bash", false, "output bash completion script and exit")
 	flags.BoolVar(&zshCompletion, "completion-script-zsh", false, "output zsh completion script and exit")
@@ -117,10 +118,16 @@ func run(ctx context.Context, name, version string, cliargs []string) error {
 }
 
 // do renders the specified files to w.
-func do(w io.Writer, bg color.Color, sideBySide, diff bool, width, height uint, args []string) error {
+func do(w io.Writer, bg color.Color /*, sideBySide, diff bool*/, width, height uint, args []string) error {
 	if !rasterm.Available() {
 		return rasterm.ErrTermGraphicsNotAvailable
 	}
+	if verbose {
+		logger = func(s string, v ...interface{}) {
+			fmt.Fprintf(os.Stderr, s+"\n", v...)
+		}
+	}
+	// add background color for svgs
 	resvg.WithBackground(bg)(resvg.Default)
 	if width != 0 || height != 0 {
 		resvg.WithScaleMode(resvg.ScaleBestFit)(resvg.Default)
@@ -139,6 +146,7 @@ func do(w io.Writer, bg color.Color, sideBySide, diff bool, width, height uint, 
 	return render(w, bg, files)
 }
 
+// open returns the files to open.
 func open(name string) ([]string, error) {
 	var v []string
 	switch fi, err := os.Stat(name); {
@@ -161,8 +169,7 @@ func open(name string) ([]string, error) {
 	return v, nil
 }
 
-var extRE = regexp.MustCompile(`(?i)\.(jpe?g|gif|png|svg|bmp|bitmap|tiff?|hei[vc]|webp)$`)
-
+// render renders files to w.
 func render(w io.Writer, bg color.Color, files []string) error {
 	var c color.Color
 	if !colors.Is(bg, colors.Transparent) {
@@ -176,49 +183,139 @@ func render(w io.Writer, bg color.Color, files []string) error {
 	return nil
 }
 
-// doFile renders the specified file to w.
-func renderFile(w io.Writer, bg color.Color, file string) error {
-	fmt.Fprintln(w, file+":")
-	now := time.Now()
-	v, err := vips.LoadImageFromFile(file, vips.NewImportParams())
+// renderFile renders the specified file to w.
+func renderFile(w io.Writer, bg color.Color, name string) error {
+	fmt.Fprintln(w, name+":")
+	start := time.Now()
+	typ, img, err := openImageFile(name)
 	if err != nil {
-		return fmt.Errorf("can't open %s: %w", file, err)
-	}
-	fmt.Fprintf(os.Stdout, "load: %v\n", time.Now().Sub(now))
-	now = time.Now()
-	img, err := v.ToImage(&vips.ExportParams{
-		Format: vips.ImageTypePNG,
-	})
-	if err != nil {
-		return fmt.Errorf("can't export %s: %w", file, err)
-	}
-	fmt.Fprintf(os.Stdout, "convert: %v\n", time.Now().Sub(now))
-	/*
-		f, err := os.OpenFile(file, os.O_RDONLY, 0)
-		if err != nil {
-			return fmt.Errorf("can't open %s: %w", file, err)
-		}
-		img, typ, err := image.Decode(f)
-		if err != nil {
-			defer f.Close()
-			return fmt.Errorf("can't decode %s: %w", file, err)
-		}
-		if err := f.Close(); err != nil {
-			return fmt.Errorf("can't close %s: %w", file, err)
-		}
-		if typ != "svg" && bg != nil {
-			img = addBackground(bg.(color.NRGBA), img)
-		}
-	*/
-	now = time.Now()
-	if err := rasterm.Encode(w, img); err != nil {
 		return err
 	}
-	fmt.Fprintf(os.Stdout, "out: %v\n", time.Now().Sub(now))
+	logger("open: %v", time.Now().Sub(start))
+	if typ != "svg" && bg != nil {
+		img = addBackground(bg.(color.NRGBA), img)
+		logger("add bg: %v", time.Now().Sub(start))
+	}
+	now := time.Now()
+	if err = rasterm.Encode(w, img); err != nil {
+		return err
+	}
+	logger("out: %v", time.Now().Sub(now))
+	logger("total: %v", time.Now().Sub(start))
 	return nil
 }
 
-// addBackground adds a background for the image.
+// openImageFile opens the image file.
+func openImageFile(name string) (string, image.Image, error) {
+	f, g := openImage, openVips
+	if m := extRE.FindStringSubmatch(name); m != nil {
+		switch strings.ToLower(m[1]) {
+		case "avif", "heic", "heiv", "heif", "pdf", "jp2", "jxl":
+			f, g = g, f
+		case "markdown", "md":
+			f, g = openMarkdown, nil
+		}
+	}
+	typ, img, err := f(name)
+	switch {
+	case err == nil:
+		return typ, img, nil
+	case g == nil:
+		return "", nil, err
+	}
+	logger("initial open failed: %v", err)
+	return g(name)
+}
+
+// openImage opens the image using Go's standard image.Decode.
+func openImage(name string) (string, image.Image, error) {
+	f, err := os.OpenFile(name, os.O_RDONLY, 0)
+	if err != nil {
+		return "", nil, fmt.Errorf("can't open %s: %w", name, err)
+	}
+	img, typ, err := image.Decode(f)
+	if err != nil {
+		defer f.Close()
+		return "", nil, fmt.Errorf("can't decode %s: %w", name, err)
+	}
+	if err := f.Close(); err != nil {
+		return "", nil, fmt.Errorf("can't close %s: %w", name, err)
+	}
+	return typ, img, nil
+}
+
+// openVips opens the image using libvips.
+func openVips(name string) (string, image.Image, error) {
+	initOnce.Do(vipsInit)
+	start := time.Now()
+	p := vips.NewImportParams()
+	p.Density.Set(300)
+	v, err := vips.LoadImageFromFile(name, p)
+	if err != nil {
+		return "", nil, fmt.Errorf("vips can't open %s: %w", name, err)
+	}
+	logger("vips load: %v", time.Now().Sub(start))
+	ext, w, h := strings.TrimPrefix(v.OriginalFormat().FileExt(), "."), v.Width(), v.Height()
+	logger("vips format: %s dimensions: %dx%d pages: %d", ext, w, h, v.Pages())
+	if ext == "pdf" {
+		_, _, scale, _ := resvg.ScaleBestFit.Scale(uint(w), uint(h), 2000, 2000)
+		if scale != 1.0 {
+			start = time.Now()
+			if err := v.Resize(float64(scale), vips.KernelAuto); err != nil {
+				return "", nil, fmt.Errorf("vips unable to scale pdf: %w", err)
+			}
+			logger("vips resize: %v", time.Now().Sub(start))
+		}
+	}
+	return vipsExport(v)
+}
+
+// openMarkdown opens the markdown file, rendering it as a pdf then using
+// libvips to export it as a standard image.
+func openMarkdown(name string) (string, image.Image, error) {
+	// read file
+	start := time.Now()
+	pathstr, err := realpath.Realpath(name)
+	if err != nil {
+		return "", nil, err
+	}
+	src, err := os.ReadFile(pathstr)
+	if err != nil {
+		return "", nil, err
+	}
+	logger("markdown open: %v", time.Now().Sub(start))
+	start = time.Now()
+	md := goldmark.New(
+		goldmark.WithRenderer(
+			pdf.New(
+				// pdf.WithContext(context.Background()),
+				pdf.WithTraceWriter(loggerWriter{}),
+				pdf.WithImageFS(http.FS(os.DirFS(filepath.Dir(pathstr)))),
+				pdf.WithHeadingFont(pdf.GetTextFont("Arial", pdf.FontHelvetica)),
+				pdf.WithBodyFont(pdf.GetTextFont("Arial", pdf.FontHelvetica)),
+				pdf.WithCodeFont(pdf.GetCodeFont("Arial", pdf.FontHelvetica)),
+			),
+		),
+	)
+	buf := new(bytes.Buffer)
+	if err := md.Convert(src, buf); err != nil {
+		return "", nil, fmt.Errorf("unable to convert markdown to pdf: %w", err)
+	}
+	if err := os.WriteFile("blah.pdf", buf.Bytes(), 0o644); err != nil {
+		panic(err)
+	}
+	logger("markdown convert: %v", time.Now().Sub(start))
+	initOnce.Do(vipsInit)
+	start = time.Now()
+	v, err := vips.NewImageFromReader(buf)
+	if err != nil {
+		return "", nil, fmt.Errorf("vips can't load rendered pdf for %s: %w", name, err)
+	}
+	logger("markdown render: %v", time.Now().Sub(start))
+	return vipsExport(v)
+}
+
+// addBackground adds a background to the image.
 func addBackground(bg color.NRGBA, fg image.Image) image.Image {
 	b := fg.Bounds()
 	img := image.NewNRGBA(b)
@@ -230,3 +327,68 @@ func addBackground(bg color.NRGBA, fg image.Image) image.Image {
 	draw.Draw(img, b, fg, image.Point{}, draw.Over)
 	return img
 }
+
+type loggerWriter struct{}
+
+func (loggerWriter) Write(buf []byte) (int, error) {
+	logger("md: %s", string(bytes.TrimRightFunc(buf, unicode.IsSpace)))
+	return len(buf), nil
+}
+
+// vipsExport exports the vips image as a png image.
+func vipsExport(v *vips.ImageRef) (string, image.Image, error) {
+	start := time.Now()
+	img, err := v.ToImage(&vips.ExportParams{
+		Format: vips.ImageTypePNG,
+	})
+	if err != nil {
+		return "", nil, fmt.Errorf("vips can't export %s: %w", name, err)
+	}
+	logger("vips export: %v", time.Now().Sub(start))
+	return "png", img, nil
+}
+
+// global vars.
+var (
+	logger          = func(string, ...interface{}) {}
+	verbose         = false
+	vipsConcurrency = runtime.NumCPU()
+)
+
+// initOnce is the init guard.
+var initOnce sync.Once
+
+// vipsInit initializes the vip package.
+func vipsInit() {
+	level := vips.LogLevelError
+	if verbose {
+		level = vips.LogLevelDebug
+	}
+	vips.LoggingSettings(func(domain string, level vips.LogLevel, msg string) {
+		logger("vips %s: %s %s", vipsLevel(level), domain, strings.TrimSpace(msg))
+	}, level)
+	vips.Startup(&vips.Config{
+		ConcurrencyLevel: vipsConcurrency,
+	})
+}
+
+func vipsLevel(level vips.LogLevel) string {
+	switch level {
+	case vips.LogLevelError:
+		return "error"
+	case vips.LogLevelCritical:
+		return "critical"
+	case vips.LogLevelWarning:
+		return "warning"
+	case vips.LogLevelMessage:
+		return "message"
+	case vips.LogLevelInfo:
+		return "info"
+	case vips.LogLevelDebug:
+		return "debug"
+	}
+	return fmt.Sprintf("(%d)", level)
+}
+
+// extRE matches file extensions.
+var extRE = regexp.MustCompile(`(?i)\.(jpe?g|jp2|gif|jxl|png|pdf|svg|bmp|bitmap|tiff?|avif|hei[fvc]|webp|markdown|md)$`)

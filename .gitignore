@@ -2,6 +2,7 @@
 /iv.exe
 
 /build
+/testdata
 
 *.png
 *.gif
