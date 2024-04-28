@@ -5,6 +5,14 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
+    - name: Install build dependencies
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get install -y \
+          build-essential \
+          libvips \
+          libvips-dev \
+          vips
     - name: Install Go
       uses: actions/setup-go@v4
       with:
