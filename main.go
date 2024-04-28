@@ -51,9 +51,10 @@ func main() {
 
 func run(ctx context.Context, name, version string, cliargs []string) error {
 	args := &Args{
+		verbose:         true,
 		bg:              colors.FromColor(color.Transparent),
 		vipsConcurrency: runtime.NumCPU(),
-		pdfDPI:          300,
+		dpi:             300,
 		logger:          func(string, ...interface{}) {},
 	}
 	var (
@@ -101,7 +102,7 @@ func run(ctx context.Context, name, version string, cliargs []string) error {
 	// flags.BoolVar(&args.diff, "diff", args.diff, "toggle diff mode")
 	flags.UintVarP(&args.width, "width", "W", args.width, "set width")
 	flags.UintVarP(&args.height, "height", "H", args.height, "set height")
-	flags.UintVar(&args.pdfDPI, "dpi", args.pdfDPI, "set dpi")
+	flags.UintVar(&args.dpi, "dpi", args.dpi, "set dpi")
 	// completions
 	flags.BoolVar(&bashCompletion, "completion-script-bash", false, "output bash completion script and exit")
 	flags.BoolVar(&zshCompletion, "completion-script-zsh", false, "output zsh completion script and exit")
@@ -124,7 +125,7 @@ type Args struct {
 	vipsConcurrency int
 	width           uint
 	height          uint
-	pdfDPI          uint
+	dpi             uint
 	scaleMode       resvg.ScaleMode
 
 	logger func(string, ...interface{})
@@ -304,6 +305,26 @@ func (args *Args) openMarkdown(name string) (string, image.Image, error) {
 	return args.vipsExport(v)
 }
 
+// vipsInit initializes the vip package.
+func (args *Args) vipsInit() {
+	start := time.Now()
+	level := vips.LogLevelError
+	if args.verbose {
+		level = vips.LogLevelDebug
+	}
+	vips.LoggingSettings(func(domain string, level vips.LogLevel, msg string) {
+		args.logger("vips %s: %s %s", vipsLevel(level), domain, strings.TrimSpace(msg))
+	}, level)
+	var config *vips.Config
+	if args.vipsConcurrency != 0 {
+		config = &vips.Config{
+			ConcurrencyLevel: args.vipsConcurrency,
+		}
+	}
+	vips.Startup(config)
+	args.logger("vips init: %v", time.Now().Sub(start))
+}
+
 // vipsOpenReader opens a vips image from the reader.
 func (args *Args) vipsOpenReader(r io.Reader, name string) (*vips.ImageRef, error) {
 	args.once.Do(args.vipsInit)
@@ -315,8 +336,8 @@ func (args *Args) vipsOpenReader(r io.Reader, name string) (*vips.ImageRef, erro
 	args.logger("load file: %v", time.Now().Sub(start))
 	start = time.Now()
 	p := vips.NewImportParams()
-	if args.pdfDPI != 0 {
-		p.Density.Set(int(args.pdfDPI))
+	if args.dpi != 0 {
+		p.Density.Set(int(args.dpi))
 	}
 	v, err := vips.LoadImageFromBuffer(buf, p)
 	if err != nil {
@@ -351,34 +372,22 @@ func (args *Args) vipsExport(v *vips.ImageRef) (string, image.Image, error) {
 		}
 	}
 	start = time.Now()
-	img, err := v.ToImage(&vips.ExportParams{
-		Format: vips.ImageTypePNG,
+	buf, _, err := v.ExportPng(&vips.PngExportParams{
+		Filter:    vips.PngFilterNone,
+		Interlace: false,
+		Palette:   true,
+		// Bitdepth:  4,
 	})
 	if err != nil {
 		return "", nil, fmt.Errorf("vips can't export %s: %w", name, err)
 	}
 	args.logger("vips export: %v", time.Now().Sub(start))
+	img, _, err := image.Decode(bytes.NewReader(buf))
+	if err != nil {
+		return "", nil, fmt.Errorf("can't decode vips image %s: %w", name, err)
+	}
+	args.logger("image type: %T", img)
 	return "png", img, nil
-}
-
-// vipsInit initializes the vip package.
-func (args *Args) vipsInit() {
-	start := time.Now()
-	level := vips.LogLevelError
-	if args.verbose {
-		level = vips.LogLevelDebug
-	}
-	vips.LoggingSettings(func(domain string, level vips.LogLevel, msg string) {
-		args.logger("vips %s: %s %s", vipsLevel(level), domain, strings.TrimSpace(msg))
-	}, level)
-	var config *vips.Config
-	if args.vipsConcurrency != 0 {
-		config = &vips.Config{
-			ConcurrencyLevel: args.vipsConcurrency,
-		}
-	}
-	vips.Startup(config)
-	args.logger("vips init: %v", time.Now().Sub(start))
 }
 
 // addBackground adds a background to a image.
