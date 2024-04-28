@@ -30,7 +30,26 @@ jobs:
           libc6-dev-arm64-cross \
           file \
           libvips \
-          libvips-dev
+          libvips-dev \
+          libfftw3-dev \
+          libopenexr-dev \
+          libgsf-1-dev \
+          libglib2.0-dev \
+          liborc-dev \
+          libopenslide-dev \
+          libmatio-dev \
+          libwebp-dev \
+          libjpeg-turbo8-dev \
+          libexpat1-dev \
+          libexif-dev \
+          libtiff5-dev \
+          libcfitsio-dev \
+          libpoppler-glib-dev \
+          librsvg2-dev \
+          libpango1.0-dev \
+          libopenjp2-7-dev \
+          liblcms2-dev \
+          libimagequant-dev
     - name: Checkout
       uses: actions/checkout@v4
     - name: Setup Go
