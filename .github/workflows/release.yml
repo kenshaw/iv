@@ -30,8 +30,7 @@ jobs:
           libc6-dev-arm64-cross \
           file \
           libvips \
-          libvips-dev \
-          vips
+          libvips-dev
     - name: Checkout
       uses: actions/checkout@v4
     - name: Setup Go

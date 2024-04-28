@@ -11,8 +11,7 @@ jobs:
         sudo apt-get install -y \
           build-essential \
           libvips \
-          libvips-dev \
-          vips
+          libvips-dev
     - name: Install Go
       uses: actions/setup-go@v4
       with:
