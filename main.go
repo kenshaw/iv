@@ -51,7 +51,6 @@ func main() {
 
 func run(ctx context.Context, name, version string, cliargs []string) error {
 	args := &Args{
-		verbose:         true,
 		bg:              colors.FromColor(color.Transparent),
 		vipsConcurrency: runtime.NumCPU(),
 		dpi:             300,
