@@ -17,7 +17,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -27,8 +26,9 @@ import (
 	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/kenshaw/colors"
 	"github.com/kenshaw/rasterm"
-	"github.com/spf13/cobra"
 	pdf "github.com/stephenafamo/goldmark-pdf"
+	"github.com/xo/ox"
+	_ "github.com/xo/ox/color"
 	"github.com/xo/resvg"
 	"github.com/yookoala/realpath"
 	"github.com/yuin/goldmark"
@@ -43,133 +43,73 @@ var (
 )
 
 func main() {
-	if err := run(context.Background(), name, version, os.Args); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-}
-
-func run(ctx context.Context, name, version string, cliargs []string) error {
 	args := &Args{
-		bg:              colors.FromColor(color.Transparent),
-		vipsConcurrency: runtime.NumCPU(),
-		dpi:             300,
-		logger:          func(string, ...interface{}) {},
+		logger: func(string, ...interface{}) {},
 	}
-	var (
-		bashCompletion       bool
-		zshCompletion        bool
-		fishCompletion       bool
-		powershellCompletion bool
-		noDescriptions       bool
-	)
-	c := &cobra.Command{
-		Use:           name + " [flags] <image1> [image2, ..., imageN]",
-		Short:         name + ", a command-line image viewer using terminal graphics",
-		Version:       version,
-		SilenceErrors: true,
-		SilenceUsage:  false,
-		RunE: func(cmd *cobra.Command, cliargs []string) error {
-			// completions and short circuits
-			switch {
-			case bashCompletion:
-				return cmd.GenBashCompletionV2(os.Stdout, !noDescriptions)
-			case zshCompletion:
-				if noDescriptions {
-					return cmd.GenZshCompletionNoDesc(os.Stdout)
-				}
-				return cmd.GenZshCompletion(os.Stdout)
-			case fishCompletion:
-				return cmd.GenFishCompletion(os.Stdout, !noDescriptions)
-			case powershellCompletion:
-				if noDescriptions {
-					return cmd.GenPowerShellCompletion(os.Stdout)
-				}
-				return cmd.GenPowerShellCompletionWithDesc(os.Stdout)
-			}
-			return do(os.Stdout, args, cliargs)
-		},
-	}
-	c.SetVersionTemplate("{{ .Name }} {{ .Version }}\n")
-	c.SetArgs(cliargs[1:])
 	// flags
-	flags := c.Flags()
-	flags.BoolVarP(&args.verbose, "verbose", "v", args.verbose, "enable verbose")
-	flags.IntVar(&args.vipsConcurrency, "vips-concurrency", args.vipsConcurrency, "vips concurrency")
-	flags.Var(args.bg.Pflag(), "bg", "background color")
-	// flags.BoolVarP(&args.sideBySide, "side-by-side", "S", args.sideBySide, "toggle side-by-side mode")
-	// flags.BoolVar(&args.diff, "diff", args.diff, "toggle diff mode")
-	flags.UintVarP(&args.width, "width", "W", args.width, "set width")
-	flags.UintVarP(&args.height, "height", "H", args.height, "set height")
-	flags.UintVar(&args.dpi, "dpi", args.dpi, "set dpi")
-	// completions
-	flags.BoolVar(&bashCompletion, "completion-script-bash", false, "output bash completion script and exit")
-	flags.BoolVar(&zshCompletion, "completion-script-zsh", false, "output zsh completion script and exit")
-	flags.BoolVar(&fishCompletion, "completion-script-fish", false, "output fish completion script and exit")
-	flags.BoolVar(&powershellCompletion, "completion-script-powershell", false, "output powershell completion script and exit")
-	flags.BoolVar(&noDescriptions, "no-descriptions", false, "disable descriptions in completion scripts")
-	// mark hidden
-	for _, name := range []string{
-		"completion-script-bash", "completion-script-zsh", "completion-script-fish",
-		"completion-script-powershell", "no-descriptions", "vips-concurrency",
-	} {
-		flags.Lookup(name).Hidden = true
-	}
-	return c.ExecuteContext(ctx)
+	ox.RunContext(
+		context.Background(),
+		ox.Usage("iv", "the command-line terminal graphics image viewer"),
+		ox.Defaults(),
+		ox.Exec(run(os.Stdout, args)),
+		ox.From(args),
+	)
 }
 
 type Args struct {
-	verbose         bool
-	bg              colors.Color
-	vipsConcurrency int
-	width           uint
-	height          uint
-	dpi             uint
-	scaleMode       resvg.ScaleMode
+	Verbose         bool          `ox:"enable verbose,short:v"`
+	Bg              *colors.Color `ox:"background color,default:transparent"`
+	VipsConcurrency int           `ox:"vips concurrency,default:$NUMCPU"`
+	Width           int           `ox:"set width"`
+	Height          int           `ox:"set height"`
+	DPI             int           `ox:"dpi,default:300,name:dpi"`
 
 	logger func(string, ...interface{})
 	bgc    color.Color
 	once   sync.Once
 }
 
-// do renders the specified files to w.
-func do(w io.Writer, args *Args, cliargs []string) error {
-	if !rasterm.Available() {
-		return rasterm.ErrTermGraphicsNotAvailable
-	}
-	// set verbose logger
-	if args.verbose {
-		args.logger = func(s string, v ...interface{}) {
-			fmt.Fprintf(os.Stderr, s+"\n", v...)
+// run renders the specified files to w.
+
+func run(w io.Writer, args *Args) func(context.Context, []string) error {
+	return func(ctx context.Context, cliargs []string) error {
+		if !rasterm.Available() {
+			return rasterm.ErrTermGraphicsNotAvailable
 		}
-	}
-	// add background color for svgs
-	resvg.WithBackground(args.bg)(resvg.Default)
-	if args.width != 0 || args.height != 0 {
-		resvg.WithScaleMode(resvg.ScaleBestFit)(resvg.Default)
-		resvg.WithWidth(int(args.width))(resvg.Default)
-		resvg.WithHeight(int(args.height))(resvg.Default)
-	}
-	// convert the bg color
-	if !colors.Is(args.bg, colors.Transparent) {
-		args.bgc = color.NRGBAModel.Convert(args.bg).(color.NRGBA)
-	}
-	// collect files
-	var files []string
-	for i := 0; i < len(cliargs); i++ {
-		v, err := open(cliargs[i])
-		if err != nil {
-			fmt.Fprintf(w, "error: unable to open arg %d: %v\n", i, err)
+		// set verbose logger
+		if args.Verbose {
+			args.logger = func(s string, v ...interface{}) {
+				fmt.Fprintf(os.Stderr, s+"\n", v...)
+			}
 		}
-		files = append(files, v...)
-	}
-	// render
-	for i := 0; i < len(files); i++ {
-		if err := args.render(w, files[i]); err != nil {
-			fmt.Fprintf(w, "error: unable to render arg %d: %v\n", i, err)
+		// add background color for svgs
+		resvg.WithBackground(args.Bg)(resvg.Default)
+		if args.Width != 0 || args.Height != 0 {
+			resvg.WithScaleMode(resvg.ScaleBestFit)(resvg.Default)
+			resvg.WithWidth(int(args.Width))(resvg.Default)
+			resvg.WithHeight(int(args.Height))(resvg.Default)
 		}
+		// convert the bg color
+		if !colors.Is(args.Bg, colors.Transparent) {
+			args.bgc = color.NRGBAModel.Convert(args.Bg).(color.NRGBA)
+		}
+		// collect files
+		var files []string
+		for i := 0; i < len(cliargs); i++ {
+			v, err := open(cliargs[i])
+			if err != nil {
+				fmt.Fprintf(w, "error: unable to open arg %d: %v\n", i, err)
+			}
+			files = append(files, v...)
+		}
+		// render
+		for i := 0; i < len(files); i++ {
+			if err := args.render(w, files[i]); err != nil {
+				fmt.Fprintf(w, "error: unable to render arg %d: %v\n", i, err)
+			}
+		}
+		return nil
 	}
-	return nil
 }
 
 // open returns the files to open.
@@ -308,16 +248,16 @@ func (args *Args) openMarkdown(name string) (string, image.Image, error) {
 func (args *Args) vipsInit() {
 	start := time.Now()
 	level := vips.LogLevelError
-	if args.verbose {
+	if args.Verbose {
 		level = vips.LogLevelDebug
 	}
 	vips.LoggingSettings(func(domain string, level vips.LogLevel, msg string) {
 		args.logger("vips %s: %s %s", vipsLevel(level), domain, strings.TrimSpace(msg))
 	}, level)
 	var config *vips.Config
-	if args.vipsConcurrency != 0 {
+	if args.VipsConcurrency != 0 {
 		config = &vips.Config{
-			ConcurrencyLevel: args.vipsConcurrency,
+			ConcurrencyLevel: args.VipsConcurrency,
 		}
 	}
 	vips.Startup(config)
@@ -335,8 +275,8 @@ func (args *Args) vipsOpenReader(r io.Reader, name string) (*vips.ImageRef, erro
 	args.logger("load file: %v", time.Now().Sub(start))
 	start = time.Now()
 	p := vips.NewImportParams()
-	if args.dpi != 0 {
-		p.Density.Set(int(args.dpi))
+	if args.DPI != 0 {
+		p.Density.Set(int(args.DPI))
 	}
 	v, err := vips.LoadImageFromBuffer(buf, p)
 	if err != nil {
