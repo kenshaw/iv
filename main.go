@@ -60,9 +60,9 @@ type Args struct {
 	Verbose         bool          `ox:"enable verbose,short:v"`
 	Bg              *colors.Color `ox:"background color,default:transparent"`
 	VipsConcurrency int           `ox:"vips concurrency,default:$NUMCPU"`
-	Width           int           `ox:"set width"`
-	Height          int           `ox:"set height"`
-	DPI             int           `ox:"dpi,default:300,name:dpi"`
+	Width           int           `ox:"set width,short:W"`
+	Height          int           `ox:"set height,short:H"`
+	DPI             int           `ox:"set dpi,default:300,name:dpi"`
 
 	logger func(string, ...interface{})
 	bgc    color.Color
