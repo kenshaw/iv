@@ -9,7 +9,7 @@ require (
 	github.com/kenshaw/colors v0.2.0
 	github.com/kenshaw/rasterm v0.1.11
 	github.com/stephenafamo/goldmark-pdf v0.4.1
-	github.com/xo/ox v0.0.0-20241204233123-bcda5677f087
+	github.com/xo/ox v0.0.0-20241217181128-6e4dc268b890
 	github.com/xo/resvg v0.6.0
 	github.com/yookoala/realpath v1.0.0
 	github.com/yuin/goldmark v1.7.8

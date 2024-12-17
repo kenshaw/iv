@@ -45,8 +45,8 @@ github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXf
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
-github.com/xo/ox v0.0.0-20241204233123-bcda5677f087 h1:hWUooMY47DB7x3g38Wc9SZ7MwxW25HLx5OjPr8gdVGM=
-github.com/xo/ox v0.0.0-20241204233123-bcda5677f087/go.mod h1:P+6CbW2koi1wfhvTg0ygy9Q5egZX2BoWrcZc+K3MLEg=
+github.com/xo/ox v0.0.0-20241217181128-6e4dc268b890 h1:qqPnYgd8RcmLwM6Q0eY17xOfMGB34zdA6GxEicFd4k0=
+github.com/xo/ox v0.0.0-20241217181128-6e4dc268b890/go.mod h1:P+6CbW2koi1wfhvTg0ygy9Q5egZX2BoWrcZc+K3MLEg=
 github.com/xo/resvg v0.6.0 h1:GsovErv9JuOnGttOA8RhQcBI7DEEVpEiIEKBuJVRS4g=
 github.com/xo/resvg v0.6.0/go.mod h1:xsIgOmL6UD2xRHIm2Laepjm/b4auoPMxAAqOHkvbSes=
 github.com/yookoala/realpath v1.0.0 h1:7OA9pj4FZd+oZDsyvXWQvjn5oBdcHRTV44PpdMSuImQ=
