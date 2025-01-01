@@ -7,9 +7,9 @@ toolchain go1.23.3
 require (
 	github.com/davidbyttow/govips/v2 v2.15.0
 	github.com/kenshaw/colors v0.2.0
-	github.com/kenshaw/rasterm v0.1.11
+	github.com/kenshaw/rasterm v0.1.12
 	github.com/stephenafamo/goldmark-pdf v0.4.1
-	github.com/xo/ox v0.0.0-20241217181128-6e4dc268b890
+	github.com/xo/ox v0.0.0-20241228164902-614951afe6e5
 	github.com/xo/resvg v0.6.0
 	github.com/yookoala/realpath v1.0.0
 	github.com/yuin/goldmark v1.7.8
@@ -24,7 +24,7 @@ require (
 	github.com/mattn/go-sixel v0.0.5 // indirect
 	github.com/phpdave11/gofpdf v1.4.2 // indirect
 	github.com/soniakeys/quant v1.0.0 // indirect
-	golang.org/x/net v0.32.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/term v0.27.0 // indirect
