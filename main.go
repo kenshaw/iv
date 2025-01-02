@@ -43,13 +43,14 @@ var (
 )
 
 func main() {
+	ox.DefaultVersionString = version
 	args := &Args{
 		logger: func(string, ...interface{}) {},
 	}
 	// flags
 	ox.RunContext(
 		context.Background(),
-		ox.Usage("iv", "the command-line terminal graphics image viewer"),
+		ox.Usage(name, "the command-line terminal graphics image viewer"),
 		ox.Defaults(),
 		ox.Exec(run(os.Stdout, args)),
 		ox.From(args),
