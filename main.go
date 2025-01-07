@@ -45,9 +45,8 @@ var (
 func main() {
 	ox.DefaultVersionString = version
 	args := &Args{
-		logger: func(string, ...interface{}) {},
+		logger: func(string, ...any) {},
 	}
-	// flags
 	ox.RunContext(
 		context.Background(),
 		ox.Usage(name, "the command-line terminal graphics image viewer"),
@@ -65,7 +64,7 @@ type Args struct {
 	Height          int           `ox:"set height,short:H"`
 	DPI             int           `ox:"set dpi,default:300,name:dpi"`
 
-	logger func(string, ...interface{})
+	logger func(string, ...any)
 	bgc    color.Color
 	once   sync.Once
 }
@@ -79,7 +78,7 @@ func run(w io.Writer, args *Args) func(context.Context, []string) error {
 		}
 		// set verbose logger
 		if args.Verbose {
-			args.logger = func(s string, v ...interface{}) {
+			args.logger = func(s string, v ...any) {
 				fmt.Fprintf(os.Stderr, s+"\n", v...)
 			}
 		}
