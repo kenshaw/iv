@@ -11,10 +11,13 @@ import (
 	"image/draw"
 	_ "image/gif"
 	_ "image/jpeg"
-	_ "image/png"
+	"image/png"
 	"io"
+	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -64,6 +67,7 @@ type Args struct {
 	Height          int           `ox:"set height,short:H"`
 	DPI             int           `ox:"set dpi,default:300,name:dpi"`
 
+	ctx    context.Context
 	logger func(string, ...any)
 	bgc    color.Color
 	once   sync.Once
@@ -73,6 +77,7 @@ type Args struct {
 
 func run(w io.Writer, args *Args) func(context.Context, []string) error {
 	return func(ctx context.Context, cliargs []string) error {
+		args.ctx = ctx
 		if !rasterm.Available() {
 			return rasterm.ErrTermGraphicsNotAvailable
 		}
@@ -221,9 +226,9 @@ func (args *Args) openMarkdown(name string) (string, image.Image, error) {
 	md := goldmark.New(
 		goldmark.WithRenderer(
 			pdf.New(
-				// pdf.WithContext(context.Background()),
+				pdf.WithContext(args.ctx),
+				pdf.WithImageFS(files{args}),
 				pdf.WithTraceWriter(args),
-				pdf.WithImageFS(http.FS(os.DirFS(filepath.Dir(pathstr)))),
 				pdf.WithHeadingFont(pdf.GetTextFont("Arial", pdf.FontHelvetica)),
 				pdf.WithBodyFont(pdf.GetTextFont("Arial", pdf.FontHelvetica)),
 				pdf.WithCodeFont(pdf.GetCodeFont("Arial", pdf.FontHelvetica)),
@@ -371,6 +376,109 @@ func vipsLevel(level vips.LogLevel) string {
 	}
 	return fmt.Sprintf("(%d)", level)
 }
+
+type files struct {
+	args *Args
+}
+
+func (fs files) Open(urlstr string) (http.File, error) {
+	fs.args.logger("md open: %s", urlstr)
+	if !urlRE.MatchString(urlstr) {
+		return nil, os.ErrNotExist
+	}
+	u, err := url.Parse(urlstr)
+	if err != nil {
+		return nil, err
+	}
+	name := path.Base(u.Path)
+	req, err := http.NewRequestWithContext(fs.args.ctx, "GET", urlstr, nil)
+	if err != nil {
+		return nil, fmt.Errorf("md open: %w", err)
+	}
+	cl := &http.Client{}
+	res, err := cl.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("md open: do: %w", err)
+	}
+	defer res.Body.Close()
+	v, err := fs.args.vipsOpenReader(res.Body, name)
+	if err != nil {
+		return nil, fmt.Errorf("md open: read: %w", err)
+	}
+	typ, img, err := fs.args.vipsExport(v)
+	if err != nil {
+		return nil, fmt.Errorf("md open: export: %w", err)
+	}
+	fs.args.logger("md open: %s (%s)", name, typ)
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		return nil, fmt.Errorf("md open: render: %w", err)
+	}
+	b := buf.Bytes()
+	return &file{
+		name: name,
+		typ:  "image/png",
+		r:    bytes.NewReader(b),
+		n:    len(b),
+	}, nil
+}
+
+type file struct {
+	name string
+	typ  string
+	r    *bytes.Reader
+	n    int
+}
+
+func (f *file) MimeType() string {
+	return f.typ
+}
+
+func (f *file) Read(b []byte) (int, error) {
+	return f.r.Read(b)
+}
+
+func (f *file) Seek(offset int64, whence int) (int64, error) {
+	return f.r.Seek(offset, whence)
+}
+
+func (f *file) Stat() (fs.FileInfo, error) {
+	return f, nil
+}
+
+func (f *file) Readdir(int) ([]fs.FileInfo, error) {
+	return nil, fs.ErrInvalid
+}
+
+func (*file) Close() error {
+	return nil
+}
+
+func (f *file) Name() string {
+	return f.name
+}
+
+func (f *file) Size() int64 {
+	return int64(f.n)
+}
+
+func (f *file) Mode() fs.FileMode {
+	return 0o644
+}
+
+func (f *file) ModTime() time.Time {
+	return time.Now()
+}
+
+func (f *file) IsDir() bool {
+	return false
+}
+
+func (f *file) Sys() any {
+	return nil
+}
+
+var urlRE = regexp.MustCompile(`(?i)^https?`)
 
 // extRE matches file extensions.
 var extRE = regexp.MustCompile(`(?i)\.(jpe?g|jp2|gif|jxl|png|pdf|svg|bmp|bitmap|tiff?|avif|hei[fvc]|webp|markdown|md)$`)
