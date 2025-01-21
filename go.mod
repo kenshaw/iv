@@ -5,11 +5,11 @@ go 1.23
 toolchain go1.23.3
 
 require (
-	github.com/davidbyttow/govips/v2 v2.15.0
-	github.com/kenshaw/colors v0.2.0
+	github.com/davidbyttow/govips/v2 v2.16.0
+	github.com/kenshaw/colors v0.2.1
 	github.com/kenshaw/rasterm v0.1.12
 	github.com/stephenafamo/goldmark-pdf v0.4.1
-	github.com/xo/ox v0.0.0-20250107165807-6c6bbcec66d1
+	github.com/xo/ox v0.0.0-20250115234929-1f506d1efb13
 	github.com/xo/resvg v0.6.0
 	github.com/yookoala/realpath v1.0.0
 	github.com/yuin/goldmark v1.7.8

@@ -66,6 +66,7 @@ type Args struct {
 	Width           int           `ox:"set width,short:W"`
 	Height          int           `ox:"set height,short:H"`
 	DPI             int           `ox:"set dpi,default:300,name:dpi"`
+	Page            int           `ox:"set page,short:p"`
 
 	ctx    context.Context
 	logger func(string, ...any)
@@ -281,7 +282,16 @@ func (args *Args) vipsOpenReader(r io.Reader, name string) (*vips.ImageRef, erro
 	start = time.Now()
 	p := vips.NewImportParams()
 	if args.DPI != 0 {
-		p.Density.Set(int(args.DPI))
+		p.Density.Set(args.DPI)
+	}
+	if args.Page != 0 {
+		v, err := vips.LoadImageFromBuffer(buf, vips.NewImportParams())
+		if err != nil {
+			return nil, fmt.Errorf("vips can't load %s: %w", name, err)
+		}
+		if page := args.Page - 1; 0 <= page && page < v.Metadata().Pages {
+			p.Page.Set(page)
+		}
 	}
 	v, err := vips.LoadImageFromBuffer(buf, p)
 	if err != nil {
