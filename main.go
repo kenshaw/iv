@@ -73,7 +73,7 @@ type Args struct {
 	FontVariant     canvas.FontVariant `ox:"font variant"`
 	FontFg          *colors.Color      `ox:"font foreground color,default:black"`
 	FontBg          *colors.Color      `ox:"font background color,default:white"`
-	FontDPI         int                `ox:"font fpi,default:100,name:font-dpi"`
+	FontDPI         int                `ox:"font dpi,default:100,name:font-dpi"`
 	FontMargin      int                `ox:"margin,default:5"`
 	VipsConcurrency int                `ox:"vips concurrency,default:$NUMCPU"`
 
