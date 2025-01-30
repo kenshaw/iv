@@ -28,6 +28,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/asticode/go-astiav"
 	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/kenshaw/colors"
@@ -137,7 +138,7 @@ func open(name string) ([]string, error) {
 			return nil, fmt.Errorf("unable to open directory %q: %v", name, err)
 		}
 		for _, entry := range entries {
-			if s := entry.Name(); !entry.IsDir() {
+			if s := entry.Name(); !entry.IsDir() && extensions[strings.TrimPrefix(filepath.Ext(s), ".")] {
 				v = append(v, filepath.Join(name, s))
 			}
 		}
@@ -188,9 +189,9 @@ func (args *Args) renderFile(name string) (image.Image, string, error) {
 	switch ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(name), ".")); {
 	case typ == "image/svg":
 		g = args.renderResvg
-	case isImageBuiltin(typ):
+	case isImageBuiltin(typ): // builtin
 		g = args.renderImage
-	case isLibreOffice(typ, ext):
+	case isLibreOffice(typ, ext): // soffice
 		g, notStream = args.renderLibreOffice, true
 	case isVipsImage(typ): // use vips
 		g = args.renderVips
@@ -295,9 +296,31 @@ func (args *Args) renderVips(r io.Reader, name string) (image.Image, error) {
 }
 
 // renderAstiv renders the image using the astiav (ffmpeg) library.
-func (args *Args) renderAstiav(r io.Reader, name string) (image.Image, error) {
+func (args *Args) renderAstiav(_ io.Reader, name string) (image.Image, error) {
 	astiavOnce.Do(astiavInit(args.logger, args.Verbose))
-	return nil, nil
+	in := astiav.AllocFormatContext()
+	defer in.Free()
+	if err := in.OpenInput(name, nil, nil); err != nil {
+		return nil, err
+	}
+	defer in.CloseInput()
+	if err := in.FindStreamInfo(nil); err != nil {
+		return nil, err
+	}
+	for i, is := range in.Streams() {
+		p := is.CodecParameters()
+		typ := p.MediaType()
+		if typ != astiav.MediaTypeVideo {
+			continue
+		}
+		args.logger("stream %d: %s", i, typ)
+		rate := ox.NewRate(p.BitRate(), time.Second)
+		args.logger(
+			"  bit rate: %s, pixel format: %v, time base: %v, duration: %v, frames: %v",
+			rate, p.PixelFormat(), is.TimeBase(), is.Duration(), is.NbFrames(),
+		)
+	}
+	return nil, errors.New("oops!")
 }
 
 // renderLibreOffice renders the image using the `soffice` command.
@@ -506,6 +529,20 @@ func vipsLevel(level vips.LogLevel) string {
 // astiavInit initializes the astiav package.
 func astiavInit(logger func(string, ...any), verbose bool) func() {
 	return func() {
+		level := astiav.LogLevelQuiet
+		if verbose {
+			level = astiav.LogLevelDebug
+		}
+		astiav.SetLogLevel(level)
+		astiav.SetLogCallback(func(c astiav.Classer, l astiav.LogLevel, fmt, msg string) {
+			var cs string
+			if c != nil {
+				if cl := c.Class(); cl != nil {
+					cs = "class: " + cl.String()
+				}
+			}
+			logger("astiav %d: %s%s", l, strings.TrimSpace(msg), cs)
+		})
 	}
 }
 
@@ -661,7 +698,74 @@ func isLibreOffice(typ, ext string) bool {
 	return false
 }
 
-var urlRE = regexp.MustCompile(`(?i)^https?`)
+// extensions are the extensions to check for directories.
+var extensions = map[string]bool{
+	"3g2":      true,
+	"3gp":      true,
+	"asf":      true,
+	"avif":     true,
+	"avi":      true,
+	"bmp":      true,
+	"bpg":      true,
+	"csv":      true,
+	"doc":      true,
+	"docx":     true,
+	"dvb":      true,
+	"dwg":      true,
+	"eot":      true,
+	"flv":      true,
+	"gif":      true,
+	"heic":     true,
+	"heif":     true,
+	"ico":      true,
+	"jp2":      true,
+	"jpeg":     true,
+	"jpf":      true,
+	"jpg":      true,
+	"jxl":      true,
+	"jxs":      true,
+	"m4v":      true,
+	"markdown": true,
+	"md":       true,
+	"mj2":      true,
+	"mkv":      true,
+	"mov":      true,
+	"mp4":      true,
+	"mpeg":     true,
+	"mpg":      true,
+	"odc":      true,
+	"odf":      true,
+	"odg":      true,
+	"odp":      true,
+	"ods":      true,
+	"odt":      true,
+	"otf":      true,
+	"otg":      true,
+	"otp":      true,
+	"ots":      true,
+	"ott":      true,
+	"pdf":      true,
+	"png":      true,
+	"ppt":      true,
+	"pptx":     true,
+	"pub":      true,
+	"rtf":      true,
+	"svg":      true,
+	"tiff":     true,
+	"tsv":      true,
+	"ttc":      true,
+	"ttf":      true,
+	"txt":      true,
+	"webm":     true,
+	"webp":     true,
+	"woff2":    true,
+	"woff":     true,
+	"xls":      true,
+	"xlsx":     true,
+	"xpm":      true,
+}
+
+var urlRE = regexp.MustCompile(`(?i)^https?://`)
 
 var (
 	vipsOnce    sync.Once
