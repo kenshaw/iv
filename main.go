@@ -28,7 +28,6 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/asticode/go-astiav"
 	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/kenshaw/colors"
@@ -78,6 +77,7 @@ type Args struct {
 	FontBg          *colors.Color      `ox:"font background color,default:white"`
 	FontDPI         int                `ox:"font dpi,default:100,name:font-dpi"`
 	FontMargin      int                `ox:"margin,default:5"`
+	TimeCode        time.Duration      `ox:"time code,short:t"`
 	VipsConcurrency int                `ox:"vips concurrency,default:$NUMCPU"`
 
 	ctx    context.Context
@@ -200,7 +200,7 @@ func (args *Args) renderFile(name string) (image.Image, string, error) {
 	case strings.HasPrefix(typ, "font/"):
 		g = args.renderFont
 	case strings.HasPrefix(typ, "video/"):
-		g, notStream = args.renderAstiav, true
+		g, notStream = args.renderFfmpeg, true
 	default:
 		return nil, "", fmt.Errorf("mime type %q not supported", typ)
 	}
@@ -295,40 +295,58 @@ func (args *Args) renderVips(r io.Reader, name string) (image.Image, error) {
 	return args.vipsExport(v)
 }
 
-// renderAstiv renders the image using the astiav (ffmpeg) library.
-func (args *Args) renderAstiav(_ io.Reader, name string) (image.Image, error) {
-	astiavOnce.Do(astiavInit(args.logger, args.Verbose))
-	in := astiav.AllocFormatContext()
-	defer in.Free()
-	if err := in.OpenInput(name, nil, nil); err != nil {
+// renderFfmpeg renders the image using the ffmpeg command.
+func (args *Args) renderFfmpeg(_ io.Reader, pathName string) (image.Image, error) {
+	var err error
+	ffmpegOnce.Do(func() {
+		ffmpegPath, err = exec.LookPath("ffmpeg")
+	})
+	switch {
+	case err != nil:
 		return nil, err
+	case ffmpegPath == "":
+		return nil, errors.New("ffmpeg not in path")
 	}
-	defer in.CloseInput()
-	if err := in.FindStreamInfo(nil); err != nil {
-		return nil, err
+	// ffmpeg -loglevel panic -hide_banner -ss $t -i *.mkv -vframes 1 -q:v 1
+	params := []string{
+		`-hide_banner`,
+		// `-ss`, ``,
+		`-i`, pathName,
+		`-vframes`, `1`,
+		`-q:v`, `1`,
+		`-f`, `apng`,
+		`-`,
 	}
-	for i, is := range in.Streams() {
-		p := is.CodecParameters()
-		typ := p.MediaType()
-		if typ != astiav.MediaTypeVideo {
-			continue
+	args.logger("executing: %s %s", ffmpegPath, strings.Join(params, " "))
+	start := time.Now()
+	cmd := exec.CommandContext(
+		args.ctx,
+		ffmpegPath,
+		params...,
+	)
+	var buf, stderr bytes.Buffer
+	cmd.Stdout, cmd.Stderr = &buf, &stderr
+	if err := cmd.Run(); err != nil {
+		errstr := stderr.String()
+		if len(errstr) > 100 {
+			errstr = errstr[:100]
 		}
-		args.logger("stream %d: %s", i, typ)
-		rate := ox.NewRate(p.BitRate(), time.Second)
-		args.logger(
-			"  bit rate: %s, pixel format: %v, time base: %v, duration: %v, frames: %v",
-			rate, p.PixelFormat(), is.TimeBase(), is.Duration(), is.NbFrames(),
-		)
+		return nil, fmt.Errorf("%w: %s", err, errstr)
 	}
-	return nil, errors.New("oops!")
+	args.logger("ffmpeg render: %v", time.Now().Sub(start))
+	return png.Decode(&buf)
 }
 
 // renderLibreOffice renders the image using the `soffice` command.
 func (args *Args) renderLibreOffice(_ io.Reader, pathName string) (image.Image, error) {
+	var err error
 	sofficeOnce.Do(func() {
-		sofficePath, _ = exec.LookPath("soffice")
+		sofficePath, err = exec.LookPath("soffice")
 	})
-	if sofficePath == "" {
+	switch {
+	case err != nil:
+		return nil, err
+	case sofficePath == "":
 		return nil, errors.New("soffice not in path")
 	}
 	tmpDir, err := os.MkdirTemp("", name+".")
@@ -526,26 +544,6 @@ func vipsLevel(level vips.LogLevel) string {
 	return fmt.Sprintf("(%d)", level)
 }
 
-// astiavInit initializes the astiav package.
-func astiavInit(logger func(string, ...any), verbose bool) func() {
-	return func() {
-		level := astiav.LogLevelQuiet
-		if verbose {
-			level = astiav.LogLevelDebug
-		}
-		astiav.SetLogLevel(level)
-		astiav.SetLogCallback(func(c astiav.Classer, l astiav.LogLevel, fmt, msg string) {
-			var cs string
-			if c != nil {
-				if cl := c.Class(); cl != nil {
-					cs = "class: " + cl.String()
-				}
-			}
-			logger("astiav %d: %s%s", l, strings.TrimSpace(msg), cs)
-		})
-	}
-}
-
 type files struct {
 	args *Args
 }
@@ -698,6 +696,19 @@ func isLibreOffice(typ, ext string) bool {
 	return false
 }
 
+var urlRE = regexp.MustCompile(`(?i)^https?://`)
+
+var (
+	vipsOnce    sync.Once
+	sofficeOnce sync.Once
+	ffmpegOnce  sync.Once
+)
+
+var (
+	sofficePath string
+	ffmpegPath  string
+)
+
 // extensions are the extensions to check for directories.
 var extensions = map[string]bool{
 	"3g2":      true,
@@ -764,13 +775,3 @@ var extensions = map[string]bool{
 	"xlsx":     true,
 	"xpm":      true,
 }
-
-var urlRE = regexp.MustCompile(`(?i)^https?://`)
-
-var (
-	vipsOnce    sync.Once
-	astiavOnce  sync.Once
-	sofficeOnce sync.Once
-)
-
-var sofficePath string
