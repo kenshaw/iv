@@ -310,9 +310,11 @@ func (args *Args) renderFfmpeg(_ io.Reader, pathName string) (image.Image, error
 		return nil, errors.New("ffmpeg not in path")
 	}
 	// ffmpeg -loglevel panic -hide_banner -ss $t -i *.mkv -vframes 1 -q:v 1
+	tc := args.ffprobeTimecode(pathName)
+	args.logger("snapshot at %v", tc)
 	params := []string{
 		`-hide_banner`,
-		`-ss`, args.ffprobeTimecode(pathName),
+		`-ss`, tc,
 		`-i`, pathName,
 		`-vframes`, `1`,
 		`-q:v`, `1`,
@@ -365,7 +367,9 @@ func (args *Args) ffprobeTimecode(pathName string) string {
 	if err != nil {
 		return "00:00"
 	}
-	switch dur := time.Duration(f * float64(time.Second)); {
+	dur := time.Duration(f * float64(time.Second))
+	args.logger("ffprobe duration: %v / %s", dur, formatTimecode(dur))
+	switch {
 	case dur >= 1*time.Hour:
 		return "10:00"
 	case dur >= 30*time.Minute:
@@ -390,8 +394,8 @@ func formatTimecode(d time.Duration) string {
 	if d == 0 {
 		return "00:00"
 	}
-	secs := int64(float64(d) / float64(time.Minute))
-	rem := int64((float64(d) / float64(time.Minute)) * float64(time.Minute))
+	secs := int64(d / time.Minute)
+	rem := int64((d % time.Minute) / time.Second)
 	return fmt.Sprintf("%02d:%02d", secs, rem)
 }
 
