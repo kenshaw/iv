@@ -167,8 +167,8 @@ func (args *Args) render(w io.Writer, name string) error {
 	if err = rasterm.Encode(w, img); err != nil {
 		return err
 	}
-	args.logger("out: %v", time.Now().Sub(now))
-	args.logger("total: %v", time.Now().Sub(start))
+	args.logger("out: %v", time.Since(now))
+	args.logger("total: %v", time.Since(start))
 	return nil
 }
 
@@ -273,7 +273,7 @@ func (args *Args) renderVips(r io.Reader, name string) (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	args.logger("load file: %v", time.Now().Sub(start))
+	args.logger("load file: %v", time.Since(start))
 	start = time.Now()
 	p := vips.NewImportParams()
 	if args.DPI != 0 {
@@ -292,7 +292,7 @@ func (args *Args) renderVips(r io.Reader, name string) (image.Image, error) {
 	if err != nil {
 		return nil, fmt.Errorf("vips can't load %s: %w", name, err)
 	}
-	args.logger("vips load: %v", time.Now().Sub(start))
+	args.logger("vips load: %v", time.Since(start))
 	return args.vipsExport(v)
 }
 
@@ -336,7 +336,7 @@ func (args *Args) renderFfmpeg(_ io.Reader, pathName string) (image.Image, error
 		}
 		return nil, fmt.Errorf("%w: %s", err, errstr)
 	}
-	args.logger("ffmpeg render: %v", time.Now().Sub(start))
+	args.logger("ffmpeg render: %v", time.Since(start))
 	return png.Decode(&buf)
 }
 
@@ -435,7 +435,7 @@ func (args *Args) renderLibreOffice(_ io.Reader, pathName string) (image.Image, 
 		}
 		return nil, fmt.Errorf("%w: %s", err, string(buf))
 	}
-	args.logger("soffice render: %v", time.Now().Sub(start))
+	args.logger("soffice render: %v", time.Since(start))
 	pdf := filepath.Join(
 		tmpDir,
 		strings.TrimSuffix(filepath.Base(pathName), filepath.Ext(pathName))+".pdf",
@@ -471,7 +471,7 @@ func (args *Args) vipsExport(v *vips.ImageRef) (image.Image, error) {
 			if err := v.Resize(float64(scale), vips.KernelAuto); err != nil {
 				return nil, fmt.Errorf("vips unable to scale pdf: %w", err)
 			}
-			args.logger("vips resize: %v", time.Now().Sub(start))
+			args.logger("vips resize: %v", time.Since(start))
 		}
 	}
 	start = time.Now()
@@ -484,7 +484,7 @@ func (args *Args) vipsExport(v *vips.ImageRef) (image.Image, error) {
 	if err != nil {
 		return nil, fmt.Errorf("vips can't export %s: %w", name, err)
 	}
-	args.logger("vips export: %v", time.Now().Sub(start))
+	args.logger("vips export: %v", time.Since(start))
 	img, _, err := image.Decode(bytes.NewReader(buf))
 	if err != nil {
 		return nil, fmt.Errorf("can't decode vips image %s: %w", name, err)
@@ -492,18 +492,6 @@ func (args *Args) vipsExport(v *vips.ImageRef) (image.Image, error) {
 	args.logger("image type: %T", img)
 	return img, nil
 }
-
-/*
-// vipsOpen opens the file.
-func (args *Args) vipsOpen(name string) (image.Image, error) {
-	f, err := os.OpenFile(name, os.O_RDONLY, 0)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	return args.renderVips(f, name)
-}
-*/
 
 // addBackground adds a background to a image.
 func (args *Args) addBackground(fg image.Image, typ string) image.Image {
@@ -519,7 +507,7 @@ func (args *Args) addBackground(fg image.Image, typ string) image.Image {
 		}
 	}
 	draw.Draw(img, b, fg, image.Point{}, draw.Over)
-	args.logger("add bg: %v", time.Now().Sub(start))
+	args.logger("add bg: %v", time.Since(start))
 	return img
 }
 
@@ -548,13 +536,13 @@ func (args *Args) renderMarkdown(r io.Reader, name string) (image.Image, error) 
 	if err := md.Convert(src, buf); err != nil {
 		return nil, fmt.Errorf("unable to convert markdown to pdf: %w", err)
 	}
-	args.logger("markdown convert: %v", time.Now().Sub(start))
+	args.logger("markdown convert: %v", time.Since(start))
 	start = time.Now()
 	pdf, err := args.renderVips(buf, name)
 	if err != nil {
 		return nil, fmt.Errorf("vips can't load rendered pdf for %s: %w", name, err)
 	}
-	args.logger("markdown render: %v", time.Now().Sub(start))
+	args.logger("markdown render: %v", time.Since(start))
 	return pdf, nil
 }
 
@@ -582,7 +570,7 @@ func vipsInit(logger func(string, ...any), verbose bool, concurrency int) func()
 			}
 		}
 		vips.Startup(config)
-		logger("vips init: %v", time.Now().Sub(start))
+		logger("vips init: %v", time.Since(start))
 	}
 }
 
