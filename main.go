@@ -309,7 +309,6 @@ func (args *Args) renderFfmpeg(_ io.Reader, pathName string) (image.Image, error
 	case ffmpegPath == "":
 		return nil, errors.New("ffmpeg not in path")
 	}
-	// ffmpeg -loglevel panic -hide_banner -ss $t -i *.mkv -vframes 1 -q:v 1
 	tc := args.ffprobeTimecode(pathName)
 	args.logger("snapshot at %v", tc)
 	params := []string{
