@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"image/color"
@@ -17,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -80,7 +82,6 @@ type Args struct {
 	ctx    context.Context
 	logger func(string, ...any)
 	bgc    color.Color
-	once   sync.Once
 }
 
 // run renders the specified files to w.
@@ -191,12 +192,16 @@ func (args *Args) renderFile(name string) (image.Image, string, error) {
 		g = args.renderMarkdown
 	case isImageBuiltin(typ):
 		g = args.renderImage
+	case isVipsImage(typ): // use vips
+		g = args.renderVips
 	case strings.HasPrefix(typ, "font/"):
 		g = args.renderFont
-	case strings.HasPrefix(typ, "image/"): // use vips
-		g = args.renderVips
 	case strings.HasPrefix(typ, "video/"):
 		g, notStream = args.renderAstiav, true
+	case isLibreOffice(typ):
+		g, notStream = args.renderLibreOffice, true
+	default:
+		return nil, "", fmt.Errorf("mime type %q not supported", typ)
 	}
 	if notStream {
 		if err := f.Close(); err != nil {
@@ -260,7 +265,7 @@ func (args *Args) renderFont(r io.Reader, name string) (image.Image, error) {
 
 // renderVips opens a vips image from the reader.
 func (args *Args) renderVips(r io.Reader, name string) (image.Image, error) {
-	args.once.Do(vipsInit(args.logger, args.Verbose, args.VipsConcurrency))
+	vipsOnce.Do(vipsInit(args.logger, args.Verbose, args.VipsConcurrency))
 	start := time.Now()
 	buf, err := io.ReadAll(r)
 	if err != nil {
@@ -289,8 +294,68 @@ func (args *Args) renderVips(r io.Reader, name string) (image.Image, error) {
 	return args.vipsExport(v)
 }
 
+// renderAstiv renders the image using the astiav (ffmpeg) library.
 func (args *Args) renderAstiav(r io.Reader, name string) (image.Image, error) {
-	return nil, fmt.Errorf("not supported! %q", name)
+	astiavOnce.Do(astiavInit(args.logger, args.Verbose))
+	return nil, nil
+}
+
+// renderLibreOffice renders the image using the `soffice` command.
+func (args *Args) renderLibreOffice(_ io.Reader, pathName string) (image.Image, error) {
+	sofficeOnce.Do(func() {
+		sofficePath, _ = exec.LookPath("soffice")
+	})
+	if sofficePath == "" {
+		return nil, errors.New("soffice not in path")
+	}
+	tmpDir, err := os.MkdirTemp("", name+".")
+	if err != nil {
+		return nil, err
+	}
+	args.logger("temp dir: %s", tmpDir)
+	params := []string{
+		`--headless`,
+		`--convert-to`, `pdf`,
+		`--outdir`, tmpDir,
+		pathName,
+	}
+	args.logger("executing: %s %s", sofficePath, strings.Join(params, " "))
+	start := time.Now()
+	cmd := exec.CommandContext(
+		args.ctx,
+		sofficePath,
+		params...,
+	)
+	buf, err := cmd.CombinedOutput()
+	if err != nil {
+		if len(buf) > 100 {
+			buf = buf[:100]
+		}
+		return nil, fmt.Errorf("%w: %s", err, string(buf))
+	}
+	args.logger("soffice render: %v", time.Now().Sub(start))
+	pdf := filepath.Join(
+		tmpDir,
+		strings.TrimSuffix(filepath.Base(pathName), filepath.Ext(pathName))+".pdf",
+	)
+	args.logger("rendering soffice output: %q", pdf)
+	f, err := os.OpenFile(pdf, os.O_RDONLY, 0)
+	if err != nil {
+		return nil, err
+	}
+	img, err := args.renderVips(f, pdf)
+	if err != nil {
+		defer f.Close()
+		return nil, err
+	}
+	if err := f.Close(); err != nil {
+		return nil, err
+	}
+	args.logger("removing: %s", tmpDir)
+	if err := os.RemoveAll(tmpDir); err != nil {
+		return nil, err
+	}
+	return img, nil
 }
 
 // vipsExport exports the vips image as a png image.
@@ -397,7 +462,7 @@ func (args *Args) Write(buf []byte) (int, error) {
 	return len(buf), nil
 }
 
-// vipsInit initializes the vip package.
+// vipsInit initializes the vips package.
 func vipsInit(logger func(string, ...any), verbose bool, concurrency int) func() {
 	return func() {
 		start := time.Now()
@@ -436,6 +501,12 @@ func vipsLevel(level vips.LogLevel) string {
 		return "debug"
 	}
 	return fmt.Sprintf("(%d)", level)
+}
+
+// astiavInit initializes the astiav package.
+func astiavInit(logger func(string, ...any), verbose bool) func() {
+	return func() {
+	}
 }
 
 type files struct {
@@ -564,4 +635,37 @@ func isImageBuiltin(typ string) bool {
 	return false
 }
 
+// isVipsImage returns true if the mime type is supported by libvips.
+func isVipsImage(typ string) bool {
+	switch typ {
+	case "application/pdf":
+		return true
+	}
+	return strings.HasPrefix(typ, "image/")
+}
+
+// isLibreOffice returns true if the mime type is supported by the `soffice`
+// command.
+func isLibreOffice(typ string) bool {
+	switch {
+	case
+		strings.HasPrefix(typ, "application/vnd.openxmlformats-officedocument."), // pptx, xlsx, ...
+		strings.HasPrefix(typ, "application/vnd.ms-"),                            // ppt, xls, ...
+		strings.HasPrefix(typ, "application/vnd.oasis.opendocument."),            // otp, otp, odg, ...
+		typ == "text/rtf",
+		typ == "text/csv",
+		typ == "text/tab-separated-values":
+		return true
+	}
+	return false
+}
+
 var urlRE = regexp.MustCompile(`(?i)^https?`)
+
+var (
+	vipsOnce    sync.Once
+	astiavOnce  sync.Once
+	sofficeOnce sync.Once
+)
+
+var sofficePath string
