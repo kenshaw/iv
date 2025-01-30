@@ -185,21 +185,21 @@ func (args *Args) renderFile(name string) (image.Image, string, error) {
 	args.logger("mime: %s", typ)
 	var g func(io.Reader, string) (image.Image, error)
 	var notStream bool
-	switch {
+	switch ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(name), ".")); {
 	case typ == "image/svg":
 		g = args.renderResvg
-	case typ == "text/plain":
-		g = args.renderMarkdown
 	case isImageBuiltin(typ):
 		g = args.renderImage
+	case isLibreOffice(typ, ext):
+		g, notStream = args.renderLibreOffice, true
 	case isVipsImage(typ): // use vips
 		g = args.renderVips
+	case typ == "text/plain":
+		g = args.renderMarkdown
 	case strings.HasPrefix(typ, "font/"):
 		g = args.renderFont
 	case strings.HasPrefix(typ, "video/"):
 		g, notStream = args.renderAstiav, true
-	case isLibreOffice(typ):
-		g, notStream = args.renderLibreOffice, true
 	default:
 		return nil, "", fmt.Errorf("mime type %q not supported", typ)
 	}
@@ -646,7 +646,7 @@ func isVipsImage(typ string) bool {
 
 // isLibreOffice returns true if the mime type is supported by the `soffice`
 // command.
-func isLibreOffice(typ string) bool {
+func isLibreOffice(typ, ext string) bool {
 	switch {
 	case
 		strings.HasPrefix(typ, "application/vnd.openxmlformats-officedocument."), // pptx, xlsx, ...
@@ -654,7 +654,8 @@ func isLibreOffice(typ string) bool {
 		strings.HasPrefix(typ, "application/vnd.oasis.opendocument."),            // otp, otp, odg, ...
 		typ == "text/rtf",
 		typ == "text/csv",
-		typ == "text/tab-separated-values":
+		typ == "text/tab-separated-values",
+		typ == "text/plain" && (ext == "csv" || ext == "tsv"):
 		return true
 	}
 	return false
