@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -77,7 +78,7 @@ type Args struct {
 	FontBg          *colors.Color      `ox:"font background color,default:white"`
 	FontDPI         int                `ox:"font dpi,default:100,name:font-dpi"`
 	FontMargin      int                `ox:"margin,default:5"`
-	TimeCode        time.Duration      `ox:"time code,short:t"`
+	TimeCode        time.Duration      `ox:"video time code,short:t"`
 	VipsConcurrency int                `ox:"vips concurrency,default:$NUMCPU"`
 
 	ctx    context.Context
@@ -299,6 +300,7 @@ func (args *Args) renderVips(r io.Reader, name string) (image.Image, error) {
 func (args *Args) renderFfmpeg(_ io.Reader, pathName string) (image.Image, error) {
 	var err error
 	ffmpegOnce.Do(func() {
+		ffprobePath, _ = exec.LookPath("ffprobe")
 		ffmpegPath, err = exec.LookPath("ffmpeg")
 	})
 	switch {
@@ -310,7 +312,7 @@ func (args *Args) renderFfmpeg(_ io.Reader, pathName string) (image.Image, error
 	// ffmpeg -loglevel panic -hide_banner -ss $t -i *.mkv -vframes 1 -q:v 1
 	params := []string{
 		`-hide_banner`,
-		// `-ss`, ``,
+		`-ss`, args.ffprobeTimecode(pathName),
 		`-i`, pathName,
 		`-vframes`, `1`,
 		`-q:v`, `1`,
@@ -335,6 +337,62 @@ func (args *Args) renderFfmpeg(_ io.Reader, pathName string) (image.Image, error
 	}
 	args.logger("ffmpeg render: %v", time.Now().Sub(start))
 	return png.Decode(&buf)
+}
+
+func (args *Args) ffprobeTimecode(pathName string) string {
+	switch {
+	case ffprobePath == "":
+		return "00:00"
+	case args.TimeCode != 0:
+		return formatTimecode(args.TimeCode)
+	}
+	params := []string{
+		`-loglevel`, `quiet`,
+		`-show_format`,
+		pathName,
+	}
+	args.logger("ffprobe: executing %s %s", ffprobePath, strings.Join(params, " "))
+	cmd := exec.CommandContext(args.ctx, ffprobePath, params...)
+	buf, err := cmd.CombinedOutput()
+	if err != nil {
+		return "00:00"
+	}
+	m := durationRE.FindStringSubmatch(string(buf))
+	if m == nil {
+		return "00:00"
+	}
+	f, err := strconv.ParseFloat(m[1], 64)
+	if err != nil {
+		return "00:00"
+	}
+	switch dur := time.Duration(f * float64(time.Second)); {
+	case dur >= 1*time.Hour:
+		return "10:00"
+	case dur >= 30*time.Minute:
+		return "05:00"
+	case dur >= 15*time.Minute:
+		return "03:00"
+	case dur >= 5*time.Minute:
+		return "02:00"
+	case dur > 1*time.Minute:
+		return "00:30"
+	case dur > 30*time.Second:
+		return "00:10"
+	case dur > 5*time.Second:
+		return "00:02"
+	}
+	return "00:00"
+}
+
+var durationRE = regexp.MustCompile(`(?m)^duration=(.*)$`)
+
+func formatTimecode(d time.Duration) string {
+	if d == 0 {
+		return "00:00"
+	}
+	secs := int64(float64(d) / float64(time.Minute))
+	rem := int64((float64(d) / float64(time.Minute)) * float64(time.Minute))
+	return fmt.Sprintf("%02d:%02d", secs, rem)
 }
 
 // renderLibreOffice renders the image using the `soffice` command.
@@ -706,6 +764,7 @@ var (
 
 var (
 	sofficePath string
+	ffprobePath string
 	ffmpegPath  string
 )
 
