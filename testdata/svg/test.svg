@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+	 viewBox="0 0 490 490" xml:space="preserve">
+<g id="XMLID_54_">
+	<g>
+		<g id="XMLID_42_">
+			<g>
+				<polygon style="fill:#CCCCCC;" points="415,95 330,95 330,10 				"/>
+				<polygon style="fill:#FFFFFF;" points="415,95 415,480 75,480 75,10 330,10 330,95 				"/>
+			</g>
+			<g>
+				<path d="M424.976,95c-0.001-2.602-0.992-5.159-2.904-7.071l-85-85c-1.913-1.913-4.47-2.904-7.071-2.905V0H75
+					c-5.522,0-10,4.477-10,10v470c0,5.523,4.478,10,10,10h340c5.522,0,10-4.477,10-10V95H424.976z M340,34.142L390.857,85H340
+					V34.142z M85,470V20h235v75c0,5.523,4.478,10,10,10h75v365H85z"/>
+				<rect x="115" y="130" width="200" height="20"/>
+				<rect x="115" y="170" width="130" height="20"/>
+				<rect x="115" y="210" width="20" height="20"/>
+				<rect x="255" y="210" width="20" height="20"/>
+				<rect x="115" y="250" width="20" height="20"/>
+				<rect x="255" y="250" width="20" height="20"/>
+				<rect x="115" y="300" width="200" height="20"/>
+				<rect x="115" y="340" width="130" height="20"/>
+				<rect x="115" y="380" width="20" height="20"/>
+				<rect x="255" y="380" width="20" height="20"/>
+				<rect x="115" y="420" width="20" height="20"/>
+				<rect x="255" y="420" width="20" height="20"/>
+				<rect x="150" y="210" width="80" height="20"/>
+				<rect x="150" y="250" width="80" height="20"/>
+				<rect x="290" y="250" width="80" height="20"/>
+				<rect x="290" y="210" width="80" height="20"/>
+				<rect x="150" y="380" width="80" height="20"/>
+				<rect x="150" y="420" width="80" height="20"/>
+				<rect x="290" y="420" width="80" height="20"/>
+				<rect x="290" y="380" width="80" height="20"/>
+			</g>
+		</g>
+	</g>
+</g>
+</svg>

@@ -1,0 +1,871 @@
+<svg width="850" height="621" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="full" viewBox="0 0 850 621">
+<rect width="850" height="621" x="0" y="0" id="0" fill="#2E2733"></rect>
+<path d="M425 258.1A40 40 0 1 1 389.2 315.9L425 298.1Z" fill="#EA5151" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel"></path>
+<path d="M425 193.1A105 105 0 0 1 508.8 234.8L456.9 274A40 40 0 0 0 425 258.1Z" fill="#EA5151" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" class="zr0-cls-0"></path>
+<path d="M425 158.1A140 140 0 0 1 498.7 179L485.5 200.3A115 115 0 0 0 425 183.1Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-1"></path>
+<path d="M425 153.1A145 145 0 0 1 451.6 155.5L450.7 160.5A140 140 0 0 0 425 158.1Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-2"></path>
+<path d="M451.6 155.5A145 145 0 0 1 477.4 162.9L475.6 167.5A140 140 0 0 0 450.7 160.5Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-3"></path>
+<path d="M477.4 162.9A145 145 0 0 1 501.3 174.8L498.7 179A140 140 0 0 0 475.6 167.5Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-4"></path>
+<path d="M498.7 179A140 140 0 0 1 519.3 194.6L502.5 213.1A115 115 0 0 0 485.5 200.3Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-5"></path>
+<path d="M501.3 174.8A145 145 0 0 1 522.7 190.9L519.3 194.6A140 140 0 0 0 498.7 179Z" fill="#FFAE57" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-6"></path>
+<path d="M519.3 194.6A140 140 0 0 1 536.7 213.7L516.8 228.8A115 115 0 0 0 502.5 213.1Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-7"></path>
+<path d="M522.7 190.9A145 145 0 0 1 540.7 210.7L536.7 213.7A140 140 0 0 0 519.3 194.6Z" fill="#EA5151" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-8"></path>
+<path d="M508.8 234.8A105 105 0 0 1 529.6 307.8L464.8 301.8A40 40 0 0 0 456.9 274Z" fill="#EA5151" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" class="zr0-cls-9"></path>
+<path d="M536.7 213.7A140 140 0 0 1 559.7 259.8L535.6 266.6A115 115 0 0 0 516.8 228.8Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-10"></path>
+<path d="M540.7 210.7A145 145 0 0 1 554.8 233.4L550.3 235.7A140 140 0 0 0 536.7 213.7Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-11"></path>
+<path d="M554.8 233.4A145 145 0 0 1 564.5 258.4L559.7 259.8A140 140 0 0 0 550.3 235.7Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-12"></path>
+<path d="M559.7 259.8A140 140 0 0 1 564.4 285.2L539.5 287.5A115 115 0 0 0 535.6 266.6Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-13"></path>
+<path d="M564.5 258.4A145 145 0 0 1 569.4 284.7L564.4 285.2A140 140 0 0 0 559.7 259.8Z" fill="#FFAE57" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-14"></path>
+<path d="M564.4 285.2A140 140 0 0 1 564.4 311L539.5 308.7A115 115 0 0 0 539.5 287.5Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-15"></path>
+<path d="M569.4 284.7A145 145 0 0 1 569.4 311.5L564.4 311A140 140 0 0 0 564.4 285.2Z" fill="#EA5151" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-16"></path>
+<path d="M529.6 307.8A105 105 0 0 1 495.7 375.7L451.9 327.6A40 40 0 0 0 464.8 301.8Z" fill="#EA5151" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" class="zr0-cls-17"></path>
+<path d="M564.4 311A140 140 0 0 1 550.3 360.5L527.9 349.3A115 115 0 0 0 539.5 308.7Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-18"></path>
+<path d="M569.4 311.5A145 145 0 0 1 564.5 337.8L559.7 336.4A140 140 0 0 0 564.4 311Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-19"></path>
+<path d="M564.5 337.8A145 145 0 0 1 554.8 362.7L550.3 360.5A140 140 0 0 0 559.7 336.4Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-20"></path>
+<path d="M550.3 360.5A140 140 0 0 1 536.7 382.4L516.8 367.4A115 115 0 0 0 527.9 349.3Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-21"></path>
+<path d="M554.8 362.7A145 145 0 0 1 540.7 385.5L536.7 382.4A140 140 0 0 0 550.3 360.5Z" fill="#FFAE57" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-22"></path>
+<path d="M536.7 382.4A140 140 0 0 1 519.3 401.5L502.5 383.1A115 115 0 0 0 516.8 367.4Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-23"></path>
+<path d="M540.7 385.5A145 145 0 0 1 522.7 405.2L519.3 401.5A140 140 0 0 0 536.7 382.4Z" fill="#CC3F57" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-24"></path>
+<path d="M495.7 375.7A105 105 0 0 1 425 403.1L425 338.1A40 40 0 0 0 451.9 327.6Z" fill="#EA5151" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" class="zr0-cls-25"></path>
+<path d="M519.3 401.5A140 140 0 0 1 475.6 428.6L466.5 405.3A115 115 0 0 0 502.5 383.1Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-26"></path>
+<path d="M522.7 405.2A145 145 0 0 1 501.3 421.4L498.7 417.1A140 140 0 0 0 519.3 401.5Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-27"></path>
+<path d="M501.3 421.4A145 145 0 0 1 477.4 433.3L475.6 428.6A140 140 0 0 0 498.7 417.1Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-28"></path>
+<path d="M475.6 428.6A140 140 0 0 1 450.7 435.7L446.1 411.1A115 115 0 0 0 466.5 405.3Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-29"></path>
+<path d="M477.4 433.3A145 145 0 0 1 451.6 440.6L450.7 435.7A140 140 0 0 0 475.6 428.6Z" fill="#FFAE57" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-30"></path>
+<path d="M450.7 435.7A140 140 0 0 1 425 438.1L425 413.1A115 115 0 0 0 446.1 411.1Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-31"></path>
+<path d="M451.6 440.6A145 145 0 0 1 425 443.1L425 438.1A140 140 0 0 0 450.7 435.7Z" fill="#EA5151" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-32"></path>
+<path d="M425 403.1A105 105 0 0 1 369.7 387.4L403.9 332.1A40 40 0 0 0 425 338.1Z" fill="#EA5151" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" class="zr0-cls-33"></path>
+<path d="M425 438.1A140 140 0 0 1 351.3 417.1L364.5 395.9A115 115 0 0 0 425 413.1Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-34"></path>
+<path d="M425 443.1A145 145 0 0 1 398.4 440.6L399.3 435.7A140 140 0 0 0 425 438.1Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-35"></path>
+<path d="M398.4 440.6A145 145 0 0 1 372.6 433.3L374.4 428.6A140 140 0 0 0 399.3 435.7Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-36"></path>
+<path d="M372.6 433.3A145 145 0 0 1 348.7 421.4L351.3 417.1A140 140 0 0 0 374.4 428.6Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-37"></path>
+<path d="M369.7 387.4A105 105 0 0 1 341.2 361.4L393.1 322.2A40 40 0 0 0 403.9 332.1Z" fill="#EA5151" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" class="zr0-cls-38"></path>
+<path d="M351.3 417.1A140 140 0 0 1 330.7 401.5L347.5 383.1A115 115 0 0 0 364.5 395.9Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-39"></path>
+<path d="M348.7 421.4A145 145 0 0 1 327.3 405.2L330.7 401.5A140 140 0 0 0 351.3 417.1Z" fill="#FFAE57" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-40"></path>
+<path d="M330.7 401.5A140 140 0 0 1 313.3 382.4L333.2 367.4A115 115 0 0 0 347.5 383.1Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-41"></path>
+<path d="M327.3 405.2A145 145 0 0 1 309.3 385.5L313.3 382.4A140 140 0 0 0 330.7 401.5Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-42"></path>
+<path d="M341.2 361.4A105 105 0 0 1 331 344.9L389.2 315.9A40 40 0 0 0 393.1 322.2Z" fill="#EA5151" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" class="zr0-cls-43"></path>
+<path d="M313.3 382.4A140 140 0 0 1 299.7 360.5L322.1 349.3A115 115 0 0 0 333.2 367.4Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-44"></path>
+<path d="M309.3 385.5A145 145 0 0 1 295.2 362.7L299.7 360.5A140 140 0 0 0 313.3 382.4Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-45"></path>
+<path d="M389.2 315.9A40 40 0 0 1 425 258.1L425 298.1Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel"></path>
+<path d="M331 344.9A105 105 0 0 1 354.3 220.5L398.1 268.5A40 40 0 0 0 389.2 315.9Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" class="zr0-cls-46"></path>
+<path d="M299.7 360.5A140 140 0 0 1 285.6 285.2L310.5 287.5A115 115 0 0 0 322.1 349.3Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-47"></path>
+<path d="M295.2 362.7A145 145 0 0 1 285.5 337.8L290.3 336.4A140 140 0 0 0 299.7 360.5Z" fill="#FFAE57" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-48"></path>
+<path d="M285.5 337.8A145 145 0 0 1 280.6 311.5L285.6 311A140 140 0 0 0 290.3 336.4Z" fill="#FFAE57" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-49"></path>
+<path d="M280.6 311.5A145 145 0 0 1 280.6 284.7L285.6 285.2A140 140 0 0 0 285.6 311Z" fill="#FFAE57" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-50"></path>
+<path d="M285.6 285.2A140 140 0 0 1 313.3 213.7L333.2 228.8A115 115 0 0 0 310.5 287.5Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-51"></path>
+<path d="M280.6 284.7A145 145 0 0 1 285.5 258.4L290.3 259.8A140 140 0 0 0 285.6 285.2Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-52"></path>
+<path d="M285.5 258.4A145 145 0 0 1 295.2 233.4L299.7 235.7A140 140 0 0 0 290.3 259.8Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-53"></path>
+<path d="M295.2 233.4A145 145 0 0 1 309.3 210.7L313.3 213.7A140 140 0 0 0 299.7 235.7Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-54"></path>
+<path d="M313.3 213.7A140 140 0 0 1 330.7 194.6L347.5 213.1A115 115 0 0 0 333.2 228.8Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-55"></path>
+<path d="M309.3 210.7A145 145 0 0 1 327.3 190.9L330.7 194.6A140 140 0 0 0 313.3 213.7Z" fill="#EA5151" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-56"></path>
+<path d="M354.3 220.5A105 105 0 0 1 425 193.1L425 258.1A40 40 0 0 0 398.1 268.5Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" class="zr0-cls-57"></path>
+<path d="M330.7 194.6A140 140 0 0 1 374.4 167.5L383.5 190.8A115 115 0 0 0 347.5 213.1Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-58"></path>
+<path d="M327.3 190.9A145 145 0 0 1 348.7 174.8L351.3 179A140 140 0 0 0 330.7 194.6Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-59"></path>
+<path d="M348.7 174.8A145 145 0 0 1 372.6 162.9L374.4 167.5A140 140 0 0 0 351.3 179Z" fill="#FF7853" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-60"></path>
+<path d="M374.4 167.5A140 140 0 0 1 399.3 160.5L403.9 185A115 115 0 0 0 383.5 190.8Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-61"></path>
+<path d="M372.6 162.9A145 145 0 0 1 398.4 155.5L399.3 160.5A140 140 0 0 0 374.4 167.5Z" fill="#FFAE57" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-62"></path>
+<path d="M399.3 160.5A140 140 0 0 1 425 158.1L425 183.1A115 115 0 0 0 403.9 185Z" fill="none" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s0)" class="zr0-cls-63"></path>
+<path d="M398.4 155.5A145 145 0 0 1 425 153.1L425 158.1A140 140 0 0 0 399.3 160.5Z" fill="#EA5151" stroke="#2E2733" stroke-width="2" stroke-linejoin="bevel" filter="url(#zr0-s1)" class="zr0-cls-64"></path>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:sans-serif;" transform="translate(442.0043 308.6086)" fill="#2E2733">非虚构</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.446,-0.895,0.895,0.446,457.316,233.1807)" fill="#2E2733">社科</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.962,0.274,-0.274,0.962,459.892,175.4472)" fill="#FF7853">4☆</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.092,-0.996,0.996,0.092,438.8403,148.7199)" fill="#FF7853" filter="url(#zr0-s2)">卓有成效的管理者</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.274,-0.962,0.962,0.274,466.0494,153.8062)" fill="#FF7853" filter="url(#zr0-s2)">进化</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.446,-0.895,0.895,0.446,491.8608,163.8055)" fill="#FF7853" filter="url(#zr0-s2)">后物欲时代的来临</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.798,0.603,-0.603,0.798,501.8359,196.3328)" fill="#FFAE57">5☆</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.603,-0.798,0.798,0.603,515.3952,178.3774)" fill="#FFAE57" filter="url(#zr0-s2)">痛点</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.674,0.739,-0.739,0.674,519.2236,212.1838)" fill="#EA5151">3☆</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.739,-0.674,0.674,0.739,535.8513,197.0257)" fill="#EA5151" filter="url(#zr0-s2)">疯癫与文明</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.962,-0.274,0.274,0.962,494.7324,278.2394)" fill="#2E2733">设计</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.446,0.895,-0.895,0.446,539.1333,241.2484)" fill="#FF7853">4☆</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.85,-0.526,0.526,0.85,552.5326,219.1152)" fill="#FF7853" filter="url(#zr0-s2)">数字绘图的光照与渲染技术</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.932,-0.361,0.361,0.932,564.8708,243.8938)" fill="#FF7853" filter="url(#zr0-s3)">日本建筑解剖书</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.184,0.983,-0.983,0.184,550.3291,274.6519)" fill="#FFAE57">5☆</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.983,-0.184,0.184,0.983,572.446,270.5176)" fill="#FFAE57" filter="url(#zr0-s2)">无界面交互</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0,-1,1,0,552.5,298.08)" fill="#EA5151">3☆</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" y="-6" transform="translate(575 298.08)" fill="#EA5151" filter="url(#zr0-s2)">奇幻世界艺术</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" y="6" transform="translate(575 298.08)" fill="#EA5151" filter="url(#zr0-s2)">&amp;RPG地图绘制讲座</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.895,0.446,-0.446,0.895,489.8993,330.396)" fill="#2E2733">心理</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.274,-0.962,0.962,0.274,547.6328,332.972)" fill="#FF7853">4☆</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.983,0.184,-0.184,0.983,572.446,325.6424)" fill="#FF7853" filter="url(#zr0-s2)">皮格马利翁效应</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.932,0.361,-0.361,0.932,564.8708,352.2662)" fill="#FF7853" filter="url(#zr0-s3)">受伤的人</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.526,-0.85,0.85,0.526,533.4027,365.2001)" fill="#FFAE57">5☆</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.85,0.526,-0.526,0.85,552.5326,377.0448)" fill="#FFAE57" filter="url(#zr0-s2)">我们时代的神经症人格</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.674,-0.739,0.739,0.674,519.2236,383.9762)" fill="#CC3F57">2☆</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.739,0.674,-0.674,0.739,535.8513,399.1343)" fill="#CC3F57" filter="url(#zr0-s2)">迷恋</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.361,0.932,-0.932,0.361,451.19,365.6842)" fill="#2E2733">绘本</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.85,-0.526,0.526,0.85,492.1201,406.4827)" fill="#FF7853">4☆</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.603,0.798,-0.798,0.603,515.3952,417.7826)" fill="#FF7853" filter="url(#zr0-s2)">假如生活糊弄了你</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.446,0.895,-0.895,0.446,491.8608,432.3545)" fill="#FF7853" filter="url(#zr0-s2)">博物学家的神秘动物图鉴</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.962,-0.274,0.274,0.962,459.892,420.7128)" fill="#FFAE57">5☆</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.274,0.962,-0.962,0.274,466.0494,442.3538)" fill="#FFAE57" filter="url(#zr0-s2)">设计诗</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.996,-0.092,0.092,0.996,436.7642,425.0361)" fill="#EA5151">3☆</text>
+<text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.092,0.996,-0.996,0.092,438.8403,447.4401)" fill="#EA5151" filter="url(#zr0-s2)">方向</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.274,-0.962,0.962,0.274,405.1594,367.8124)" fill="#2E2733">居家</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.962,0.274,-0.274,0.962,390.108,420.7128)" fill="#FF7853">4☆</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.092,-0.996,0.996,0.092,411.1597,447.4401)" fill="#FF7853" filter="url(#zr0-s2)">把房子住成家</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.274,-0.962,0.962,0.274,383.9506,442.3538)" fill="#FF7853" filter="url(#zr0-s2)">只过必要生活</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.446,-0.895,0.895,0.446,358.1392,432.3545)" fill="#FF7853" filter="url(#zr0-s2)">北欧简约风格</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.674,-0.739,0.739,0.674,376.1571,351.6581)" fill="#2E2733">技术</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.798,0.603,-0.603,0.798,348.1641,399.8272)" fill="#FFAE57">5☆</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.603,-0.798,0.798,0.603,334.6048,417.7826)" fill="#FFAE57" filter="url(#zr0-s2)">代码整洁之道</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.674,0.739,-0.739,0.674,330.7764,383.9762)" fill="#FF7853">4☆</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" xml:space="preserve" transform="matrix(0.739,-0.674,0.674,0.739,314.1487,399.1343)" fill="#FF7853" filter="url(#zr0-s2)">Three.js 开发指南</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.85,-0.526,0.526,0.85,363.3593,336.2463)" fill="#2E2733">哲学</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.526,0.85,-0.85,0.526,316.5973,365.2001)" fill="#FF7853">4☆</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.85,-0.526,0.526,0.85,297.4674,377.0448)" fill="#FF7853" filter="url(#zr0-s2)">人生的智慧</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:sans-serif;" transform="translate(407.9957 287.5514)" fill="#2E2733">虚构</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.983,0.184,-0.184,0.983,353.7345,284.7582)" fill="#2E2733">小说</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.184,0.983,-0.983,0.184,299.6709,321.5081)" fill="#FFAE57">5☆</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.932,-0.361,0.361,0.932,285.1292,352.2662)" fill="#FFAE57" filter="url(#zr0-s3)">疼</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.983,-0.184,0.184,0.983,277.554,325.6424)" fill="#FFAE57" filter="url(#zr0-s2)">慈悲</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="translate(275 298.08)" fill="#FFAE57" filter="url(#zr0-s2)">楼下的房客</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.361,-0.932,0.932,0.361,306.1098,252.0217)" fill="#FF7853">4☆</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.983,0.184,-0.184,0.983,277.554,270.5176)" fill="#FF7853" filter="url(#zr0-s2)">虚无的十字架</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.932,0.361,-0.361,0.932,285.1292,243.8938)" fill="#FF7853" filter="url(#zr0-s3)">无声告白</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.85,0.526,-0.526,0.85,297.4674,219.1152)" fill="#FF7853" filter="url(#zr0-s2)">童年的终结</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.674,-0.739,0.739,0.674,330.7764,212.1838)" fill="#EA5151">3☆</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.739,0.674,-0.674,0.739,314.1487,197.0257)" fill="#EA5151" filter="url(#zr0-s2)">疯癫老人日记</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.361,0.932,-0.932,0.361,398.81,230.4758)" fill="#2E2733">其他</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.85,-0.526,0.526,0.85,357.8799,189.6773)" fill="#FF7853">4☆</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.603,0.798,-0.798,0.603,334.6048,178.3774)" fill="#FF7853" filter="url(#zr0-s3)">安魂曲</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.446,0.895,-0.895,0.446,358.1392,163.8055)" fill="#FF7853" filter="url(#zr0-s2)">人生拼图版</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.962,-0.274,0.274,0.962,390.108,175.4472)" fill="#FFAE57">5☆</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.274,0.962,-0.962,0.274,383.9506,153.8062)" fill="#FFAE57" filter="url(#zr0-s2)">纳博科夫短篇小说全集</text>
+<text dominant-baseline="central" text-anchor="middle" style="font-size:10px;font-family:sans-serif;" transform="matrix(0.996,-0.092,0.092,0.996,413.2358,171.1239)" fill="#EA5151">3☆</text>
+<text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:sans-serif;" transform="matrix(0.092,0.996,-0.996,0.092,411.1597,148.7199)" fill="#EA5151" filter="url(#zr0-s2)">比起爱你，我更需要你</text>
+<defs >
+<filter id="zr0-s0" x="-100%" y="-100%" width="300%" height="300%">
+<feDropShadow dx="0" dy="0" stdDeviation="1 1" flood-color="#EA5151" flood-opacity="1"></feDropShadow>
+</filter>
+<filter id="zr0-s1" x="-100%" y="-100%" width="300%" height="300%">
+<feDropShadow dx="0" dy="0" stdDeviation="40 40" flood-color="#FFAE57" flood-opacity="1"></feDropShadow>
+</filter>
+<filter id="zr0-s2" x="-100%" y="-100%" width="300%" height="300%">
+<feDropShadow dx="0" dy="0" stdDeviation="2.5 2.5" flood-color="#333" flood-opacity="1"></feDropShadow>
+</filter>
+<filter id="zr0-s3" x="-100%" y="-100%" width="300%" height="300%">
+<feDropShadow dx="0" dy="0" stdDeviation="2.5000000000000004 2.5000000000000004" flood-color="#333" flood-opacity="1"></feDropShadow>
+</filter>
+</defs>
+<style ><![CDATA[
+.zr0-cls-0 {
+animation:zr0-ani-0 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-1 {
+animation:zr0-ani-1 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-2 {
+animation:zr0-ani-2 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-3 {
+animation:zr0-ani-3 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-4 {
+animation:zr0-ani-4 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-5 {
+animation:zr0-ani-5 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-6 {
+animation:zr0-ani-6 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-7 {
+animation:zr0-ani-7 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-8 {
+animation:zr0-ani-8 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-9 {
+animation:zr0-ani-9 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-10 {
+animation:zr0-ani-10 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-11 {
+animation:zr0-ani-11 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-12 {
+animation:zr0-ani-12 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-13 {
+animation:zr0-ani-13 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-14 {
+animation:zr0-ani-14 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-15 {
+animation:zr0-ani-15 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-16 {
+animation:zr0-ani-16 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-17 {
+animation:zr0-ani-17 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-18 {
+animation:zr0-ani-18 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-19 {
+animation:zr0-ani-19 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-20 {
+animation:zr0-ani-20 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-21 {
+animation:zr0-ani-21 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-22 {
+animation:zr0-ani-22 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-23 {
+animation:zr0-ani-23 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-24 {
+animation:zr0-ani-24 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-25 {
+animation:zr0-ani-25 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-26 {
+animation:zr0-ani-26 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-27 {
+animation:zr0-ani-27 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-28 {
+animation:zr0-ani-28 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-29 {
+animation:zr0-ani-29 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-30 {
+animation:zr0-ani-30 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-31 {
+animation:zr0-ani-31 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-32 {
+animation:zr0-ani-32 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-33 {
+animation:zr0-ani-33 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-34 {
+animation:zr0-ani-34 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-35 {
+animation:zr0-ani-35 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-36 {
+animation:zr0-ani-36 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-37 {
+animation:zr0-ani-37 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-38 {
+animation:zr0-ani-38 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-39 {
+animation:zr0-ani-39 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-40 {
+animation:zr0-ani-40 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-41 {
+animation:zr0-ani-41 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-42 {
+animation:zr0-ani-42 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-43 {
+animation:zr0-ani-43 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-44 {
+animation:zr0-ani-44 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-45 {
+animation:zr0-ani-45 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-46 {
+animation:zr0-ani-46 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-47 {
+animation:zr0-ani-47 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-48 {
+animation:zr0-ani-48 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-49 {
+animation:zr0-ani-49 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-50 {
+animation:zr0-ani-50 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-51 {
+animation:zr0-ani-51 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-52 {
+animation:zr0-ani-52 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-53 {
+animation:zr0-ani-53 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-54 {
+animation:zr0-ani-54 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-55 {
+animation:zr0-ani-55 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-56 {
+animation:zr0-ani-56 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-57 {
+animation:zr0-ani-57 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-58 {
+animation:zr0-ani-58 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-59 {
+animation:zr0-ani-59 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-60 {
+animation:zr0-ani-60 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-61 {
+animation:zr0-ani-61 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-62 {
+animation:zr0-ani-62 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-63 {
+animation:zr0-ani-63 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+.zr0-cls-64 {
+animation:zr0-ani-64 1s cubic-bezier(0.65,0,0.35,1) both;
+}
+@keyframes zr0-ani-0 {
+0% {
+d:path("M425 258.1A40 40 0 0 1 456.9 274A40 40 0 0 0 425 258.1Z");
+}
+100% {
+d:path("M425 193.1A105 105 0 0 1 508.8 234.8L456.9 274A40 40 0 0 0 425 258.1Z");
+}
+}
+@keyframes zr0-ani-1 {
+0% {
+d:path("M425 183.1A115 115 0 0 1 485.5 200.3A115 115 0 0 0 425 183.1Z");
+}
+100% {
+d:path("M425 158.1A140 140 0 0 1 498.7 179L485.5 200.3A115 115 0 0 0 425 183.1Z");
+}
+}
+@keyframes zr0-ani-2 {
+0% {
+d:path("M425 158.1A140 140 0 0 1 450.7 160.5L450.7 160.5A140 140 0 0 0 425 158.1Z");
+}
+100% {
+d:path("M425 153.1A145 145 0 0 1 451.6 155.5L450.7 160.5A140 140 0 0 0 425 158.1Z");
+}
+}
+@keyframes zr0-ani-3 {
+0% {
+d:path("M450.7 160.5A140 140 0 0 1 475.6 167.5L475.6 167.5A140 140 0 0 0 450.7 160.5Z");
+}
+100% {
+d:path("M451.6 155.5A145 145 0 0 1 477.4 162.9L475.6 167.5A140 140 0 0 0 450.7 160.5Z");
+}
+}
+@keyframes zr0-ani-4 {
+0% {
+d:path("M475.6 167.5A140 140 0 0 1 498.7 179L498.7 179A140 140 0 0 0 475.6 167.5Z");
+}
+100% {
+d:path("M477.4 162.9A145 145 0 0 1 501.3 174.8L498.7 179A140 140 0 0 0 475.6 167.5Z");
+}
+}
+@keyframes zr0-ani-5 {
+0% {
+d:path("M485.5 200.3A115 115 0 0 1 502.5 213.1L502.5 213.1A115 115 0 0 0 485.5 200.3Z");
+}
+100% {
+d:path("M498.7 179A140 140 0 0 1 519.3 194.6L502.5 213.1A115 115 0 0 0 485.5 200.3Z");
+}
+}
+@keyframes zr0-ani-6 {
+0% {
+d:path("M498.7 179A140 140 0 0 1 519.3 194.6L519.3 194.6A140 140 0 0 0 498.7 179Z");
+}
+100% {
+d:path("M501.3 174.8A145 145 0 0 1 522.7 190.9L519.3 194.6A140 140 0 0 0 498.7 179Z");
+}
+}
+@keyframes zr0-ani-7 {
+0% {
+d:path("M502.5 213.1A115 115 0 0 1 516.8 228.8L516.8 228.8A115 115 0 0 0 502.5 213.1Z");
+}
+100% {
+d:path("M519.3 194.6A140 140 0 0 1 536.7 213.7L516.8 228.8A115 115 0 0 0 502.5 213.1Z");
+}
+}
+@keyframes zr0-ani-8 {
+0% {
+d:path("M519.3 194.6A140 140 0 0 1 536.7 213.7L536.7 213.7A140 140 0 0 0 519.3 194.6Z");
+}
+100% {
+d:path("M522.7 190.9A145 145 0 0 1 540.7 210.7L536.7 213.7A140 140 0 0 0 519.3 194.6Z");
+}
+}
+@keyframes zr0-ani-9 {
+0% {
+d:path("M456.9 274A40 40 0 0 1 464.8 301.8L464.8 301.8A40 40 0 0 0 456.9 274Z");
+}
+100% {
+d:path("M508.8 234.8A105 105 0 0 1 529.6 307.8L464.8 301.8A40 40 0 0 0 456.9 274Z");
+}
+}
+@keyframes zr0-ani-10 {
+0% {
+d:path("M516.8 228.8A115 115 0 0 1 535.6 266.6L535.6 266.6A115 115 0 0 0 516.8 228.8Z");
+}
+100% {
+d:path("M536.7 213.7A140 140 0 0 1 559.7 259.8L535.6 266.6A115 115 0 0 0 516.8 228.8Z");
+}
+}
+@keyframes zr0-ani-11 {
+0% {
+d:path("M536.7 213.7A140 140 0 0 1 550.3 235.7L550.3 235.7A140 140 0 0 0 536.7 213.7Z");
+}
+100% {
+d:path("M540.7 210.7A145 145 0 0 1 554.8 233.4L550.3 235.7A140 140 0 0 0 536.7 213.7Z");
+}
+}
+@keyframes zr0-ani-12 {
+0% {
+d:path("M550.3 235.7A140 140 0 0 1 559.7 259.8L559.7 259.8A140 140 0 0 0 550.3 235.7Z");
+}
+100% {
+d:path("M554.8 233.4A145 145 0 0 1 564.5 258.4L559.7 259.8A140 140 0 0 0 550.3 235.7Z");
+}
+}
+@keyframes zr0-ani-13 {
+0% {
+d:path("M535.6 266.6A115 115 0 0 1 539.5 287.5L539.5 287.5A115 115 0 0 0 535.6 266.6Z");
+}
+100% {
+d:path("M559.7 259.8A140 140 0 0 1 564.4 285.2L539.5 287.5A115 115 0 0 0 535.6 266.6Z");
+}
+}
+@keyframes zr0-ani-14 {
+0% {
+d:path("M559.7 259.8A140 140 0 0 1 564.4 285.2L564.4 285.2A140 140 0 0 0 559.7 259.8Z");
+}
+100% {
+d:path("M564.5 258.4A145 145 0 0 1 569.4 284.7L564.4 285.2A140 140 0 0 0 559.7 259.8Z");
+}
+}
+@keyframes zr0-ani-15 {
+0% {
+d:path("M539.5 287.5A115 115 0 0 1 539.5 308.7L539.5 308.7A115 115 0 0 0 539.5 287.5Z");
+}
+100% {
+d:path("M564.4 285.2A140 140 0 0 1 564.4 311L539.5 308.7A115 115 0 0 0 539.5 287.5Z");
+}
+}
+@keyframes zr0-ani-16 {
+0% {
+d:path("M564.4 285.2A140 140 0 0 1 564.4 311L564.4 311A140 140 0 0 0 564.4 285.2Z");
+}
+100% {
+d:path("M569.4 284.7A145 145 0 0 1 569.4 311.5L564.4 311A140 140 0 0 0 564.4 285.2Z");
+}
+}
+@keyframes zr0-ani-17 {
+0% {
+d:path("M464.8 301.8A40 40 0 0 1 451.9 327.6L451.9 327.6A40 40 0 0 0 464.8 301.8Z");
+}
+100% {
+d:path("M529.6 307.8A105 105 0 0 1 495.7 375.7L451.9 327.6A40 40 0 0 0 464.8 301.8Z");
+}
+}
+@keyframes zr0-ani-18 {
+0% {
+d:path("M539.5 308.7A115 115 0 0 1 527.9 349.3L527.9 349.3A115 115 0 0 0 539.5 308.7Z");
+}
+100% {
+d:path("M564.4 311A140 140 0 0 1 550.3 360.5L527.9 349.3A115 115 0 0 0 539.5 308.7Z");
+}
+}
+@keyframes zr0-ani-19 {
+0% {
+d:path("M564.4 311A140 140 0 0 1 559.7 336.4L559.7 336.4A140 140 0 0 0 564.4 311Z");
+}
+100% {
+d:path("M569.4 311.5A145 145 0 0 1 564.5 337.8L559.7 336.4A140 140 0 0 0 564.4 311Z");
+}
+}
+@keyframes zr0-ani-20 {
+0% {
+d:path("M559.7 336.4A140 140 0 0 1 550.3 360.5L550.3 360.5A140 140 0 0 0 559.7 336.4Z");
+}
+100% {
+d:path("M564.5 337.8A145 145 0 0 1 554.8 362.7L550.3 360.5A140 140 0 0 0 559.7 336.4Z");
+}
+}
+@keyframes zr0-ani-21 {
+0% {
+d:path("M527.9 349.3A115 115 0 0 1 516.8 367.4L516.8 367.4A115 115 0 0 0 527.9 349.3Z");
+}
+100% {
+d:path("M550.3 360.5A140 140 0 0 1 536.7 382.4L516.8 367.4A115 115 0 0 0 527.9 349.3Z");
+}
+}
+@keyframes zr0-ani-22 {
+0% {
+d:path("M550.3 360.5A140 140 0 0 1 536.7 382.4L536.7 382.4A140 140 0 0 0 550.3 360.5Z");
+}
+100% {
+d:path("M554.8 362.7A145 145 0 0 1 540.7 385.5L536.7 382.4A140 140 0 0 0 550.3 360.5Z");
+}
+}
+@keyframes zr0-ani-23 {
+0% {
+d:path("M516.8 367.4A115 115 0 0 1 502.5 383.1L502.5 383.1A115 115 0 0 0 516.8 367.4Z");
+}
+100% {
+d:path("M536.7 382.4A140 140 0 0 1 519.3 401.5L502.5 383.1A115 115 0 0 0 516.8 367.4Z");
+}
+}
+@keyframes zr0-ani-24 {
+0% {
+d:path("M536.7 382.4A140 140 0 0 1 519.3 401.5L519.3 401.5A140 140 0 0 0 536.7 382.4Z");
+}
+100% {
+d:path("M540.7 385.5A145 145 0 0 1 522.7 405.2L519.3 401.5A140 140 0 0 0 536.7 382.4Z");
+}
+}
+@keyframes zr0-ani-25 {
+0% {
+d:path("M451.9 327.6A40 40 0 0 1 425 338.1L425 338.1A40 40 0 0 0 451.9 327.6Z");
+}
+100% {
+d:path("M495.7 375.7A105 105 0 0 1 425 403.1L425 338.1A40 40 0 0 0 451.9 327.6Z");
+}
+}
+@keyframes zr0-ani-26 {
+0% {
+d:path("M502.5 383.1A115 115 0 0 1 466.5 405.3L466.5 405.3A115 115 0 0 0 502.5 383.1Z");
+}
+100% {
+d:path("M519.3 401.5A140 140 0 0 1 475.6 428.6L466.5 405.3A115 115 0 0 0 502.5 383.1Z");
+}
+}
+@keyframes zr0-ani-27 {
+0% {
+d:path("M519.3 401.5A140 140 0 0 1 498.7 417.1L498.7 417.1A140 140 0 0 0 519.3 401.5Z");
+}
+100% {
+d:path("M522.7 405.2A145 145 0 0 1 501.3 421.4L498.7 417.1A140 140 0 0 0 519.3 401.5Z");
+}
+}
+@keyframes zr0-ani-28 {
+0% {
+d:path("M498.7 417.1A140 140 0 0 1 475.6 428.6L475.6 428.6A140 140 0 0 0 498.7 417.1Z");
+}
+100% {
+d:path("M501.3 421.4A145 145 0 0 1 477.4 433.3L475.6 428.6A140 140 0 0 0 498.7 417.1Z");
+}
+}
+@keyframes zr0-ani-29 {
+0% {
+d:path("M466.5 405.3A115 115 0 0 1 446.1 411.1L446.1 411.1A115 115 0 0 0 466.5 405.3Z");
+}
+100% {
+d:path("M475.6 428.6A140 140 0 0 1 450.7 435.7L446.1 411.1A115 115 0 0 0 466.5 405.3Z");
+}
+}
+@keyframes zr0-ani-30 {
+0% {
+d:path("M475.6 428.6A140 140 0 0 1 450.7 435.7L450.7 435.7A140 140 0 0 0 475.6 428.6Z");
+}
+100% {
+d:path("M477.4 433.3A145 145 0 0 1 451.6 440.6L450.7 435.7A140 140 0 0 0 475.6 428.6Z");
+}
+}
+@keyframes zr0-ani-31 {
+0% {
+d:path("M446.1 411.1A115 115 0 0 1 425 413.1L425 413.1A115 115 0 0 0 446.1 411.1Z");
+}
+100% {
+d:path("M450.7 435.7A140 140 0 0 1 425 438.1L425 413.1A115 115 0 0 0 446.1 411.1Z");
+}
+}
+@keyframes zr0-ani-32 {
+0% {
+d:path("M450.7 435.7A140 140 0 0 1 425 438.1L425 438.1A140 140 0 0 0 450.7 435.7Z");
+}
+100% {
+d:path("M451.6 440.6A145 145 0 0 1 425 443.1L425 438.1A140 140 0 0 0 450.7 435.7Z");
+}
+}
+@keyframes zr0-ani-33 {
+0% {
+d:path("M425 338.1A40 40 0 0 1 403.9 332.1A40 40 0 0 0 425 338.1Z");
+}
+100% {
+d:path("M425 403.1A105 105 0 0 1 369.7 387.4L403.9 332.1A40 40 0 0 0 425 338.1Z");
+}
+}
+@keyframes zr0-ani-34 {
+0% {
+d:path("M425 413.1A115 115 0 0 1 364.5 395.9L364.5 395.9A115 115 0 0 0 425 413.1Z");
+}
+100% {
+d:path("M425 438.1A140 140 0 0 1 351.3 417.1L364.5 395.9A115 115 0 0 0 425 413.1Z");
+}
+}
+@keyframes zr0-ani-35 {
+0% {
+d:path("M425 438.1A140 140 0 0 1 399.3 435.7L399.3 435.7A140 140 0 0 0 425 438.1Z");
+}
+100% {
+d:path("M425 443.1A145 145 0 0 1 398.4 440.6L399.3 435.7A140 140 0 0 0 425 438.1Z");
+}
+}
+@keyframes zr0-ani-36 {
+0% {
+d:path("M399.3 435.7A140 140 0 0 1 374.4 428.6L374.4 428.6A140 140 0 0 0 399.3 435.7Z");
+}
+100% {
+d:path("M398.4 440.6A145 145 0 0 1 372.6 433.3L374.4 428.6A140 140 0 0 0 399.3 435.7Z");
+}
+}
+@keyframes zr0-ani-37 {
+0% {
+d:path("M374.4 428.6A140 140 0 0 1 351.3 417.1L351.3 417.1A140 140 0 0 0 374.4 428.6Z");
+}
+100% {
+d:path("M372.6 433.3A145 145 0 0 1 348.7 421.4L351.3 417.1A140 140 0 0 0 374.4 428.6Z");
+}
+}
+@keyframes zr0-ani-38 {
+0% {
+d:path("M403.9 332.1A40 40 0 0 1 393.1 322.2L393.1 322.2A40 40 0 0 0 403.9 332.1Z");
+}
+100% {
+d:path("M369.7 387.4A105 105 0 0 1 341.2 361.4L393.1 322.2A40 40 0 0 0 403.9 332.1Z");
+}
+}
+@keyframes zr0-ani-39 {
+0% {
+d:path("M364.5 395.9A115 115 0 0 1 347.5 383.1L347.5 383.1A115 115 0 0 0 364.5 395.9Z");
+}
+100% {
+d:path("M351.3 417.1A140 140 0 0 1 330.7 401.5L347.5 383.1A115 115 0 0 0 364.5 395.9Z");
+}
+}
+@keyframes zr0-ani-40 {
+0% {
+d:path("M351.3 417.1A140 140 0 0 1 330.7 401.5L330.7 401.5A140 140 0 0 0 351.3 417.1Z");
+}
+100% {
+d:path("M348.7 421.4A145 145 0 0 1 327.3 405.2L330.7 401.5A140 140 0 0 0 351.3 417.1Z");
+}
+}
+@keyframes zr0-ani-41 {
+0% {
+d:path("M347.5 383.1A115 115 0 0 1 333.2 367.4L333.2 367.4A115 115 0 0 0 347.5 383.1Z");
+}
+100% {
+d:path("M330.7 401.5A140 140 0 0 1 313.3 382.4L333.2 367.4A115 115 0 0 0 347.5 383.1Z");
+}
+}
+@keyframes zr0-ani-42 {
+0% {
+d:path("M330.7 401.5A140 140 0 0 1 313.3 382.4L313.3 382.4A140 140 0 0 0 330.7 401.5Z");
+}
+100% {
+d:path("M327.3 405.2A145 145 0 0 1 309.3 385.5L313.3 382.4A140 140 0 0 0 330.7 401.5Z");
+}
+}
+@keyframes zr0-ani-43 {
+0% {
+d:path("M393.1 322.2A40 40 0 0 1 389.2 315.9L389.2 315.9A40 40 0 0 0 393.1 322.2Z");
+}
+100% {
+d:path("M341.2 361.4A105 105 0 0 1 331 344.9L389.2 315.9A40 40 0 0 0 393.1 322.2Z");
+}
+}
+@keyframes zr0-ani-44 {
+0% {
+d:path("M333.2 367.4A115 115 0 0 1 322.1 349.3L322.1 349.3A115 115 0 0 0 333.2 367.4Z");
+}
+100% {
+d:path("M313.3 382.4A140 140 0 0 1 299.7 360.5L322.1 349.3A115 115 0 0 0 333.2 367.4Z");
+}
+}
+@keyframes zr0-ani-45 {
+0% {
+d:path("M313.3 382.4A140 140 0 0 1 299.7 360.5L299.7 360.5A140 140 0 0 0 313.3 382.4Z");
+}
+100% {
+d:path("M309.3 385.5A145 145 0 0 1 295.2 362.7L299.7 360.5A140 140 0 0 0 313.3 382.4Z");
+}
+}
+@keyframes zr0-ani-46 {
+0% {
+d:path("M389.2 315.9A40 40 0 0 1 398.1 268.5L398.1 268.5A40 40 0 0 0 389.2 315.9Z");
+}
+100% {
+d:path("M331 344.9A105 105 0 0 1 354.3 220.5L398.1 268.5A40 40 0 0 0 389.2 315.9Z");
+}
+}
+@keyframes zr0-ani-47 {
+0% {
+d:path("M322.1 349.3A115 115 0 0 1 310.5 287.5L310.5 287.5A115 115 0 0 0 322.1 349.3Z");
+}
+100% {
+d:path("M299.7 360.5A140 140 0 0 1 285.6 285.2L310.5 287.5A115 115 0 0 0 322.1 349.3Z");
+}
+}
+@keyframes zr0-ani-48 {
+0% {
+d:path("M299.7 360.5A140 140 0 0 1 290.3 336.4L290.3 336.4A140 140 0 0 0 299.7 360.5Z");
+}
+100% {
+d:path("M295.2 362.7A145 145 0 0 1 285.5 337.8L290.3 336.4A140 140 0 0 0 299.7 360.5Z");
+}
+}
+@keyframes zr0-ani-49 {
+0% {
+d:path("M290.3 336.4A140 140 0 0 1 285.6 311L285.6 311A140 140 0 0 0 290.3 336.4Z");
+}
+100% {
+d:path("M285.5 337.8A145 145 0 0 1 280.6 311.5L285.6 311A140 140 0 0 0 290.3 336.4Z");
+}
+}
+@keyframes zr0-ani-50 {
+0% {
+d:path("M285.6 311A140 140 0 0 1 285.6 285.2L285.6 285.2A140 140 0 0 0 285.6 311Z");
+}
+100% {
+d:path("M280.6 311.5A145 145 0 0 1 280.6 284.7L285.6 285.2A140 140 0 0 0 285.6 311Z");
+}
+}
+@keyframes zr0-ani-51 {
+0% {
+d:path("M310.5 287.5A115 115 0 0 1 333.2 228.8L333.2 228.8A115 115 0 0 0 310.5 287.5Z");
+}
+100% {
+d:path("M285.6 285.2A140 140 0 0 1 313.3 213.7L333.2 228.8A115 115 0 0 0 310.5 287.5Z");
+}
+}
+@keyframes zr0-ani-52 {
+0% {
+d:path("M285.6 285.2A140 140 0 0 1 290.3 259.8L290.3 259.8A140 140 0 0 0 285.6 285.2Z");
+}
+100% {
+d:path("M280.6 284.7A145 145 0 0 1 285.5 258.4L290.3 259.8A140 140 0 0 0 285.6 285.2Z");
+}
+}
+@keyframes zr0-ani-53 {
+0% {
+d:path("M290.3 259.8A140 140 0 0 1 299.7 235.7L299.7 235.7A140 140 0 0 0 290.3 259.8Z");
+}
+100% {
+d:path("M285.5 258.4A145 145 0 0 1 295.2 233.4L299.7 235.7A140 140 0 0 0 290.3 259.8Z");
+}
+}
+@keyframes zr0-ani-54 {
+0% {
+d:path("M299.7 235.7A140 140 0 0 1 313.3 213.7L313.3 213.7A140 140 0 0 0 299.7 235.7Z");
+}
+100% {
+d:path("M295.2 233.4A145 145 0 0 1 309.3 210.7L313.3 213.7A140 140 0 0 0 299.7 235.7Z");
+}
+}
+@keyframes zr0-ani-55 {
+0% {
+d:path("M333.2 228.8A115 115 0 0 1 347.5 213.1L347.5 213.1A115 115 0 0 0 333.2 228.8Z");
+}
+100% {
+d:path("M313.3 213.7A140 140 0 0 1 330.7 194.6L347.5 213.1A115 115 0 0 0 333.2 228.8Z");
+}
+}
+@keyframes zr0-ani-56 {
+0% {
+d:path("M313.3 213.7A140 140 0 0 1 330.7 194.6L330.7 194.6A140 140 0 0 0 313.3 213.7Z");
+}
+100% {
+d:path("M309.3 210.7A145 145 0 0 1 327.3 190.9L330.7 194.6A140 140 0 0 0 313.3 213.7Z");
+}
+}
+@keyframes zr0-ani-57 {
+0% {
+d:path("M398.1 268.5A40 40 0 0 1 425 258.1L425 258.1A40 40 0 0 0 398.1 268.5Z");
+}
+100% {
+d:path("M354.3 220.5A105 105 0 0 1 425 193.1L425 258.1A40 40 0 0 0 398.1 268.5Z");
+}
+}
+@keyframes zr0-ani-58 {
+0% {
+d:path("M347.5 213.1A115 115 0 0 1 383.5 190.8L383.5 190.8A115 115 0 0 0 347.5 213.1Z");
+}
+100% {
+d:path("M330.7 194.6A140 140 0 0 1 374.4 167.5L383.5 190.8A115 115 0 0 0 347.5 213.1Z");
+}
+}
+@keyframes zr0-ani-59 {
+0% {
+d:path("M330.7 194.6A140 140 0 0 1 351.3 179L351.3 179A140 140 0 0 0 330.7 194.6Z");
+}
+100% {
+d:path("M327.3 190.9A145 145 0 0 1 348.7 174.8L351.3 179A140 140 0 0 0 330.7 194.6Z");
+}
+}
+@keyframes zr0-ani-60 {
+0% {
+d:path("M351.3 179A140 140 0 0 1 374.4 167.5L374.4 167.5A140 140 0 0 0 351.3 179Z");
+}
+100% {
+d:path("M348.7 174.8A145 145 0 0 1 372.6 162.9L374.4 167.5A140 140 0 0 0 351.3 179Z");
+}
+}
+@keyframes zr0-ani-61 {
+0% {
+d:path("M383.5 190.8A115 115 0 0 1 403.9 185L403.9 185A115 115 0 0 0 383.5 190.8Z");
+}
+100% {
+d:path("M374.4 167.5A140 140 0 0 1 399.3 160.5L403.9 185A115 115 0 0 0 383.5 190.8Z");
+}
+}
+@keyframes zr0-ani-62 {
+0% {
+d:path("M374.4 167.5A140 140 0 0 1 399.3 160.5L399.3 160.5A140 140 0 0 0 374.4 167.5Z");
+}
+100% {
+d:path("M372.6 162.9A145 145 0 0 1 398.4 155.5L399.3 160.5A140 140 0 0 0 374.4 167.5Z");
+}
+}
+@keyframes zr0-ani-63 {
+0% {
+d:path("M403.9 185A115 115 0 0 1 425 183.1L425 183.1A115 115 0 0 0 403.9 185Z");
+}
+100% {
+d:path("M399.3 160.5A140 140 0 0 1 425 158.1L425 183.1A115 115 0 0 0 403.9 185Z");
+}
+}
+@keyframes zr0-ani-64 {
+0% {
+d:path("M399.3 160.5A140 140 0 0 1 425 158.1L425 158.1A140 140 0 0 0 399.3 160.5Z");
+}
+100% {
+d:path("M398.4 155.5A145 145 0 0 1 425 153.1L425 158.1A140 140 0 0 0 399.3 160.5Z");
+}
+}
+]]>
+
+</style>
+</svg>
