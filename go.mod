@@ -10,7 +10,7 @@ require (
 	github.com/kenshaw/rasterm v0.1.12
 	github.com/stephenafamo/goldmark-pdf v0.4.1
 	github.com/tdewolff/canvas v0.0.0-20250121210638-095c8720cf5b
-	github.com/xo/ox v0.0.0-20250123023955-f95d93cf84fa
+	github.com/xo/ox v0.0.0-20250130033540-914c4b976072
 	github.com/xo/resvg v0.6.0
 	github.com/yuin/goldmark v1.7.8
 	golang.org/x/image v0.23.0
