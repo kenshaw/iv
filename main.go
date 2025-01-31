@@ -72,14 +72,14 @@ type Args struct {
 	Height          uint               `ox:"display height,short:H"`
 	DPI             uint               `ox:"image dpi,default:300,name:dpi"`
 	Page            uint               `ox:"page to display,short:p"`
-	Bg              *colors.Color      `ox:"image background color,default:transparent"`
-	FontSize        uint               `ox:"font size,default:48"`
-	FontStyle       canvas.FontStyle   `ox:"font style"`
-	FontVariant     canvas.FontVariant `ox:"font variant"`
-	FontFg          *colors.Color      `ox:"font foreground color,default:black"`
-	FontBg          *colors.Color      `ox:"font background color,default:white"`
-	FontDPI         uint               `ox:"font dpi,default:100,name:font-dpi"`
-	FontMargin      uint               `ox:"margin,default:5"`
+	Bg              *colors.Color      `ox:"background color,default:transparent"`
+	FontSize        uint               `ox:"font preview size,default:48"`
+	FontStyle       canvas.FontStyle   `ox:"font preview style"`
+	FontVariant     canvas.FontVariant `ox:"font preview variant"`
+	FontFg          *colors.Color      `ox:"font preview foreground color,default:black"`
+	FontBg          *colors.Color      `ox:"font preview background color,default:white"`
+	FontDPI         uint               `ox:"font preview dpi,default:100,name:font-dpi"`
+	FontMargin      uint               `ox:"font preview margin,default:5"`
 	TimeCode        time.Duration      `ox:"video time code,short:t"`
 	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
 
