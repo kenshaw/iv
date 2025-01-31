@@ -35,6 +35,7 @@ import (
 	"github.com/kenshaw/colors"
 	"github.com/kenshaw/fontimg"
 	"github.com/kenshaw/rasterm"
+	"github.com/mholt/archives"
 	pdf "github.com/stephenafamo/goldmark-pdf"
 	"github.com/tdewolff/canvas"
 	"github.com/xo/ox"
@@ -67,20 +68,20 @@ func main() {
 
 type Args struct {
 	Verbose         bool               `ox:"enable verbose,short:v"`
-	Width           int                `ox:"display width,short:W"`
-	Height          int                `ox:"display height,short:H"`
-	DPI             int                `ox:"image dpi,default:300,name:dpi"`
-	Page            int                `ox:"page to display,short:p"`
+	Width           uint               `ox:"display width,short:W"`
+	Height          uint               `ox:"display height,short:H"`
+	DPI             uint               `ox:"image dpi,default:300,name:dpi"`
+	Page            uint               `ox:"page to display,short:p"`
 	Bg              *colors.Color      `ox:"image background color,default:transparent"`
-	FontSize        int                `ox:"font size,default:48"`
+	FontSize        uint               `ox:"font size,default:48"`
 	FontStyle       canvas.FontStyle   `ox:"font style"`
 	FontVariant     canvas.FontVariant `ox:"font variant"`
 	FontFg          *colors.Color      `ox:"font foreground color,default:black"`
 	FontBg          *colors.Color      `ox:"font background color,default:white"`
-	FontDPI         int                `ox:"font dpi,default:100,name:font-dpi"`
-	FontMargin      int                `ox:"margin,default:5"`
+	FontDPI         uint               `ox:"font dpi,default:100,name:font-dpi"`
+	FontMargin      uint               `ox:"margin,default:5"`
 	TimeCode        time.Duration      `ox:"video time code,short:t"`
-	VipsConcurrency int                `ox:"vips concurrency,default:$NUMCPU"`
+	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
 
 	ctx    context.Context
 	logger func(string, ...any)
@@ -104,8 +105,8 @@ func run(w io.Writer, args *Args) func(context.Context, []string) error {
 		resvg.WithBackground(args.Bg)(resvg.Default)
 		if args.Width != 0 || args.Height != 0 {
 			resvg.WithScaleMode(resvg.ScaleBestFit)(resvg.Default)
-			resvg.WithWidth(args.Width)(resvg.Default)
-			resvg.WithHeight(args.Height)(resvg.Default)
+			resvg.WithWidth(int(args.Width))(resvg.Default)
+			resvg.WithHeight(int(args.Height))(resvg.Default)
 		}
 		// convert the bg color
 		if !colors.Is(args.Bg, colors.Transparent) {
@@ -113,18 +114,18 @@ func run(w io.Writer, args *Args) func(context.Context, []string) error {
 		}
 		// collect files
 		var files []string
-		for i := 0; i < len(cliargs); i++ {
-			v, err := open(cliargs[i])
+		for _, pathName := range cliargs {
+			v, err := open(pathName)
 			if err != nil {
-				fmt.Fprintf(w, "error: unable to open arg %d: %v\n\n", i, err)
+				fmt.Fprintf(w, "error: unable to open %q: %v\n\n", pathName, err)
 			} else {
 				files = append(files, v...)
 			}
 		}
 		// render
-		for i := 0; i < len(files); i++ {
-			if err := args.render(w, files[i]); err != nil {
-				fmt.Fprintf(w, "error: unable to render arg %d: %v\n\n", i, err)
+		for _, pathName := range files {
+			if err := args.render(w, pathName); err != nil {
+				fmt.Fprintf(w, "error: unable to render %q: %v\n\n", pathName, err)
 			}
 		}
 		return nil
@@ -132,39 +133,39 @@ func run(w io.Writer, args *Args) func(context.Context, []string) error {
 }
 
 // open returns the files to open.
-func open(name string) ([]string, error) {
+func open(pathName string) ([]string, error) {
 	var v []string
-	switch fi, err := os.Stat(name); {
+	switch fi, err := os.Stat(pathName); {
 	case err == nil && fi.IsDir():
-		entries, err := os.ReadDir(name)
+		entries, err := os.ReadDir(pathName)
 		if err != nil {
-			return nil, fmt.Errorf("unable to open directory %q: %v", name, err)
+			return nil, fmt.Errorf("unable to read directory %q: %v", pathName, err)
 		}
 		for _, entry := range entries {
-			if s := entry.Name(); !entry.IsDir() && extensions[strings.TrimPrefix(filepath.Ext(s), ".")] {
-				v = append(v, filepath.Join(name, s))
+			if s := entry.Name(); !entry.IsDir() && extensions[fileExt(s)] {
+				v = append(v, filepath.Join(pathName, s))
 			}
 		}
 		sort.Strings(v)
 	case err == nil:
-		v = append(v, name)
+		v = append(v, pathName)
 	default:
-		return nil, fmt.Errorf("unable to open %q", name)
+		return nil, fmt.Errorf("unable to open %q", pathName)
 	}
 	return v, nil
 }
 
 // render renders the file to w.
-func (args *Args) render(w io.Writer, name string) error {
-	fmt.Fprintln(w, name+":")
+func (args *Args) render(w io.Writer, pathName string) error {
+	fmt.Fprintln(w, pathName+":")
 	start := time.Now()
 	// render
-	img, typ, err := args.renderFile(name)
+	img, mime, err := args.renderFile(pathName)
 	if err != nil {
 		return err
 	}
 	// add background
-	img = args.addBackground(img, typ)
+	img = args.addBackground(mime, img)
 	now := time.Now()
 	if err = rasterm.Encode(w, img); err != nil {
 		return err
@@ -175,39 +176,41 @@ func (args *Args) render(w io.Writer, name string) error {
 }
 
 // renderFile renders the file.
-func (args *Args) renderFile(name string) (image.Image, string, error) {
-	f, err := os.OpenFile(name, os.O_RDONLY, 0)
+func (args *Args) renderFile(pathName string) (image.Image, string, error) {
+	f, err := os.OpenFile(pathName, os.O_RDONLY, 0)
 	if err != nil {
 		return nil, "", err
 	}
 	// determine type
-	typ, err := mimeDetect(f)
+	mime, err := mimeDetect(f)
 	if err != nil {
 		defer f.Close()
 		return nil, "", fmt.Errorf("mime detection failed: %v", err)
 	}
-	args.logger("mime: %s", typ)
-	var g func(io.Reader, string) (image.Image, error)
+	args.logger("mime: %s", mime)
+	var g func(string, string, io.Reader) (image.Image, error)
 	var notStream bool
-	switch ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(name), ".")); {
-	case typ == "image/svg":
+	switch ext := fileExt(pathName); {
+	case mime == "image/svg":
 		g = args.renderResvg
-	case isImageBuiltin(typ): // builtin
+	case isImageBuiltin(mime): // builtin
 		g = args.renderImage
-	case isLibreOffice(typ, ext): // soffice
+	case isLibreOffice(mime, ext): // soffice
 		g, notStream = args.renderLibreOffice, true
-	case isVipsImage(typ): // use vips
+	case isVipsImage(mime): // use vips
 		g = args.renderVips
-	case typ == "text/plain":
+	case mime == "text/plain":
 		g = args.renderMarkdown
-	case strings.HasPrefix(typ, "font/"):
+	case strings.HasPrefix(mime, "font/"):
 		g = args.renderFont
-	case strings.HasPrefix(typ, "video/"):
+	case strings.HasPrefix(mime, "video/"):
 		g, notStream = args.renderFfmpeg, true
-	case strings.HasPrefix(typ, "audio/"):
+	case strings.HasPrefix(mime, "audio/"):
 		g = args.renderTag
+	case isComicArchive(mime, ext):
+		g = args.renderComicArchive
 	default:
-		return nil, "", fmt.Errorf("mime type %q not supported", typ)
+		return nil, "", fmt.Errorf("mime type %q not supported", mime)
 	}
 	if notStream {
 		if err := f.Close(); err != nil {
@@ -220,7 +223,7 @@ func (args *Args) renderFile(name string) (image.Image, string, error) {
 			return nil, "", fmt.Errorf("could not seek start: %w", err)
 		}
 	}
-	img, err := g(f, name)
+	img, err := g(pathName, mime, f)
 	if err != nil {
 		if !notStream {
 			defer f.Close()
@@ -232,30 +235,30 @@ func (args *Args) renderFile(name string) (image.Image, string, error) {
 			return nil, "", fmt.Errorf("could not close file: %w", err)
 		}
 	}
-	return img, typ, nil
+	return img, mime, nil
 }
 
 // renderImage decodes the image from the reader.
-func (*Args) renderImage(r io.Reader, _ string) (image.Image, error) {
+func (*Args) renderImage(_, _ string, r io.Reader) (image.Image, error) {
 	img, _, err := image.Decode(r)
 	return img, err
 }
 
 // renderResvg decodes the svg from the reader.
-func (args *Args) renderResvg(r io.Reader, _ string) (image.Image, error) {
+func (args *Args) renderResvg(_, _ string, r io.Reader) (image.Image, error) {
 	return resvg.Decode(r)
 }
 
 // renderFont decodes the font from the reader into an image.
-func (args *Args) renderFont(r io.Reader, name string) (image.Image, error) {
+func (args *Args) renderFont(pathName, _ string, r io.Reader) (image.Image, error) {
 	buf, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
-	font := fontimg.New(buf, name)
+	font := fontimg.New(buf, pathName)
 	img, err := font.Rasterize(
 		nil,
-		args.FontSize,
+		int(args.FontSize),
 		args.FontStyle,
 		args.FontVariant,
 		args.FontFg,
@@ -270,8 +273,8 @@ func (args *Args) renderFont(r io.Reader, name string) (image.Image, error) {
 }
 
 // renderVips opens a vips image from the reader.
-func (args *Args) renderVips(r io.Reader, name string) (image.Image, error) {
-	vipsOnce.Do(vipsInit(args.logger, args.Verbose, args.VipsConcurrency))
+func (args *Args) renderVips(pathName, _ string, r io.Reader) (image.Image, error) {
+	vipsOnce.Do(vipsInit(args.logger, args.Verbose, int(args.VipsConcurrency)))
 	start := time.Now()
 	buf, err := io.ReadAll(r)
 	if err != nil {
@@ -281,27 +284,27 @@ func (args *Args) renderVips(r io.Reader, name string) (image.Image, error) {
 	start = time.Now()
 	p := vips.NewImportParams()
 	if args.DPI != 0 {
-		p.Density.Set(args.DPI)
+		p.Density.Set(int(args.DPI))
 	}
 	if args.Page != 0 {
 		v, err := vips.LoadImageFromBuffer(buf, vips.NewImportParams())
 		if err != nil {
-			return nil, fmt.Errorf("vips can't load %s: %w", name, err)
+			return nil, fmt.Errorf("vips can't load %s: %w", pathName, err)
 		}
-		if page := args.Page - 1; 0 <= page && page < v.Metadata().Pages {
+		if page := int(args.Page - 1); 0 <= page && page < v.Metadata().Pages {
 			p.Page.Set(page)
 		}
 	}
 	v, err := vips.LoadImageFromBuffer(buf, p)
 	if err != nil {
-		return nil, fmt.Errorf("vips can't load %s: %w", name, err)
+		return nil, fmt.Errorf("vips can't load %s: %w", pathName, err)
 	}
 	args.logger("vips load: %v", time.Since(start))
 	return args.vipsExport(v)
 }
 
 // renderFfmpeg renders the image using the ffmpeg command.
-func (args *Args) renderFfmpeg(_ io.Reader, pathName string) (image.Image, error) {
+func (args *Args) renderFfmpeg(pathName, _ string, _ io.Reader) (image.Image, error) {
 	var err error
 	ffmpegOnce.Do(func() {
 		ffprobePath, _ = exec.LookPath("ffprobe")
@@ -403,7 +406,7 @@ func formatTimecode(d time.Duration) string {
 }
 
 // renderLibreOffice renders the image using the `soffice` command.
-func (args *Args) renderLibreOffice(_ io.Reader, pathName string) (image.Image, error) {
+func (args *Args) renderLibreOffice(pathName, _ string, _ io.Reader) (image.Image, error) {
 	var err error
 	sofficeOnce.Do(func() {
 		sofficePath, err = exec.LookPath("soffice")
@@ -440,16 +443,16 @@ func (args *Args) renderLibreOffice(_ io.Reader, pathName string) (image.Image, 
 		return nil, fmt.Errorf("%w: %s", err, string(buf))
 	}
 	args.logger("soffice render: %v", time.Since(start))
-	pdf := filepath.Join(
+	pdfName := filepath.Join(
 		tmpDir,
 		strings.TrimSuffix(filepath.Base(pathName), filepath.Ext(pathName))+".pdf",
 	)
-	args.logger("rendering soffice output: %q", pdf)
-	f, err := os.OpenFile(pdf, os.O_RDONLY, 0)
+	args.logger("rendering soffice output: %q", pdfName)
+	f, err := os.OpenFile(pdfName, os.O_RDONLY, 0)
 	if err != nil {
 		return nil, err
 	}
-	img, err := args.renderVips(f, pdf)
+	img, err := args.renderVips(pdfName, "", f)
 	if err != nil {
 		defer f.Close()
 		return nil, err
@@ -498,10 +501,10 @@ func (args *Args) vipsExport(v *vips.ImageRef) (image.Image, error) {
 }
 
 // renderTag renders the embedded picture from music metadata (ie, album art).
-func (args *Args) renderTag(r io.Reader, _ string) (image.Image, error) {
+func (args *Args) renderTag(_, _ string, r io.Reader) (image.Image, error) {
 	f, ok := r.(*os.File)
 	if !ok {
-		return nil, fmt.Errorf("must take *os.File, got: %T", r)
+		return nil, fmt.Errorf("%T not supported (*os.File only)", r)
 	}
 	md, err := tag.ReadFrom(f)
 	if err != nil {
@@ -515,9 +518,51 @@ func (args *Args) renderTag(r io.Reader, _ string) (image.Image, error) {
 	return img, err
 }
 
+// renderComicArchive renders the first file in the comic archive with integer
+// suffix.
+func (args *Args) renderComicArchive(pathName, mime string, r io.Reader) (image.Image, error) {
+	file, ok := r.(*os.File)
+	if !ok {
+		return nil, fmt.Errorf("%T not supported (*os.File only)", r)
+	}
+	fsys, err := archives.FileSystem(args.ctx, pathName, file)
+	if err != nil {
+		return nil, err
+	}
+	var files []string
+	err = fs.WalkDir(fsys, ".", func(name string, d fs.DirEntry, err error) error {
+		switch {
+		case err != nil:
+			return err
+		case d.IsDir(), !comicExtensions[fileExt(name)]:
+			return nil
+		}
+		args.logger("file %q", name)
+		files = append(files, name)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	i := 0
+	if page := int(args.Page - 1); 0 <= page && page < len(files) {
+		i = page
+	}
+	f, err := fsys.Open(files[i])
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	img, _, err := image.Decode(f)
+	if err != nil {
+		return nil, err
+	}
+	return img, nil
+}
+
 // addBackground adds a background to a image.
-func (args *Args) addBackground(fg image.Image, typ string) image.Image {
-	if args.bgc == nil || typ == "image/svg" {
+func (args *Args) addBackground(mime string, fg image.Image) image.Image {
+	if args.bgc == nil || mime == "image/svg" {
 		return fg
 	}
 	start := time.Now()
@@ -535,7 +580,7 @@ func (args *Args) addBackground(fg image.Image, typ string) image.Image {
 
 // renderMarkdown renders the markdown file, rendering it as a pdf then using
 // libvips to export it as a standard image.
-func (args *Args) renderMarkdown(r io.Reader, name string) (image.Image, error) {
+func (args *Args) renderMarkdown(pathName, _ string, r io.Reader) (image.Image, error) {
 	src, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -560,9 +605,9 @@ func (args *Args) renderMarkdown(r io.Reader, name string) (image.Image, error) 
 	}
 	args.logger("markdown convert: %v", time.Since(start))
 	start = time.Now()
-	pdf, err := args.renderVips(buf, name)
+	pdf, err := args.renderVips(pathName, "", buf)
 	if err != nil {
-		return nil, fmt.Errorf("vips can't load rendered pdf for %s: %w", name, err)
+		return nil, fmt.Errorf("vips can't load rendered pdf for %s: %w", pathName, err)
 	}
 	args.logger("markdown render: %v", time.Since(start))
 	return pdf, nil
@@ -628,7 +673,7 @@ func (fs files) Open(urlstr string) (http.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	name := path.Base(u.Path)
+	pathName := path.Base(u.Path)
 	req, err := http.NewRequestWithContext(fs.args.ctx, "GET", urlstr, nil)
 	if err != nil {
 		return nil, fmt.Errorf("md open: %w", err)
@@ -639,18 +684,18 @@ func (fs files) Open(urlstr string) (http.File, error) {
 		return nil, fmt.Errorf("md open: do: %w", err)
 	}
 	defer res.Body.Close()
-	img, err := fs.args.renderVips(res.Body, name)
+	img, err := fs.args.renderVips(pathName, "", res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("md open: render: %w", err)
 	}
-	fs.args.logger("md open: %s", name)
+	fs.args.logger("md open: %s", pathName)
 	var buf bytes.Buffer
 	if err := png.Encode(&buf, img); err != nil {
 		return nil, fmt.Errorf("md open: encode: %w", err)
 	}
 	b := buf.Bytes()
 	return &file{
-		name: name,
+		name: pathName,
 		typ:  "image/png",
 		r:    bytes.NewReader(b),
 		n:    len(b),
@@ -767,6 +812,21 @@ func isLibreOffice(typ, ext string) bool {
 	return false
 }
 
+// isComicArchive returns true if the type and extension match for a comic
+// archive.
+func isComicArchive(typ, ext string) bool {
+	switch {
+	case
+		typ == "application/x-7z-compressed" && ext == "cb7", // 7z
+		// typ == "application" && ext == "cba",           // ACE -- no support for the compression format
+		typ == "application/x-rar-compressed" && ext == "cbr", // rar
+		typ == "application/x-tar" && ext == "cbt",            // tar
+		typ == "application/zip" && ext == "cbz":              // zip
+		return true
+	}
+	return false
+}
+
 var urlRE = regexp.MustCompile(`(?i)^https?://`)
 
 var (
@@ -780,6 +840,10 @@ var (
 	ffprobePath string
 	ffmpegPath  string
 )
+
+func fileExt(s string) string {
+	return strings.ToLower(strings.TrimPrefix(filepath.Ext(s), "."))
+}
 
 // extensions are the extensions to check for directories.
 var extensions = map[string]bool{
@@ -854,4 +918,22 @@ var extensions = map[string]bool{
 	"xls":      true,
 	"xlsx":     true,
 	"xpm":      true,
+	// comic archives
+	"cb7": true,
+	"cba": true,
+	"cbr": true,
+	"cbt": true,
+	"cbz": true,
+}
+
+// comicExtensions are the extensions of files within a comic archive to
+// consider for display.
+var comicExtensions = map[string]bool{
+	"jpg":  true,
+	"jpeg": true,
+	"gif":  true,
+	"bmp":  true,
+	"png":  true,
+	"webp": true,
+	"tiff": true,
 }
