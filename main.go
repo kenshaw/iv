@@ -30,6 +30,7 @@ import (
 	"unicode"
 
 	"github.com/davidbyttow/govips/v2/vips"
+	"github.com/dhowden/tag"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/kenshaw/colors"
 	"github.com/kenshaw/fontimg"
@@ -115,14 +116,15 @@ func run(w io.Writer, args *Args) func(context.Context, []string) error {
 		for i := 0; i < len(cliargs); i++ {
 			v, err := open(cliargs[i])
 			if err != nil {
-				fmt.Fprintf(w, "error: unable to open arg %d: %v\n", i, err)
+				fmt.Fprintf(w, "error: unable to open arg %d: %v\n\n", i, err)
+			} else {
+				files = append(files, v...)
 			}
-			files = append(files, v...)
 		}
 		// render
 		for i := 0; i < len(files); i++ {
 			if err := args.render(w, files[i]); err != nil {
-				fmt.Fprintf(w, "error: unable to render arg %d: %v\n", i, err)
+				fmt.Fprintf(w, "error: unable to render arg %d: %v\n\n", i, err)
 			}
 		}
 		return nil
@@ -202,6 +204,8 @@ func (args *Args) renderFile(name string) (image.Image, string, error) {
 		g = args.renderFont
 	case strings.HasPrefix(typ, "video/"):
 		g, notStream = args.renderFfmpeg, true
+	case strings.HasPrefix(typ, "audio/"):
+		g = args.renderTag
 	default:
 		return nil, "", fmt.Errorf("mime type %q not supported", typ)
 	}
@@ -493,6 +497,24 @@ func (args *Args) vipsExport(v *vips.ImageRef) (image.Image, error) {
 	return img, nil
 }
 
+// renderTag renders the embedded picture from music metadata (ie, album art).
+func (args *Args) renderTag(r io.Reader, _ string) (image.Image, error) {
+	f, ok := r.(*os.File)
+	if !ok {
+		return nil, fmt.Errorf("must take *os.File, got: %T", r)
+	}
+	md, err := tag.ReadFrom(f)
+	if err != nil {
+		return nil, err
+	}
+	pic := md.Picture()
+	if pic == nil {
+		return nil, errors.New("no embedded picture")
+	}
+	img, _, err := image.Decode(bytes.NewReader(pic.Data))
+	return img, err
+}
+
 // addBackground adds a background to a image.
 func (args *Args) addBackground(fg image.Image, typ string) image.Image {
 	if args.bgc == nil || typ == "image/svg" {
@@ -763,6 +785,7 @@ var (
 var extensions = map[string]bool{
 	"3g2":      true,
 	"3gp":      true,
+	"aac":      true,
 	"asf":      true,
 	"avif":     true,
 	"avi":      true,
@@ -774,6 +797,7 @@ var extensions = map[string]bool{
 	"dvb":      true,
 	"dwg":      true,
 	"eot":      true,
+	"flac":     true,
 	"flv":      true,
 	"gif":      true,
 	"heic":     true,
@@ -785,13 +809,16 @@ var extensions = map[string]bool{
 	"jpg":      true,
 	"jxl":      true,
 	"jxs":      true,
+	"m4a":      true,
 	"m4v":      true,
 	"markdown": true,
 	"md":       true,
 	"mj2":      true,
 	"mkv":      true,
 	"mov":      true,
+	"mp3":      true,
 	"mp4":      true,
+	"mpeg3":    true,
 	"mpeg":     true,
 	"mpg":      true,
 	"odc":      true,
@@ -800,6 +827,9 @@ var extensions = map[string]bool{
 	"odp":      true,
 	"ods":      true,
 	"odt":      true,
+	"oga":      true,
+	"ogg":      true,
+	"ogv":      true,
 	"otf":      true,
 	"otg":      true,
 	"otp":      true,

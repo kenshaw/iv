@@ -4,6 +4,7 @@ go 1.23.5
 
 require (
 	github.com/davidbyttow/govips/v2 v2.16.0
+	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/kenshaw/colors v0.2.1
 	github.com/kenshaw/fontimg v0.1.1
