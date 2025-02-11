@@ -11,7 +11,7 @@ require (
 	github.com/kenshaw/rasterm v0.1.12
 	github.com/mholt/archives v0.1.0
 	github.com/stephenafamo/goldmark-pdf v0.4.1
-	github.com/tdewolff/canvas v0.0.0-20250206210051-e5c0e8ad9da1
+	github.com/tdewolff/canvas v0.0.0-20250209140343-015076d8ff76
 	github.com/xo/ox v0.0.0-20250130034615-44e38f949f5c
 	github.com/xo/resvg v0.6.0
 	github.com/yuin/goldmark v1.7.8
@@ -58,7 +58,7 @@ require (
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
-	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.29.0 // indirect
