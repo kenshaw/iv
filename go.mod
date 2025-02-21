@@ -7,7 +7,7 @@ require (
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/kenshaw/colors v0.2.1
-	github.com/kenshaw/fontimg v0.1.1
+	github.com/kenshaw/fontimg v0.1.2
 	github.com/kenshaw/rasterm v0.1.12
 	github.com/mholt/archives v0.1.0
 	github.com/stephenafamo/goldmark-pdf v0.4.1
@@ -32,7 +32,7 @@ require (
 	github.com/bodgit/plumbing v1.3.0 // indirect
 	github.com/bodgit/sevenzip v1.6.0 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
-	github.com/dlclark/regexp2 v1.11.4 // indirect
+	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
 	github.com/go-fonts/latin-modern v0.3.3 // indirect
 	github.com/go-swiss/fonts v0.0.0-20230807175105-90067c2f5042 // indirect
@@ -42,7 +42,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
-	github.com/klauspost/compress v1.17.11 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/mattn/go-sixel v0.0.5 // indirect
 	github.com/nwaples/rardecode/v2 v2.1.0 // indirect
