@@ -66,7 +66,5 @@ require (
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/term v0.31.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
-	modernc.org/knuth v0.5.4 // indirect
-	modernc.org/token v1.1.0 // indirect
-	star-tex.org/x/tex v0.6.0 // indirect
+	star-tex.org/x/tex v0.5.0 // indirect
 )
