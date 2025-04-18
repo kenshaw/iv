@@ -239,14 +239,22 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 }
 
 // renderImage decodes the image from the reader.
-func (*Args) renderImage(_, _ string, r io.Reader) (image.Image, error) {
+func (args *Args) renderImage(_, _ string, r io.Reader) (image.Image, error) {
 	img, _, err := image.Decode(r)
+	b := img.Bounds()
+	args.logger("dimensions: %dx%d", b.Dx(), b.Dy())
 	return img, err
 }
 
 // renderResvg decodes the svg from the reader.
 func (args *Args) renderResvg(_, _ string, r io.Reader) (image.Image, error) {
-	return resvg.Decode(r)
+	img, err := resvg.Decode(r)
+	if err != nil {
+		return nil, err
+	}
+	b := img.Bounds()
+	args.logger("dimensions: %dx%d", b.Dx(), b.Dy())
+	return img, nil
 }
 
 // renderFont decodes the font from the reader into an image.
@@ -269,6 +277,8 @@ func (args *Args) renderFont(pathName, _ string, r io.Reader) (image.Image, erro
 	if err != nil {
 		return nil, err
 	}
+	b := img.Bounds()
+	args.logger("dimensions: %dx%d", b.Dx(), b.Dy())
 	return img, nil
 }
 
@@ -396,6 +406,7 @@ func (args *Args) ffprobeTimecode(pathName string) string {
 
 var durationRE = regexp.MustCompile(`(?m)^duration=(.*)$`)
 
+// formatTimecode formats a duration in ffmpeg's timecode format.
 func formatTimecode(d time.Duration) string {
 	if d == 0 {
 		return "00:00"
@@ -554,10 +565,7 @@ func (args *Args) renderComicArchive(pathName, mime string, r io.Reader) (image.
 	}
 	defer f.Close()
 	img, _, err := image.Decode(f)
-	if err != nil {
-		return nil, err
-	}
-	return img, nil
+	return img, err
 }
 
 // addBackground adds a background to a image.
@@ -568,8 +576,8 @@ func (args *Args) addBackground(mime string, fg image.Image) image.Image {
 	start := time.Now()
 	b, c := fg.Bounds(), args.bgc.(color.NRGBA)
 	img := image.NewNRGBA(b)
-	for i := 0; i < b.Dx(); i++ {
-		for j := 0; j < b.Dy(); j++ {
+	for i := range b.Dx() {
+		for j := range b.Dy() {
 			img.SetNRGBA(i, j, c)
 		}
 	}
