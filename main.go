@@ -241,6 +241,9 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 // renderImage decodes the image from the reader.
 func (args *Args) renderImage(_, _ string, r io.Reader) (image.Image, error) {
 	img, _, err := image.Decode(r)
+	if err != nil {
+		return nil, err
+	}
 	b := img.Bounds()
 	args.logger("dimensions: %dx%d", b.Dx(), b.Dy())
 	return img, err
