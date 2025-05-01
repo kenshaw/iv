@@ -690,17 +690,17 @@ func vipsInit(logger func(string, ...any), verbose bool, concurrency int) func()
 func vipsLevel(level vips.LogLevel) string {
 	switch level {
 	case vips.LogLevelError:
-		return "error"
+		return "err"
 	case vips.LogLevelCritical:
-		return "critical"
+		return "crt"
 	case vips.LogLevelWarning:
-		return "warning"
+		return "wrn"
 	case vips.LogLevelMessage:
-		return "message"
+		return "mes"
 	case vips.LogLevelInfo:
-		return "info"
+		return "nfo"
 	case vips.LogLevelDebug:
-		return "debug"
+		return "dbg"
 	}
 	return fmt.Sprintf("(%d)", level)
 }
