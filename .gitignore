@@ -12,13 +12,27 @@
 *.webp
 *.pnm
 *.heif
+*.pbm
+*.pgm
+*.pfm
+*.ppm
+*.pam
+
+*.epub
+*.mobi
+*.fb2
+*.xps
 
 *.ttf
 *.ttc
 *.otf
 *.woff
 *.woff2
+*.fnt
 
 *.txt
 *.yml
 *.yaml
+
+*.xml
+*.html

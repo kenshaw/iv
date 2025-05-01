@@ -32,10 +32,12 @@ import (
 	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/dhowden/tag"
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/gen2brain/go-fitz"
 	"github.com/kenshaw/colors"
 	"github.com/kenshaw/fontimg"
 	"github.com/kenshaw/rasterm"
 	"github.com/mholt/archives"
+	_ "github.com/spakin/netpbm"
 	pdf "github.com/stephenafamo/goldmark-pdf"
 	"github.com/tdewolff/canvas"
 	"github.com/xo/ox"
@@ -193,12 +195,14 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 	switch ext := fileExt(pathName); {
 	case mime == "image/svg":
 		g = args.renderResvg
-	case isImageBuiltin(mime): // builtin
+	case isBuiltin(mime): // builtin
 		g = args.renderImage
 	case isLibreOffice(mime, ext): // soffice
 		g, notStream = args.renderLibreOffice, true
-	case isVipsImage(mime): // use vips
+	case isVips(mime): // use vips
 		g = args.renderVips
+	case isFitz(mime, ext):
+		g = args.renderFitz
 	case mime == "text/plain":
 		g = args.renderMarkdown
 	case strings.HasPrefix(mime, "font/"):
@@ -314,6 +318,36 @@ func (args *Args) renderVips(pathName, _ string, r io.Reader) (image.Image, erro
 	}
 	args.logger("vips load: %v", time.Since(start))
 	return args.vipsExport(v)
+}
+
+// renderFitz renders the image using the fitz (mupdf) package.
+func (args *Args) renderFitz(pathName, _ string, r io.Reader) (image.Image, error) {
+	start := time.Now()
+	// open
+	d, err := fitz.NewFromReader(r)
+	if err != nil {
+		return nil, fmt.Errorf("fitz can't open %s: %w", pathName, err)
+	}
+	defer d.Close()
+	args.logger("fitz load: %v", time.Since(start))
+	args.logger("fitz pages: %d", d.NumPage())
+	// page
+	page := int(args.Page)
+	if page != 0 {
+		page--
+	}
+	// render
+	var img *image.RGBA
+	start = time.Now()
+	if args.DPI == 0 {
+		img, err = d.ImageDPI(page, float64(args.DPI))
+	} else {
+		img, err = d.Image(page)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("fitz can't render %s: %w", pathName, err)
+	}
+	return img, nil
 }
 
 // renderFfmpeg renders the image using the ffmpeg command.
@@ -781,9 +815,9 @@ func mimeDetect(r io.Reader) (string, error) {
 	return strings.TrimSuffix(typ, "+xml"), nil
 }
 
-// isImageBuiltin returns true if the mime type is a supported, builtin Go
-// image type.
-func isImageBuiltin(typ string) bool {
+// isBuiltin returns true if the mime type is a supported, builtin Go image
+// type.
+func isBuiltin(typ string) bool {
 	switch typ {
 	case
 		"image/bmp",
@@ -793,17 +827,41 @@ func isImageBuiltin(typ string) bool {
 		"image/webp",
 		"image/tiff":
 		return true
+	case "image/x-portable-floatmap":
+		return false
 	}
-	return false
+	return strings.HasPrefix(typ, "image/x-portable-")
 }
 
-// isVipsImage returns true if the mime type is supported by libvips.
-func isVipsImage(typ string) bool {
+// isVips returns true if the mime type is supported by libvips.
+func isVips(typ string) bool {
 	switch typ {
 	case "application/pdf":
 		return true
+	case "image/vnd.adobe.photoshop":
+		return false
 	}
-	return strings.HasPrefix(typ, "image/")
+	return strings.HasPrefix(typ, "image/") &&
+		!strings.HasPrefix(typ, "image/x-portable-") &&
+		!strings.Contains(typ, "jxr")
+}
+
+// isFitz returns true if the mime type is supported by fitz (mupdf).
+//
+// epub, xps, mobi, fb2
+func isFitz(typ, ext string) bool {
+	switch {
+	case
+		typ == "application/epub+zip",           // epub
+		typ == "application/x-mobipocket-ebook", // mobi
+		typ == "text/fb2+xml",                   // fb2
+		typ == "text/xml" && ext == "fb2",
+		typ == "image/vnd.adobe.photoshop",       // psd
+		typ == "application/zip" && ext == "xps", // xps
+		strings.HasPrefix(typ, "image/x-portable-") && typ != "image/x-portable-floatmap":
+		return true
+	}
+	return false
 }
 
 // isLibreOffice returns true if the mime type is supported by the `soffice`
@@ -838,6 +896,12 @@ func isComicArchive(typ, ext string) bool {
 	return false
 }
 
+// fileExt returns the lower case file extension.
+func fileExt(s string) string {
+	return strings.ToLower(strings.TrimPrefix(filepath.Ext(s), "."))
+}
+
+// urlRE matches http/s URLs.
 var urlRE = regexp.MustCompile(`(?i)^https?://`)
 
 var (
@@ -851,10 +915,6 @@ var (
 	ffprobePath string
 	ffmpegPath  string
 )
-
-func fileExt(s string) string {
-	return strings.ToLower(strings.TrimPrefix(filepath.Ext(s), "."))
-}
 
 // extensions are the extensions to check for directories.
 var extensions = map[string]bool{
@@ -935,6 +995,11 @@ var extensions = map[string]bool{
 	"cbr": true,
 	"cbt": true,
 	"cbz": true,
+	// fitz (mupdf)
+	"xps":  true,
+	"epub": true,
+	"mobi": true,
+	"fb2":  true,
 }
 
 // comicExtensions are the extensions of files within a comic archive to
@@ -947,4 +1012,5 @@ var comicExtensions = map[string]bool{
 	"png":  true,
 	"webp": true,
 	"tiff": true,
+	"tif":  true,
 }
