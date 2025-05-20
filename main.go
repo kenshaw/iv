@@ -55,7 +55,6 @@ var (
 )
 
 func main() {
-	ox.DefaultVersionString = version
 	args := &Args{
 		logger: func(string, ...any) {},
 	}

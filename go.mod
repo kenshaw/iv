@@ -1,8 +1,8 @@
 module github.com/kenshaw/iv
 
-go 1.24.1
+go 1.24.2
 
-toolchain go1.24.2
+toolchain go1.24.3
 
 require (
 	github.com/davidbyttow/govips/v2 v2.16.0
@@ -11,15 +11,15 @@ require (
 	github.com/gen2brain/go-fitz v1.24.14
 	github.com/kenshaw/colors v0.2.1
 	github.com/kenshaw/fontimg v0.2.0
-	github.com/kenshaw/rasterm v0.1.13
-	github.com/mholt/archives v0.1.1
+	github.com/kenshaw/rasterm v0.1.14
+	github.com/mholt/archives v0.1.2
 	github.com/spakin/netpbm v1.3.2
 	github.com/stephenafamo/goldmark-pdf v0.4.1
-	github.com/tdewolff/canvas v0.0.0-20250430140454-4197cdeab172
-	github.com/xo/ox v0.0.0-20250130034615-44e38f949f5c
+	github.com/tdewolff/canvas v0.0.0-20250508181010-75987a1ae9cc
+	github.com/xo/ox v0.0.0-20250516000116-a7bcbd99c528
 	github.com/xo/resvg v0.6.0
-	github.com/yuin/goldmark v1.7.11
-	golang.org/x/image v0.26.0
+	github.com/yuin/goldmark v1.7.12
+	golang.org/x/image v0.27.0
 )
 
 require (
@@ -30,8 +30,8 @@ require (
 	github.com/BurntSushi/xgbutil v0.0.0-20190907113008-ad855c713046 // indirect
 	github.com/ByteArena/poly2tri-go v0.0.0-20170716161910-d102ad91854f // indirect
 	github.com/STARRY-S/zip v0.2.3 // indirect
-	github.com/alecthomas/chroma/v2 v2.17.2 // indirect
-	github.com/andybalholm/brotli v1.1.1 // indirect
+	github.com/alecthomas/chroma/v2 v2.18.0 // indirect
+	github.com/andybalholm/brotli v1.1.2-0.20250424173009-453214e765f3 // indirect
 	github.com/benoitkugler/textlayout v0.3.1 // indirect
 	github.com/benoitkugler/textprocessing v0.0.3 // indirect
 	github.com/bodgit/plumbing v1.3.0 // indirect
@@ -39,20 +39,20 @@ require (
 	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
-	github.com/ebitengine/purego v0.8.2 // indirect
+	github.com/ebitengine/purego v0.8.3 // indirect
 	github.com/go-fonts/latin-modern v0.3.3 // indirect
 	github.com/go-swiss/fonts v0.0.0-20230807175105-90067c2f5042 // indirect
 	github.com/go-text/typesetting v0.3.0 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
-	github.com/jupiterrider/ffi v0.4.0 // indirect
+	github.com/jupiterrider/ffi v0.4.1 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/mattn/go-sixel v0.0.5 // indirect
-	github.com/minio/minlz v1.0.0 // indirect
+	github.com/minio/minlz v1.0.1 // indirect
 	github.com/nwaples/rardecode/v2 v2.1.1 // indirect
-	github.com/phpdave11/gofpdf v1.4.2 // indirect
+	github.com/phpdave11/gofpdf v1.4.3 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/soniakeys/quant v1.0.0 // indirect
 	github.com/sorairolake/lzip-go v0.3.7 // indirect
@@ -60,16 +60,16 @@ require (
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
 	github.com/tdewolff/font v0.0.0-20250430140153-b654fd8acba3 // indirect
-	github.com/tdewolff/minify/v2 v2.23.3 // indirect
-	github.com/tdewolff/parse/v2 v2.7.23 // indirect
+	github.com/tdewolff/minify/v2 v2.23.6 // indirect
+	github.com/tdewolff/parse/v2 v2.8.1 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
-	golang.org/x/net v0.39.0 // indirect
-	golang.org/x/sync v0.13.0 // indirect
-	golang.org/x/sys v0.32.0 // indirect
-	golang.org/x/term v0.31.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/net v0.40.0 // indirect
+	golang.org/x/sync v0.14.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/term v0.32.0 // indirect
+	golang.org/x/text v0.25.0 // indirect
 	modernc.org/knuth v0.5.5 // indirect
 	modernc.org/token v1.1.0 // indirect
 	star-tex.org/x/tex v0.7.1 // indirect
