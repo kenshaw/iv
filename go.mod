@@ -1,8 +1,6 @@
 module github.com/kenshaw/iv
 
-go 1.24.2
-
-toolchain go1.24.3
+go 1.24.3
 
 require (
 	github.com/davidbyttow/govips/v2 v2.16.0
@@ -16,7 +14,7 @@ require (
 	github.com/spakin/netpbm v1.3.2
 	github.com/stephenafamo/goldmark-pdf v0.4.1
 	github.com/tdewolff/canvas v0.0.0-20250508181010-75987a1ae9cc
-	github.com/xo/ox v0.0.0-20250516000116-a7bcbd99c528
+	github.com/xo/ox v0.0.0-20250527004220-904931d33448
 	github.com/xo/resvg v0.6.0
 	github.com/yuin/goldmark v1.7.12
 	golang.org/x/image v0.27.0
@@ -39,7 +37,7 @@ require (
 	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
-	github.com/ebitengine/purego v0.8.3 // indirect
+	github.com/ebitengine/purego v0.8.4 // indirect
 	github.com/go-fonts/latin-modern v0.3.3 // indirect
 	github.com/go-swiss/fonts v0.0.0-20230807175105-90067c2f5042 // indirect
 	github.com/go-text/typesetting v0.3.0 // indirect
@@ -60,7 +58,7 @@ require (
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
 	github.com/tdewolff/font v0.0.0-20250430140153-b654fd8acba3 // indirect
-	github.com/tdewolff/minify/v2 v2.23.6 // indirect
+	github.com/tdewolff/minify/v2 v2.23.8 // indirect
 	github.com/tdewolff/parse/v2 v2.8.1 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect

@@ -82,8 +82,8 @@ github.com/dlclark/regexp2 v1.11.5/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cn
 github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 h1:2tV76y6Q9BB+NEBasnqvs7e49aEBFI8ejC89PSnWH+4=
 github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707/go.mod h1:qssHWj60/X5sZFNxpG4HBPDHVqxNm4DfnCKgrbZOT+s=
 github.com/dsnet/golib v0.0.0-20171103203638-1ea166775780/go.mod h1:Lj+Z9rebOhdfkVLjJ8T6VcRQv3SXugXy999NBtR9aFY=
-github.com/ebitengine/purego v0.8.3 h1:K+0AjQp63JEZTEMZiwsI9g0+hAMNohwUOtY0RPGexmc=
-github.com/ebitengine/purego v0.8.3/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
+github.com/ebitengine/purego v0.8.4 h1:CF7LEKg5FFOsASUj0+QwaXf8Ht6TlFxg09+S9wz0omw=
+github.com/ebitengine/purego v0.8.4/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/gabriel-vasile/mimetype v1.4.9 h1:5k+WDwEsD9eTLL8Tz3L0VnmVh9QxGjRmjBvAG7U/oYY=
@@ -216,8 +216,8 @@ github.com/tdewolff/canvas v0.0.0-20250508181010-75987a1ae9cc h1:hZ/uFsNQuNRaJWk
 github.com/tdewolff/canvas v0.0.0-20250508181010-75987a1ae9cc/go.mod h1:xXkALI8c2qLMmoMWPRhDHkc1AtNSW/OGPPxp7lBfycU=
 github.com/tdewolff/font v0.0.0-20250430140153-b654fd8acba3 h1:DztDdVAimSmI3eDKlMP1XSpeEYyhLRt9tPPivB7SNz8=
 github.com/tdewolff/font v0.0.0-20250430140153-b654fd8acba3/go.mod h1:eDnkgh2pt95UFXk0GsUv2JNj5gumg78c02QX0TdcwTA=
-github.com/tdewolff/minify/v2 v2.23.6 h1:s0ktOnrlqKfhignkv9M/rh9wCfRlIPiIpjPOq3xUJ84=
-github.com/tdewolff/minify/v2 v2.23.6/go.mod h1:VW3ISUd3gDOZuQ/jwZr4sCzsuX+Qvsx87FDMjk6Rvno=
+github.com/tdewolff/minify/v2 v2.23.8 h1:tvjHzRer46kwOfpdCBCWsDblCw3QtnLJRd61pTVkyZ8=
+github.com/tdewolff/minify/v2 v2.23.8/go.mod h1:VW3ISUd3gDOZuQ/jwZr4sCzsuX+Qvsx87FDMjk6Rvno=
 github.com/tdewolff/parse/v2 v2.8.1 h1:J5GSHru6o3jF1uLlEKVXkDxxcVx6yzOlIVIotK4w2po=
 github.com/tdewolff/parse/v2 v2.8.1/go.mod h1:Hwlni2tiVNKyzR1o6nUs4FOF07URA+JLBLd6dlIXYqo=
 github.com/tdewolff/test v1.0.11 h1:FdLbwQVHxqG16SlkGveC0JVyrJN62COWTRyUFzfbtBE=
@@ -227,8 +227,8 @@ github.com/therootcompany/xz v1.0.1/go.mod h1:3K3UH1yCKgBneZYhuQUvJ9HPD19UEXEI0B
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/ulikunitz/xz v0.5.12 h1:37Nm15o69RwBkXM0J6A5OlE67RZTfzUxTj8fB3dfcsc=
 github.com/ulikunitz/xz v0.5.12/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
-github.com/xo/ox v0.0.0-20250516000116-a7bcbd99c528 h1:8sVxa6m/Uc/UTfKRei2wYXQ0p2MRI4opaOz8b0dKiv8=
-github.com/xo/ox v0.0.0-20250516000116-a7bcbd99c528/go.mod h1:ARKysapfnYQG9O9xNsRyG4fG7FLoQMlMwCHty9LK8nM=
+github.com/xo/ox v0.0.0-20250527004220-904931d33448 h1:A2XgkKtV/Mk0ZLkF4vISR8ym75GUcnhzs7xJlTEIwCY=
+github.com/xo/ox v0.0.0-20250527004220-904931d33448/go.mod h1:HclWRGAu/EkPG21+wj6B6VL5iC0HFFwJH/3kEIPgpzQ=
 github.com/xo/resvg v0.6.0 h1:GsovErv9JuOnGttOA8RhQcBI7DEEVpEiIEKBuJVRS4g=
 github.com/xo/resvg v0.6.0/go.mod h1:xsIgOmL6UD2xRHIm2Laepjm/b4auoPMxAAqOHkvbSes=
 github.com/xyproto/randomstring v1.0.5 h1:YtlWPoRdgMu3NZtP45drfy1GKoojuR7hmRcnhZqKjWU=
