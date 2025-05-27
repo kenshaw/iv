@@ -227,8 +227,8 @@ github.com/therootcompany/xz v1.0.1/go.mod h1:3K3UH1yCKgBneZYhuQUvJ9HPD19UEXEI0B
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/ulikunitz/xz v0.5.12 h1:37Nm15o69RwBkXM0J6A5OlE67RZTfzUxTj8fB3dfcsc=
 github.com/ulikunitz/xz v0.5.12/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
-github.com/xo/ox v0.0.0-20250527004220-904931d33448 h1:A2XgkKtV/Mk0ZLkF4vISR8ym75GUcnhzs7xJlTEIwCY=
-github.com/xo/ox v0.0.0-20250527004220-904931d33448/go.mod h1:HclWRGAu/EkPG21+wj6B6VL5iC0HFFwJH/3kEIPgpzQ=
+github.com/xo/ox v0.0.0-20250527010449-8e2b1c51ab41 h1:Uvg691gZc+Xl+bJUJoa7pgmJc/nHJLUqNXWEMLImkIA=
+github.com/xo/ox v0.0.0-20250527010449-8e2b1c51ab41/go.mod h1:HclWRGAu/EkPG21+wj6B6VL5iC0HFFwJH/3kEIPgpzQ=
 github.com/xo/resvg v0.6.0 h1:GsovErv9JuOnGttOA8RhQcBI7DEEVpEiIEKBuJVRS4g=
 github.com/xo/resvg v0.6.0/go.mod h1:xsIgOmL6UD2xRHIm2Laepjm/b4auoPMxAAqOHkvbSes=
 github.com/xyproto/randomstring v1.0.5 h1:YtlWPoRdgMu3NZtP45drfy1GKoojuR7hmRcnhZqKjWU=

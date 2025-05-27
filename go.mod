@@ -14,7 +14,7 @@ require (
 	github.com/spakin/netpbm v1.3.2
 	github.com/stephenafamo/goldmark-pdf v0.4.1
 	github.com/tdewolff/canvas v0.0.0-20250508181010-75987a1ae9cc
-	github.com/xo/ox v0.0.0-20250527004220-904931d33448
+	github.com/xo/ox v0.0.0-20250527010449-8e2b1c51ab41
 	github.com/xo/resvg v0.6.0
 	github.com/yuin/goldmark v1.7.12
 	golang.org/x/image v0.27.0

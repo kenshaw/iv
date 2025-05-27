@@ -61,6 +61,7 @@ func main() {
 	ox.RunContext(
 		context.Background(),
 		ox.Usage(name, "the command-line terminal graphics image viewer"),
+		ox.VersionString(version),
 		ox.Defaults(),
 		ox.Exec(run(os.Stdout, args)),
 		ox.From(args),
