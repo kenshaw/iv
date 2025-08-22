@@ -26,8 +26,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 	"unicode"
+	"unsafe"
 
 	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/dhowden/tag"
@@ -45,8 +47,10 @@ import (
 	"github.com/xo/resvg"
 	"github.com/yuin/goldmark"
 	_ "golang.org/x/image/bmp"
+	xdraw "golang.org/x/image/draw"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
+	"golang.org/x/term"
 )
 
 var (
@@ -70,8 +74,8 @@ func main() {
 
 type Args struct {
 	Verbose         bool               `ox:"enable verbose,short:v"`
-	Width           uint               `ox:"display width,short:W"`
-	Height          uint               `ox:"display height,short:H"`
+	Width           string             `ox:"display width,short:W"`
+	Height          string             `ox:"display height,short:H"`
 	DPI             uint               `ox:"image dpi,default:300,name:dpi"`
 	Page            uint               `ox:"page to display,short:p"`
 	Bg              *colors.Color      `ox:"background color,default:transparent"`
@@ -84,7 +88,7 @@ type Args struct {
 	FontMargin      uint               `ox:"font preview margin,default:5"`
 	TimeCode        time.Duration      `ox:"video time code,short:t"`
 	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
-
+	ASCII           bool               `ox:"force ASCII/Unicode character rendering,short:a"`
 	ctx    context.Context
 	logger func(string, ...any)
 	bgc    color.Color
@@ -103,12 +107,18 @@ func run(w io.Writer, args *Args) func(context.Context, []string) error {
 				fmt.Fprintf(os.Stderr, s+"\n", v...)
 			}
 		}
+		available := rasterm.Available()
+		useASCII := args.ASCII || !available
 		// set svg background color and scaling
 		resvg.WithBackground(args.Bg)(resvg.Default)
-		if args.Width != 0 || args.Height != 0 {
+		if args.Width != "" || args.Height != "" {
 			resvg.WithScaleMode(resvg.ScaleBestFit)(resvg.Default)
-			resvg.WithWidth(int(args.Width))(resvg.Default)
-			resvg.WithHeight(int(args.Height))(resvg.Default)
+			if w, _, err := parsePercentage(args.Width); err == nil && w > 0 {
+				resvg.WithWidth(int(w))(resvg.Default)
+			}
+			if h, _, err := parsePercentage(args.Height); err == nil && h > 0 {
+				resvg.WithHeight(int(h))(resvg.Default)
+			}
 		}
 		// convert the bg color
 		if !colors.Is(args.Bg, colors.Transparent) {
@@ -126,7 +136,7 @@ func run(w io.Writer, args *Args) func(context.Context, []string) error {
 		}
 		// render
 		for _, pathName := range files {
-			if err := args.render(w, pathName); err != nil {
+			if err := args.render(w, pathName, useASCII); err != nil {
 				fmt.Fprintf(w, "error: unable to render %q: %v\n\n", pathName, err)
 			}
 		}
@@ -158,7 +168,7 @@ func open(pathName string) ([]string, error) {
 }
 
 // render renders the file to w.
-func (args *Args) render(w io.Writer, pathName string) error {
+func (args *Args) render(w io.Writer, pathName string, useASCII bool) error {
 	fmt.Fprintln(w, pathName+":")
 	start := time.Now()
 	// render
@@ -168,9 +178,26 @@ func (args *Args) render(w io.Writer, pathName string) error {
 	}
 	// add background
 	img = args.addBackground(mime, img)
+	img = args.applyResize(img)
 	now := time.Now()
-	if err = rasterm.Encode(w, img); err != nil {
-		return err
+	if useASCII {
+		colorTerm := os.Getenv("COLORTERM")
+		termName := os.Getenv("TERM")
+		hasColor := colorTerm == "truecolor" || colorTerm == "24bit" || 
+			strings.Contains(termName, "256color") || strings.Contains(termName, "truecolor")
+		if hasColor {
+			if err = args.renderASCIIColor(w, img); err != nil {
+				return err
+			}
+		} else {
+			if err = args.renderASCII(w, img); err != nil {
+				return err
+			}
+		}
+	} else {
+		if err = rasterm.Encode(w, img); err != nil {
+			return err
+		}
 	}
 	args.logger("out: %v", time.Since(now))
 	args.logger("total: %v", time.Since(start))
@@ -621,6 +648,232 @@ func (args *Args) addBackground(mime string, fg image.Image) image.Image {
 	draw.Draw(img, b, fg, image.Point{}, draw.Over)
 	args.logger("add bg: %v", time.Since(start))
 	return img
+}
+
+func getTerminalDimensions() (width, height int, err error) {
+	fd := int(os.Stdout.Fd())
+	if !term.IsTerminal(fd) {
+		return 80, 24, nil
+	}
+	width, height, err = term.GetSize(fd)
+	if err != nil {
+		return 80, 24, nil
+	}
+	return width, height, nil
+}
+
+func getTerminalPixelDimensions() (widthPixels, heightPixels int, success bool) {
+	widthPixels, heightPixels, success = getPixelDimensionsIOCTL()
+	if success && widthPixels > 0 && heightPixels > 0 {
+		cols, rows, _ := getTerminalDimensions()
+		if widthPixels > cols*5 && heightPixels > rows*5 {
+			return widthPixels, heightPixels, true
+		}
+	}
+	cols, rows, err := getTerminalDimensions()
+	if err == nil {
+		return cols * 10, rows * 20, true
+	}
+	return 0, 0, false
+}
+
+func getPixelDimensionsIOCTL() (widthPixels, heightPixels int, success bool) {
+	type winsize struct {
+		Row    uint16
+		Col    uint16
+		Xpixel uint16
+		Ypixel uint16
+	}
+	const TIOCGWINSZ = 0x5413
+	fd := int(os.Stdout.Fd())
+	var ws winsize
+	_, _, errno := syscall.Syscall(
+		syscall.SYS_IOCTL,
+		uintptr(fd),
+		uintptr(TIOCGWINSZ),
+		uintptr(unsafe.Pointer(&ws)),
+	)
+	if errno != 0 {
+		return 0, 0, false
+	}
+	if ws.Xpixel > 0 && ws.Ypixel > 0 {
+		return int(ws.Xpixel), int(ws.Ypixel), true
+	}
+	return 0, 0, false
+}
+
+func parsePercentage(s string) (value float64, isPercent bool, err error) {
+	if s == "" {
+		return 0, false, nil
+	}
+	if strings.HasSuffix(s, "%") {
+		percentStr := strings.TrimSuffix(s, "%")
+		value, err = strconv.ParseFloat(percentStr, 64)
+		if err != nil {
+			return 0, false, fmt.Errorf("invalid percentage: %s", s)
+		}
+		return value / 100.0, true, nil
+	}
+	value, err = strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, false, fmt.Errorf("invalid number: %s", s)
+	}
+	return value, false, nil
+}
+
+func (args *Args) calculateResizeDimensions(imgWidth, imgHeight int) (targetWidth, targetHeight int) {
+	var termWidthPixels, termHeightPixels int
+	exactWidth, exactHeight, hasExactDimensions := getTerminalPixelDimensions()
+	if hasExactDimensions {
+		termWidthPixels = exactWidth
+		termHeightPixels = exactHeight
+	} else {
+		termWidth, termHeight, _ := getTerminalDimensions()
+		termWidthPixels = termWidth * 10
+		termHeightPixels = termHeight * 20
+	}
+	targetWidth = imgWidth
+	targetHeight = imgHeight
+	widthSpecified := false
+	heightSpecified := false
+	if args.Width != "" {
+		w, isPercent, err := parsePercentage(args.Width)
+		if err == nil {
+			widthSpecified = true
+			if isPercent {
+				targetWidth = int(w * float64(termWidthPixels))
+			} else {
+				targetWidth = int(w)
+			}
+		}
+	}
+	if args.Height != "" {
+		h, isPercent, err := parsePercentage(args.Height)
+		if err == nil {
+			heightSpecified = true
+			if isPercent {
+				targetHeight = int(h * float64(termHeightPixels))
+			} else {
+				targetHeight = int(h)
+			}
+		}
+	}
+	if widthSpecified && !heightSpecified {
+		aspectRatio := float64(imgHeight) / float64(imgWidth)
+		targetHeight = int(float64(targetWidth) * aspectRatio)
+	} else if !widthSpecified && heightSpecified {
+		aspectRatio := float64(imgWidth) / float64(imgHeight)
+		targetWidth = int(float64(targetHeight) * aspectRatio)
+	} else if !widthSpecified && !heightSpecified {
+		if imgWidth > termWidthPixels || imgHeight > termHeightPixels {
+			scaleX := float64(termWidthPixels) / float64(imgWidth)
+			scaleY := float64(termHeightPixels) / float64(imgHeight)
+			scale := scaleX
+			if scaleY < scaleX {
+				scale = scaleY
+			}
+			targetWidth = int(float64(imgWidth) * scale)
+			targetHeight = int(float64(imgHeight) * scale)
+		}
+	}
+	if !widthSpecified && targetWidth > imgWidth {
+		targetWidth = imgWidth
+	}
+	if !heightSpecified && targetHeight > imgHeight {
+		targetHeight = imgHeight
+	}
+	return targetWidth, targetHeight
+}
+
+func (args *Args) applyResize(img image.Image) image.Image {
+	bounds := img.Bounds()
+	imgWidth := bounds.Dx()
+	imgHeight := bounds.Dy()
+	targetWidth, targetHeight := args.calculateResizeDimensions(imgWidth, imgHeight)
+	if targetWidth == imgWidth && targetHeight == imgHeight {
+		return img
+	}
+	resized := image.NewRGBA(image.Rect(0, 0, targetWidth, targetHeight))
+	xdraw.BiLinear.Scale(resized, resized.Bounds(), img, bounds, draw.Over, nil)
+	return resized
+}
+
+func (args *Args) renderASCII(w io.Writer, img image.Image) error {
+	bounds := img.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+	charWidth := width / 10
+	charHeight := height / 20
+	blocks := []rune{' ', '░', '▒', '▓', '█'}
+	for y := 0; y < charHeight; y++ {
+		for x := 0; x < charWidth; x++ {
+			srcX := x * width / charWidth
+			srcY := y * height / charHeight
+			c := img.At(srcX, srcY)
+			r, g, b, a := c.RGBA()
+			gray := (r*299 + g*587 + b*114) / 1000
+			if a < 32768 {
+				gray = 0
+			}
+			intensity := float64(gray) / 65535.0
+			blockIndex := int(intensity * float64(len(blocks)-1))
+			if blockIndex >= len(blocks) {
+				blockIndex = len(blocks) - 1
+			}
+			fmt.Fprint(w, string(blocks[blockIndex]))
+		}
+		fmt.Fprintln(w)
+	}
+	return nil
+}
+
+func (args *Args) renderASCIIColor(w io.Writer, img image.Image) error {
+	bounds := img.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+	charWidth := width / 10
+	charHeight := height / 10
+	if charHeight%2 == 1 {
+		charHeight--
+	}
+	for y := 0; y < charHeight; y += 2 {
+		lineBuffer := make([]byte, 0, charWidth*30)
+		for x := 0; x < charWidth; x++ {
+			srcX := x * width / charWidth
+			srcY1 := (y * height) / charHeight
+			srcY2 := ((y + 1) * height) / charHeight
+			if srcX >= width {
+				srcX = width - 1
+			}
+			if srcY1 >= height {
+				srcY1 = height - 1
+			}
+			if srcY2 >= height {
+				srcY2 = height - 1
+			}
+			c1 := img.At(srcX, srcY1)
+			c2 := img.At(srcX, srcY2)
+			r1, g1, b1, a1 := c1.RGBA()
+			r2, g2, b2, a2 := c2.RGBA()
+			r1, g1, b1 = r1>>8, g1>>8, b1>>8
+			r2, g2, b2 = r2>>8, g2>>8, b2>>8
+			if a1 < 32768 && a2 < 32768 {
+				lineBuffer = append(lineBuffer, ' ')
+			} else if a1 < 32768 {
+				lineBuffer = append(lineBuffer, []byte(fmt.Sprintf("\x1b[38;2;%d;%d;%dm▄", r2, g2, b2))...)
+			} else if a2 < 32768 {
+				lineBuffer = append(lineBuffer, []byte(fmt.Sprintf("\x1b[38;2;%d;%d;%dm▀", r1, g1, b1))...)
+			} else if r1 == r2 && g1 == g2 && b1 == b2 {
+				lineBuffer = append(lineBuffer, []byte(fmt.Sprintf("\x1b[38;2;%d;%d;%dm█", r1, g1, b1))...)
+			} else {
+				lineBuffer = append(lineBuffer, []byte(fmt.Sprintf("\x1b[38;2;%d;%d;%dm\x1b[48;2;%d;%d;%dm▀", 
+					r1, g1, b1, r2, g2, b2))...)
+			}
+		}
+		lineBuffer = append(lineBuffer, []byte("\x1b[0m\n")...)
+		w.Write(lineBuffer)
+	}
+	return nil
 }
 
 // renderMarkdown renders the markdown file, rendering it as a pdf then using
