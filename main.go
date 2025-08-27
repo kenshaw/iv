@@ -203,6 +203,8 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 		g = args.renderVips
 	case isFitz(mime, ext):
 		g = args.renderFitz
+	case isMermaid(mime, ext):
+		g, notStream = args.renderMermaid, true
 	case mime == "text/plain":
 		g = args.renderMarkdown
 	case strings.HasPrefix(mime, "font/"):
@@ -513,6 +515,42 @@ func (args *Args) renderLibreOffice(pathName, _ string, _ io.Reader) (image.Imag
 		return nil, err
 	}
 	return img, nil
+}
+
+// renderMermaid renders the image using the `mmdc` command.
+func (args *Args) renderMermaid(pathName, _ string, _ io.Reader) (image.Image, error) {
+	var err error
+	mmdcOnce.Do(func() {
+		mmdcPath, err = exec.LookPath("mmdc")
+	})
+	switch {
+	case err != nil:
+		return nil, err
+	case mmdcPath == "":
+		return nil, errors.New("mmdc not in path")
+	}
+	params := []string{
+		`--outputFormat`, `svg`,
+		`--input`, pathName,
+		`--output`, `-`,
+	}
+	args.logger("executing: %s %s", mmdcPath, strings.Join(params, " "))
+	start := time.Now()
+	cmd := exec.CommandContext(
+		args.ctx,
+		mmdcPath,
+		params...,
+	)
+	var buf, stderr bytes.Buffer
+	cmd.Stdout, cmd.Stderr = &buf, &stderr
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+	for s := range strings.SplitSeq(strings.TrimSpace(stderr.String()), "\n") {
+		args.logger("mmdc: %s", s)
+	}
+	args.logger("mmdc render: %v", time.Since(start))
+	return args.renderResvg("", "", &buf)
 }
 
 // vipsExport exports the vips image as a png image.
@@ -864,6 +902,11 @@ func isFitz(typ, ext string) bool {
 	return false
 }
 
+// isMermaid returns true if the mime type is supported by the `mmdc` command.
+func isMermaid(typ, ext string) bool {
+	return typ == "text/plain" && ext == "mmd"
+}
+
 // isLibreOffice returns true if the mime type is supported by the `soffice`
 // command.
 func isLibreOffice(typ, ext string) bool {
@@ -908,12 +951,14 @@ var (
 	vipsOnce    sync.Once
 	sofficeOnce sync.Once
 	ffmpegOnce  sync.Once
+	mmdcOnce    sync.Once
 )
 
 var (
 	sofficePath string
 	ffprobePath string
 	ffmpegPath  string
+	mmdcPath    string
 )
 
 // extensions are the extensions to check for directories.
@@ -1000,6 +1045,8 @@ var extensions = map[string]bool{
 	"epub": true,
 	"mobi": true,
 	"fb2":  true,
+	// mermaid
+	"mmd": true,
 }
 
 // comicExtensions are the extensions of files within a comic archive to
