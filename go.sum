@@ -143,8 +143,8 @@ github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/X
 github.com/jung-kurt/gofpdf v1.0.0/go.mod h1:7Id9E/uU8ce6rXgefFLlgrJj/GYY22cpxn+r32jIOes=
 github.com/jupiterrider/ffi v0.5.1 h1:l7ANXU+Ex33LilVa283HNaf/sTzCrrht7D05k6T6nlc=
 github.com/jupiterrider/ffi v0.5.1/go.mod h1:x7xdNKo8h0AmLuXfswDUBxUsd2OqUP4ekC8sCnsmbvo=
-github.com/kenshaw/colors v0.2.2 h1:YyhDB576iEz4m75y3QR8A+1S6cIQlJ3Eu1tYHmWRFys=
-github.com/kenshaw/colors v0.2.2/go.mod h1:Aok7+9KpR+qEwgCxDEoLBS6IGFhY1iRJIzbcv5ijewI=
+github.com/kenshaw/colors v0.2.3 h1:z/IIrevOGcc3r179X8WC1DOm5LgYAir0dw9cnVgtsvM=
+github.com/kenshaw/colors v0.2.3/go.mod h1:Aok7+9KpR+qEwgCxDEoLBS6IGFhY1iRJIzbcv5ijewI=
 github.com/kenshaw/fontimg v0.3.1 h1:Kh4+6mkwldPPv1PGYwEQW8ECVnB9BLKosogssRJcstY=
 github.com/kenshaw/fontimg v0.3.1/go.mod h1:3Vap3TJPcLjJMKz4LLImKhqKXAyPWBwznA8tXnDfmm4=
 github.com/kenshaw/rasterm v0.1.15 h1:k3sXKUly/WnnECtPl0EAwgsv5dcyotM/bfuOG/4GXCU=

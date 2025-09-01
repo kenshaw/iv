@@ -72,6 +72,8 @@ type Args struct {
 	Verbose         bool               `ox:"enable verbose,short:v"`
 	Width           uint               `ox:"display width,short:W"`
 	Height          uint               `ox:"display height,short:H"`
+	MinWidth        uint               `ox:"minimum width,short:w,default:64"`
+	MinHeight       uint               `ox:"minimum height,short:h,default:64"`
 	DPI             uint               `ox:"image dpi,default:300,name:dpi"`
 	Page            uint               `ox:"page to display,short:p"`
 	Bg              *colors.Color      `ox:"background color,default:transparent"`
@@ -84,11 +86,14 @@ type Args struct {
 	FontMargin      uint               `ox:"font preview margin,default:5"`
 	TimeCode        time.Duration      `ox:"video time code,short:t"`
 	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
-	Icons           []string           `ox:"additional mermaid icon packages"`
+	MermaidIcons    []string           `ox:"additional mermaid icon packages"`
+	MermaidBg       *colors.Color      `ox:"default mermaid background,default:white"`
 
 	ctx    context.Context
 	logger func(string, ...any)
-	bgc    color.Color
+
+	bgc  color.Color
+	mbgc color.Color
 }
 
 // run renders the specified files to w.
@@ -111,9 +116,12 @@ func run(w io.Writer, args *Args) func(context.Context, []string) error {
 			resvg.WithWidth(int(args.Width))(resvg.Default)
 			resvg.WithHeight(int(args.Height))(resvg.Default)
 		}
-		// convert the bg color
+		// convert/cache background colors
 		if !colors.Is(args.Bg, colors.Transparent) {
-			args.bgc = color.NRGBAModel.Convert(args.Bg).(color.NRGBA)
+			args.bgc = args.Bg.NRGBA()
+		}
+		if !colors.Is(args.MermaidBg, colors.Transparent) {
+			args.mbgc = args.MermaidBg.NRGBA()
 		}
 		// collect files
 		var files []string
@@ -536,7 +544,7 @@ func (args *Args) renderMermaid(pathName, _ string, _ io.Reader) (image.Image, e
 		`--output`, `-`,
 		`--iconPacks`, "@iconify-json/logos",
 	}
-	params = append(params, args.Icons...)
+	params = append(params, args.MermaidIcons...)
 	args.logger("executing: %s %s", mmdcPath, strings.Join(params, " "))
 	start := time.Now()
 	cmd := exec.CommandContext(
@@ -647,23 +655,25 @@ func (args *Args) renderComicArchive(pathName, mime string, r io.Reader) (image.
 }
 
 // addBackground adds a background to a image.
-func (args *Args) addBackground(mime string, fg image.Image) image.Image {
+func (args *Args) addBackground(mime string, src image.Image) image.Image {
 	bg := args.bgc
 	switch {
 	case bg == nil && mime == "text/plain": // mermaid
-		bg = whiteNRGBA
+		bg = args.mbgc
+	}
+	switch {
 	case bg == nil, mime == "image/svg":
-		return fg
+		return src
 	}
 	start := time.Now()
-	b, c := fg.Bounds(), bg.(color.NRGBA)
+	b, c := src.Bounds(), bg.(color.NRGBA)
 	img := image.NewNRGBA(b)
 	for i := range b.Dx() {
 		for j := range b.Dy() {
 			img.SetNRGBA(i, j, c)
 		}
 	}
-	draw.Draw(img, b, fg, image.Point{}, draw.Over)
+	draw.Draw(img, b, src, image.Point{}, draw.Over)
 	args.logger("add bg: %v", time.Since(start))
 	return img
 }
@@ -1068,6 +1078,3 @@ var comicExtensions = map[string]bool{
 	"tiff": true,
 	"tif":  true,
 }
-
-// whiteNRGBA is a white background color.
-var whiteNRGBA = colors.White.NRGBA()
