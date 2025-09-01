@@ -1,0 +1,41 @@
+%% 3-Tier AWS Web Application Architecture
+graph TD
+    subgraph "Internet"
+        U[User]
+    end
+
+    subgraph "AWS Cloud"
+        R53(fa:fa-globe Route 53)
+        CF(fa:fa-cloud-arrow-down CloudFront)
+
+        subgraph VPC
+            direction LR
+            subgraph "Public Subnets"
+                ALB(fa:fa-server Application Load Balancer)
+                subgraph "Web Tier"
+                    direction LR
+                    WebASG[fa:fa-desktop Auto Scaling Group]
+                end
+            end
+
+            subgraph "Private Subnets"
+                subgraph "App Tier"
+                    direction LR
+                    AppASG[fa:fa-cogs Auto Scaling Group]
+                end
+                DB(fa:fa-database RDS Database)
+            end
+        end
+    end
+
+    %% Define connections
+    U --> R53
+    R53 --> CF
+    CF --> ALB
+    ALB --> WebASG
+    WebASG --> AppASG
+    AppASG --> DB
+
+    %% Styling (optional, for clarity)
+    classDef awsService fill:#232F3E,color:#FFFFFF,stroke:#FF9900,stroke-width:2px;
+    class R53,CF,ALB,WebASG,AppASG,DB awsService;

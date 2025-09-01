@@ -5,9 +5,9 @@ go 1.24.3
 require (
 	github.com/davidbyttow/govips/v2 v2.16.0
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
-	github.com/gabriel-vasile/mimetype v1.4.9
+	github.com/gabriel-vasile/mimetype v1.4.10
 	github.com/gen2brain/go-fitz v1.24.15
-	github.com/kenshaw/colors v0.2.1
+	github.com/kenshaw/colors v0.2.2
 	github.com/kenshaw/fontimg v0.3.1
 	github.com/kenshaw/rasterm v0.1.15
 	github.com/mholt/archives v0.1.3

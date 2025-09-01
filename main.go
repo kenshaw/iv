@@ -84,6 +84,7 @@ type Args struct {
 	FontMargin      uint               `ox:"font preview margin,default:5"`
 	TimeCode        time.Duration      `ox:"video time code,short:t"`
 	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
+	Icons           []string           `ox:"additional mermaid icon packages"`
 
 	ctx    context.Context
 	logger func(string, ...any)
@@ -533,7 +534,9 @@ func (args *Args) renderMermaid(pathName, _ string, _ io.Reader) (image.Image, e
 		`--outputFormat`, `svg`,
 		`--input`, pathName,
 		`--output`, `-`,
+		`--iconPacks`, "@iconify-json/logos",
 	}
+	params = append(params, args.Icons...)
 	args.logger("executing: %s %s", mmdcPath, strings.Join(params, " "))
 	start := time.Now()
 	cmd := exec.CommandContext(
@@ -645,11 +648,15 @@ func (args *Args) renderComicArchive(pathName, mime string, r io.Reader) (image.
 
 // addBackground adds a background to a image.
 func (args *Args) addBackground(mime string, fg image.Image) image.Image {
-	if args.bgc == nil || mime == "image/svg" {
+	bg := args.bgc
+	switch {
+	case bg == nil && mime == "text/plain": // mermaid
+		bg = whiteNRGBA
+	case bg == nil, mime == "image/svg":
 		return fg
 	}
 	start := time.Now()
-	b, c := fg.Bounds(), args.bgc.(color.NRGBA)
+	b, c := fg.Bounds(), bg.(color.NRGBA)
 	img := image.NewNRGBA(b)
 	for i := range b.Dx() {
 		for j := range b.Dy() {
@@ -1061,3 +1068,6 @@ var comicExtensions = map[string]bool{
 	"tiff": true,
 	"tif":  true,
 }
+
+// whiteNRGBA is a white background color.
+var whiteNRGBA = colors.White.NRGBA()
