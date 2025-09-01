@@ -92,8 +92,8 @@ type Args struct {
 	ctx    context.Context
 	logger func(string, ...any)
 
-	bgc  color.Color
-	mbgc color.Color
+	bgc  *color.NRGBA
+	mbgc *color.NRGBA
 }
 
 // run renders the specified files to w.
@@ -113,15 +113,17 @@ func run(w io.Writer, args *Args) func(context.Context, []string) error {
 		resvg.WithBackground(args.Bg)(resvg.Default)
 		if args.Width != 0 || args.Height != 0 {
 			resvg.WithScaleMode(resvg.ScaleBestFit)(resvg.Default)
-			resvg.WithWidth(int(args.Width))(resvg.Default)
-			resvg.WithHeight(int(args.Height))(resvg.Default)
+			resvg.WithWidth(max(int(args.Width), int(args.MinWidth)))(resvg.Default)
+			resvg.WithHeight(max(int(args.Height), int(args.MinHeight)))(resvg.Default)
 		}
 		// convert/cache background colors
 		if !colors.Is(args.Bg, colors.Transparent) {
-			args.bgc = args.Bg.NRGBA()
+			c := args.Bg.NRGBA()
+			args.bgc = &c
 		}
 		if !colors.Is(args.MermaidBg, colors.Transparent) {
-			args.mbgc = args.MermaidBg.NRGBA()
+			c := args.MermaidBg.NRGBA()
+			args.mbgc = &c
 		}
 		// collect files
 		var files []string
@@ -666,7 +668,7 @@ func (args *Args) addBackground(mime string, src image.Image) image.Image {
 		return src
 	}
 	start := time.Now()
-	b, c := src.Bounds(), bg.(color.NRGBA)
+	b, c := src.Bounds(), *bg
 	img := image.NewNRGBA(b)
 	for i := range b.Dx() {
 		for j := range b.Dy() {
