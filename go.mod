@@ -13,7 +13,7 @@ require (
 	github.com/mholt/archives v0.1.3
 	github.com/spakin/netpbm v1.3.2
 	github.com/stephenafamo/goldmark-pdf v0.4.1
-	github.com/tdewolff/canvas v0.0.0-20250728095813-50d4cb1eee71
+	github.com/tdewolff/canvas v0.0.0-20250901181509-0db6c05d88b8
 	github.com/xo/ox v0.0.0-20250529002803-30865a99877b
 	github.com/xo/resvg v0.6.0
 	github.com/yuin/goldmark v1.7.13
@@ -54,14 +54,14 @@ require (
 	github.com/phpdave11/gofpdf v1.4.3 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/soniakeys/quant v1.0.0 // indirect
-	github.com/sorairolake/lzip-go v0.3.7 // indirect
+	github.com/sorairolake/lzip-go v0.3.8 // indirect
 	github.com/spf13/afero v1.14.0 // indirect
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
-	github.com/tdewolff/font v0.0.0-20250724150151-83cb1696c2bd // indirect
-	github.com/tdewolff/minify/v2 v2.23.11 // indirect
-	github.com/tdewolff/parse/v2 v2.8.2-0.20250806174018-50048bb39781 // indirect
-	github.com/ulikunitz/xz v0.5.12 // indirect
+	github.com/tdewolff/font v0.0.0-20250902141222-fb72ecc1bc0a // indirect
+	github.com/tdewolff/minify/v2 v2.24.2 // indirect
+	github.com/tdewolff/parse/v2 v2.8.4-0.20250902141113-be7b6b11bb1b // indirect
+	github.com/ulikunitz/xz v0.5.15 // indirect
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
 	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
