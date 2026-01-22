@@ -171,6 +171,8 @@ func open(pathName string) ([]target, error) {
 		if _, err := url.Parse(pathName); err == nil {
 			return []target{{pathName, true}}, nil
 		}
+	case strings.HasPrefix(pathName, "WIFI:"):
+		return []target{{pathName, true}}, nil
 	}
 	return nil, fmt.Errorf("unable to open %q", pathName)
 }
