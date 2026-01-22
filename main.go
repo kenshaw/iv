@@ -37,6 +37,7 @@ import (
 	"github.com/kenshaw/fontimg"
 	"github.com/kenshaw/rasterm"
 	"github.com/mholt/archives"
+	qrcode "github.com/skip2/go-qrcode"
 	_ "github.com/spakin/netpbm"
 	pdf "github.com/stephenafamo/goldmark-pdf"
 	"github.com/tdewolff/canvas"
@@ -76,7 +77,9 @@ type Args struct {
 	MinHeight       uint               `ox:"minimum height,short:h,default:64"`
 	DPI             uint               `ox:"image dpi,default:300,name:dpi"`
 	Page            uint               `ox:"page to display,short:p"`
+	Fg              *colors.Color      `ox:"foregrond color,default:dimgray"`
 	Bg              *colors.Color      `ox:"background color,default:transparent"`
+	Border          uint               `ox:"border width,default:30"`
 	FontSize        uint               `ox:"font preview size,default:48"`
 	FontStyle       canvas.FontStyle   `ox:"font preview style"`
 	FontVariant     canvas.FontVariant `ox:"font preview variant"`
@@ -125,20 +128,19 @@ func run(w io.Writer, args *Args) func(context.Context, []string) error {
 			c := args.MermaidBg.NRGBA()
 			args.mbgc = &c
 		}
-		// collect files
-		var files []string
+		// collect targets
+		var targets []target
 		for _, pathName := range cliargs {
-			v, err := open(pathName)
-			if err != nil {
-				fmt.Fprintf(w, "error: unable to open %q: %v\n\n", pathName, err)
+			if v, err := open(pathName); err == nil {
+				targets = append(targets, v...)
 			} else {
-				files = append(files, v...)
+				fmt.Fprintf(w, "error: unable to open %q: %v\n\n", pathName, err)
 			}
 		}
 		// render
-		for _, pathName := range files {
-			if err := args.render(w, pathName); err != nil {
-				fmt.Fprintf(w, "error: unable to render %q: %v\n\n", pathName, err)
+		for _, v := range targets {
+			if err := args.render(w, v); err != nil {
+				fmt.Fprintf(w, "error: unable to render %q: %v\n\n", v.path, err)
 			}
 		}
 		return nil
@@ -146,34 +148,52 @@ func run(w io.Writer, args *Args) func(context.Context, []string) error {
 }
 
 // open returns the files to open.
-func open(pathName string) ([]string, error) {
-	var v []string
+func open(pathName string) ([]target, error) {
 	switch fi, err := os.Stat(pathName); {
 	case err == nil && fi.IsDir():
 		entries, err := os.ReadDir(pathName)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read directory %q: %v", pathName, err)
 		}
+		var d []target
 		for _, entry := range entries {
 			if s := entry.Name(); !entry.IsDir() && extensions[fileExt(s)] {
-				v = append(v, filepath.Join(pathName, s))
+				d = append(d, target{path: filepath.Join(pathName, s)})
 			}
 		}
-		sort.Strings(v)
+		sort.Slice(d, func(i, j int) bool {
+			return d[i].path < d[j].path
+		})
+		return d, nil
 	case err == nil:
-		v = append(v, pathName)
-	default:
-		return nil, fmt.Errorf("unable to open %q", pathName)
+		return []target{{path: pathName}}, nil
+	case strings.Contains(pathName, "://"):
+		if _, err := url.Parse(pathName); err == nil {
+			return []target{{pathName, true}}, nil
+		}
 	}
-	return v, nil
+	return nil, fmt.Errorf("unable to open %q", pathName)
+}
+
+// targets are either paths that exist on disk, or a url.
+type target struct {
+	path  string
+	isURL bool
 }
 
 // render renders the file to w.
-func (args *Args) render(w io.Writer, pathName string) error {
-	fmt.Fprintln(w, pathName+":")
+func (args *Args) render(w io.Writer, v target) error {
+	fmt.Fprintln(w, v.path+":")
 	start := time.Now()
+	var img image.Image
+	var mime string
+	var err error
 	// render
-	img, mime, err := args.renderFile(pathName)
+	if !v.isURL {
+		img, mime, err = args.renderFile(v.path)
+	} else {
+		img, mime, err = args.renderURL(v.path)
+	}
 	if err != nil {
 		return err
 	}
@@ -253,6 +273,27 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 		}
 	}
 	return img, mime, nil
+}
+
+// renderURL renders a URL as a QR code.
+func (args *Args) renderURL(urlstr string) (image.Image, string, error) {
+	q, err := qrcode.New(urlstr, qrcode.Medium)
+	if err != nil {
+		return nil, "", err
+	}
+	q.ForegroundColor, q.BackgroundColor, q.DisableBorder = args.Fg, args.Bg, true
+	return args.addBorder(q.Image(-10)), "image/bitmap", nil
+}
+
+// addBorder adds a border to the image.
+func (args *Args) addBorder(src image.Image) image.Image {
+	b, w := src.Bounds(), int(args.Border)
+	x, y := b.Dx(), b.Dy()
+	dst := image.NewRGBA(image.Rect(0, 0, x+(2*w), y+(2*w)))
+	draw.Draw(dst, dst.Bounds(), &image.Uniform{args.Bg}, image.Point{}, draw.Src)
+	r := image.Rect(w, w, w+b.Dx(), w+b.Dy())
+	draw.Draw(dst, r, src, b.Min, draw.Over)
+	return dst
 }
 
 // renderImage decodes the image from the reader.
