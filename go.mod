@@ -3,7 +3,7 @@ module github.com/kenshaw/iv
 go 1.25
 
 require (
-	github.com/davidbyttow/govips/v2 v2.16.0
+	github.com/cshum/vipsgen v1.3.1
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/gabriel-vasile/mimetype v1.4.12
 	github.com/gen2brain/go-fitz v1.24.15

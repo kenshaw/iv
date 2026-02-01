@@ -29,7 +29,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/davidbyttow/govips/v2/vips"
+	"github.com/cshum/vipsgen/vips"
 	"github.com/dhowden/tag"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gen2brain/go-fitz"
@@ -205,7 +205,7 @@ func (args *Args) render(w io.Writer, v target) error {
 	if err = rasterm.Encode(w, img); err != nil {
 		return err
 	}
-	args.logger("out: %v", time.Since(now))
+	args.logger("encode out: %v", time.Since(now))
 	args.logger("total: %v", time.Since(start))
 	return nil
 }
@@ -223,7 +223,7 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 		return nil, "", fmt.Errorf("mime detection failed: %v", err)
 	}
 	args.logger("mime: %s", mime)
-	var g func(string, string, io.Reader) (image.Image, error)
+	var g func(string, string, io.ReadCloser) (image.Image, error)
 	var notStream bool
 	switch ext := fileExt(pathName); {
 	case mime == "image/svg":
@@ -299,7 +299,7 @@ func (args *Args) addBorder(src image.Image) image.Image {
 }
 
 // renderImage decodes the image from the reader.
-func (args *Args) renderImage(_, _ string, r io.Reader) (image.Image, error) {
+func (args *Args) renderImage(_, _ string, r io.ReadCloser) (image.Image, error) {
 	img, _, err := image.Decode(r)
 	if err != nil {
 		return nil, err
@@ -310,7 +310,7 @@ func (args *Args) renderImage(_, _ string, r io.Reader) (image.Image, error) {
 }
 
 // renderResvg decodes the svg from the reader.
-func (args *Args) renderResvg(_, _ string, r io.Reader) (image.Image, error) {
+func (args *Args) renderResvg(_, _ string, r io.ReadCloser) (image.Image, error) {
 	img, err := resvg.Decode(r)
 	if err != nil {
 		return nil, err
@@ -321,7 +321,7 @@ func (args *Args) renderResvg(_, _ string, r io.Reader) (image.Image, error) {
 }
 
 // renderFont decodes the font from the reader into an image.
-func (args *Args) renderFont(pathName, _ string, r io.Reader) (image.Image, error) {
+func (args *Args) renderFont(pathName, _ string, r io.ReadCloser) (image.Image, error) {
 	buf, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -346,29 +346,26 @@ func (args *Args) renderFont(pathName, _ string, r io.Reader) (image.Image, erro
 }
 
 // renderVips opens a vips image from the reader.
-func (args *Args) renderVips(pathName, _ string, r io.Reader) (image.Image, error) {
+func (args *Args) renderVips(pathName, _ string, r io.ReadCloser) (image.Image, error) {
 	vipsOnce.Do(vipsInit(args.logger, args.Verbose, int(args.VipsConcurrency)))
 	start := time.Now()
-	buf, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
 	args.logger("load file: %v", time.Since(start))
 	start = time.Now()
-	p := vips.NewImportParams()
-	if args.DPI != 0 {
-		p.Density.Set(int(args.DPI))
+	opts := &vips.LoadOptions{
+		N:           1,
+		Autorotate:  true,
+		FailOnError: true,
 	}
 	if args.Page != 0 {
-		v, err := vips.LoadImageFromBuffer(buf, vips.NewImportParams())
+		v, err := vips.NewImageFromSource(vips.NewSource(r), opts)
 		if err != nil {
 			return nil, fmt.Errorf("vips can't load %s: %w", pathName, err)
 		}
-		if page := int(args.Page - 1); 0 <= page && page < v.Metadata().Pages {
-			p.Page.Set(page)
+		if page := int(args.Page - 1); 0 <= page && page < v.Pages() {
+			opts.Page = page
 		}
 	}
-	v, err := vips.LoadImageFromBuffer(buf, p)
+	v, err := vips.NewImageFromSource(vips.NewSource(r), opts)
 	if err != nil {
 		return nil, fmt.Errorf("vips can't load %s: %w", pathName, err)
 	}
@@ -377,7 +374,7 @@ func (args *Args) renderVips(pathName, _ string, r io.Reader) (image.Image, erro
 }
 
 // renderFitz renders the image using the fitz (mupdf) package.
-func (args *Args) renderFitz(pathName, _ string, r io.Reader) (image.Image, error) {
+func (args *Args) renderFitz(pathName, _ string, r io.ReadCloser) (image.Image, error) {
 	start := time.Now()
 	// open
 	d, err := fitz.NewFromReader(r)
@@ -407,7 +404,7 @@ func (args *Args) renderFitz(pathName, _ string, r io.Reader) (image.Image, erro
 }
 
 // renderFfmpeg renders the image using the ffmpeg command.
-func (args *Args) renderFfmpeg(pathName, _ string, _ io.Reader) (image.Image, error) {
+func (args *Args) renderFfmpeg(pathName, _ string, _ io.ReadCloser) (image.Image, error) {
 	var err error
 	ffmpegOnce.Do(func() {
 		ffprobePath, _ = exec.LookPath("ffprobe")
@@ -510,7 +507,7 @@ func formatTimecode(d time.Duration) string {
 }
 
 // renderLibreOffice renders the image using the `soffice` command.
-func (args *Args) renderLibreOffice(pathName, _ string, _ io.Reader) (image.Image, error) {
+func (args *Args) renderLibreOffice(pathName, _ string, _ io.ReadCloser) (image.Image, error) {
 	var err error
 	sofficeOnce.Do(func() {
 		sofficePath, err = exec.LookPath("soffice")
@@ -572,7 +569,7 @@ func (args *Args) renderLibreOffice(pathName, _ string, _ io.Reader) (image.Imag
 }
 
 // renderMermaid renders the image using the `mmdc` command.
-func (args *Args) renderMermaid(pathName, _ string, _ io.Reader) (image.Image, error) {
+func (args *Args) renderMermaid(pathName, _ string, _ io.ReadCloser) (image.Image, error) {
 	var err error
 	mmdcOnce.Do(func() {
 		mmdcPath, err = exec.LookPath("mmdc")
@@ -606,44 +603,42 @@ func (args *Args) renderMermaid(pathName, _ string, _ io.Reader) (image.Image, e
 		args.logger("mmdc: %s", s)
 	}
 	args.logger("mmdc render: %v", time.Since(start))
-	return args.renderResvg("", "", &buf)
+	return args.renderResvg("", "", io.NopCloser(&buf))
 }
 
 // vipsExport exports the vips image as a png image.
-func (args *Args) vipsExport(v *vips.ImageRef) (image.Image, error) {
+func (args *Args) vipsExport(v *vips.Image) (image.Image, error) {
 	start := time.Now()
-	ext, w, h := strings.TrimPrefix(v.OriginalFormat().FileExt(), "."), v.Width(), v.Height()
+	ext, w, h := strings.TrimPrefix(string(v.Format()), "."), v.Width(), v.Height()
 	args.logger("vips format: %s dimensions: %dx%d pages: %d", ext, w, h, v.Pages())
 	if ext == "pdf" {
 		_, _, scale, _ := resvg.ScaleBestFit.Scale(uint(w), uint(h), 2000, 2000)
 		if scale != 1.0 {
-			if err := v.Resize(float64(scale), vips.KernelAuto); err != nil {
+			if err := v.Resize(float64(scale), nil); err != nil {
 				return nil, fmt.Errorf("vips unable to scale pdf: %w", err)
 			}
 			args.logger("vips resize: %v", time.Since(start))
 		}
 	}
 	start = time.Now()
-	buf, _, err := v.ExportPng(&vips.PngExportParams{
-		Filter:    vips.PngFilterNone,
-		Interlace: false,
-		Palette:   true,
-		// Bitdepth:  4,
-	})
-	if err != nil {
+	buf := new(bytes.Buffer)
+	target := vips.NewTarget(nopWriteCloser{buf})
+	if err := v.PngsaveTarget(target, nil); err != nil {
 		return nil, fmt.Errorf("vips can't export %s: %w", name, err)
 	}
 	args.logger("vips export: %v", time.Since(start))
-	img, _, err := image.Decode(bytes.NewReader(buf))
+	start = time.Now()
+	img, _, err := image.Decode(buf)
 	if err != nil {
 		return nil, fmt.Errorf("can't decode vips image %s: %w", name, err)
 	}
+	args.logger("go vips decode: %v", time.Since(start))
 	args.logger("image type: %T", img)
 	return img, nil
 }
 
 // renderTag renders the embedded picture from music metadata (ie, album art).
-func (args *Args) renderTag(_, _ string, r io.Reader) (image.Image, error) {
+func (args *Args) renderTag(_, _ string, r io.ReadCloser) (image.Image, error) {
 	f, ok := r.(*os.File)
 	if !ok {
 		return nil, fmt.Errorf("%T not supported (*os.File only)", r)
@@ -662,7 +657,7 @@ func (args *Args) renderTag(_, _ string, r io.Reader) (image.Image, error) {
 
 // renderComicArchive renders the first file in the comic archive with integer
 // suffix.
-func (args *Args) renderComicArchive(pathName, mime string, r io.Reader) (image.Image, error) {
+func (args *Args) renderComicArchive(pathName, mime string, r io.ReadCloser) (image.Image, error) {
 	file, ok := r.(*os.File)
 	if !ok {
 		return nil, fmt.Errorf("%T not supported (*os.File only)", r)
@@ -725,7 +720,7 @@ func (args *Args) addBackground(mime string, src image.Image) image.Image {
 
 // renderMarkdown renders the markdown file, rendering it as a pdf then using
 // libvips to export it as a standard image.
-func (args *Args) renderMarkdown(pathName, _ string, r io.Reader) (image.Image, error) {
+func (args *Args) renderMarkdown(pathName, _ string, r io.ReadCloser) (image.Image, error) {
 	src, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -750,7 +745,7 @@ func (args *Args) renderMarkdown(pathName, _ string, r io.Reader) (image.Image, 
 	}
 	args.logger("markdown convert: %v", time.Since(start))
 	start = time.Now()
-	pdf, err := args.renderVips(pathName, "", buf)
+	pdf, err := args.renderVips(pathName, "", io.NopCloser(buf))
 	if err != nil {
 		return nil, fmt.Errorf("vips can't load rendered pdf for %s: %w", pathName, err)
 	}
@@ -772,7 +767,7 @@ func vipsInit(logger func(string, ...any), verbose bool, concurrency int) func()
 		if verbose {
 			level = vips.LogLevelDebug
 		}
-		vips.LoggingSettings(func(domain string, level vips.LogLevel, msg string) {
+		vips.SetLogging(func(domain string, level vips.LogLevel, msg string) {
 			logger("vips %s: %s %s", vipsLevel(level), domain, strings.TrimSpace(msg))
 		}, level)
 		var config *vips.Config
@@ -1122,4 +1117,14 @@ var comicExtensions = map[string]bool{
 	"webp": true,
 	"tiff": true,
 	"tif":  true,
+}
+
+// nopWriteCloser wraps a writer with a noop close method.
+type nopWriteCloser struct {
+	io.Writer
+}
+
+// Close satisfies the io.Closer interface.
+func (nopWriteCloser) Close() error {
+	return nil
 }
