@@ -392,7 +392,7 @@ func (args *Args) renderFitz(pathName, _ string, r io.ReadCloser) (image.Image, 
 	// render
 	var img *image.RGBA
 	start = time.Now()
-	if args.DPI == 0 {
+	if args.DPI != 0 {
 		img, err = d.ImageDPI(page, float64(args.DPI))
 	} else {
 		img, err = d.Image(page)
@@ -400,6 +400,7 @@ func (args *Args) renderFitz(pathName, _ string, r io.ReadCloser) (image.Image, 
 	if err != nil {
 		return nil, fmt.Errorf("fitz can't render %s: %w", pathName, err)
 	}
+	args.logger("fitz render: %v", time.Since(start))
 	return img, nil
 }
 
