@@ -37,6 +37,7 @@ import (
 	"github.com/kenshaw/fontimg"
 	"github.com/kenshaw/rasterm"
 	"github.com/mholt/archives"
+	_ "github.com/sergeymakinen/go-ico"
 	qrcode "github.com/skip2/go-qrcode"
 	_ "github.com/spakin/netpbm"
 	pdf "github.com/stephenafamo/goldmark-pdf"
@@ -352,8 +353,8 @@ func (args *Args) renderVips(pathName, _ string, r io.ReadCloser) (image.Image, 
 	args.logger("load file: %v", time.Since(start))
 	start = time.Now()
 	opts := &vips.LoadOptions{
-		N:           1,
-		Autorotate:  true,
+		N: 1,
+		// Autorotate:  true,
 		FailOnError: true,
 	}
 	if args.Page != 0 {
@@ -921,7 +922,8 @@ func isBuiltin(typ string) bool {
 		"image/png",
 		"image/gif",
 		"image/webp",
-		"image/tiff":
+		"image/tiff",
+		"image/x-icon":
 		return true
 	case "image/x-portable-floatmap":
 		return false
