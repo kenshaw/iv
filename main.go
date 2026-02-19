@@ -47,7 +47,6 @@ import (
 	_ "github.com/xo/ox/color"
 	"github.com/xo/resvg"
 	"github.com/yuin/goldmark"
-	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
 )
@@ -699,7 +698,8 @@ func (args *Args) decodeComicArchive(pathName, mime string, r io.ReadCloser) (im
 	return img, err
 }
 
-// decodeWindowsPE decodes the windows PE icon.
+// decodeWindowsPE decodes embedded application icons from the windows PE (exe)
+// file.
 func (args *Args) decodeWindowsPE(pathName, mime string, r io.ReadCloser) (image.Image, error) {
 	file, ok := r.(*os.File)
 	if !ok {
@@ -707,23 +707,47 @@ func (args *Args) decodeWindowsPE(pathName, mime string, r io.ReadCloser) (image
 	}
 	rs, err := winres.LoadFromEXE(file)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to load resources: %w", err)
 	}
-	var icons [][]byte
-	rs.WalkType(winres.RT_ICON, func(id winres.Identifier, _ uint16, data []byte) bool {
-		buf := make([]byte, len(data))
-		copy(buf, data)
-		icons = append(icons, buf)
+	var icons []image.Image
+	var count int
+	rs.Walk(func(typid, id winres.Identifier, lang uint16, data []byte) bool {
+		mime := mimetype.Detect(data)
+		args.logger("resource %d: type: %v res: %v lang: %v len: %d mime: %v", count, typid, id, lang, len(data), mime)
+		if mime.String() != "image/x-icon" {
+			return true
+		}
+		icon, err := rs.GetIconTranslation(id, lang)
+		if err != nil {
+			args.logger("resource %d: unable to read icon: %v", err)
+			return false
+		}
+		var buf bytes.Buffer
+		if err := icon.SaveICO(&buf); err != nil {
+			args.logger("resource %d: unable to save icon: %v", err)
+			return false
+		}
+		img, _, err := image.Decode(&buf)
+		if err != nil {
+			args.logger("resource %d: unable to decode icon: %v", err)
+			return false
+		}
+		b := img.Bounds()
+		args.logger("icon %d: dimensions: %dx%d", len(icons)+1, b.Dx(), b.Dy())
+		icons = append(icons, img)
+		count++
 		return true
 	})
-	args.logger("icons: %d", len(icons))
+	if len(icons) == 0 {
+		return nil, fmt.Errorf("no icons found")
+	}
 	page := 0
 	if args.Page != 0 {
 		if p := int(args.Page - 1); 0 <= p && p < len(icons) {
 			page = p
 		}
 	}
-	return args.decodeBuiltin("", "", io.NopCloser(bytes.NewReader(icons[page])))
+	return icons[page], nil
 }
 
 // addBackground adds a background to a image.
