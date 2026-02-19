@@ -15,6 +15,7 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spakin/netpbm v1.3.2
 	github.com/stephenafamo/goldmark-pdf v0.4.2
+	github.com/tc-hib/winres v0.3.1
 	github.com/tdewolff/canvas v0.0.0-20260213104355-3d7d3c955351
 	github.com/xo/ox v0.0.0-20250529002803-30865a99877b
 	github.com/xo/resvg v0.6.0
@@ -52,6 +53,7 @@ require (
 	github.com/mattn/go-sixel v0.0.8 // indirect
 	github.com/mikelolasagasti/xz v1.0.1 // indirect
 	github.com/minio/minlz v1.0.1 // indirect
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/nwaples/rardecode/v2 v2.2.2 // indirect
 	github.com/phpdave11/gofpdf v1.4.3 // indirect
 	github.com/pierrec/lz4/v4 v4.1.25 // indirect
