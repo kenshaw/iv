@@ -37,6 +37,7 @@ import (
 	"github.com/kenshaw/fontimg"
 	"github.com/kenshaw/rasterm"
 	"github.com/mholt/archives"
+	"github.com/sergeymakinen/go-bmp"
 	_ "github.com/sergeymakinen/go-ico"
 	qrcode "github.com/skip2/go-qrcode"
 	_ "github.com/spakin/netpbm"
@@ -302,9 +303,12 @@ func (args *Args) addBorder(src image.Image) image.Image {
 }
 
 // decodeBuiltin decodes the image from the reader.
-func (args *Args) decodeBuiltin(_, _ string, r io.ReadCloser) (image.Image, error) {
+func (args *Args) decodeBuiltin(pathName, mime string, r io.ReadCloser) (image.Image, error) {
 	img, _, err := image.Decode(r)
-	if err != nil {
+	switch _, ok := errors.AsType[bmp.UnsupportedError](err); {
+	case err != nil && ok:
+		return args.decodeVips(pathName, mime, r)
+	case err != nil:
 		return nil, err
 	}
 	b := img.Bounds()
