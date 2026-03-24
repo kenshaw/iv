@@ -851,7 +851,7 @@ func vipsLevel(level vips.LogLevel) string {
 	case vips.LogLevelWarning:
 		return "wrn"
 	case vips.LogLevelMessage:
-		return "mes"
+		return "msg"
 	case vips.LogLevelInfo:
 		return "nfo"
 	case vips.LogLevelDebug:
@@ -957,6 +957,16 @@ func (f *file) Sys() any {
 	return nil
 }
 
+type Imager interface {
+	Image() image.Image
+	BytesPNG() ([]byte, error)
+	Scale()
+	SetBackground(color.Color)
+	SetForeground(color.Color)
+	AddBorder(color.Color, uint)
+	AddMargin(uint)
+}
+
 type Image struct {
 	img image.Image
 }
@@ -965,8 +975,8 @@ func (img *Image) Image() image.Image {
 	return img
 }
 
-// RawPNG returns a raw PNG of the image, for use by encoders.
-func (img *Image) RawPNG() ([]byte, error) {
+// BytesPNG returns the PNG bytes of the image, for use by encoders.
+func (img *Image) BytesPNG() ([]byte, error) {
 	return nil, nil
 }
 
