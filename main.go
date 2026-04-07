@@ -318,12 +318,14 @@ func (args *Args) decodeBuiltin(pathName, mime string, r io.ReadCloser) (image.I
 
 // decodeResvg decodes the svg from the reader.
 func (args *Args) decodeResvg(_, _ string, r io.ReadCloser) (image.Image, error) {
+	start := time.Now()
 	img, err := resvg.Decode(r)
 	if err != nil {
 		return nil, err
 	}
 	b := img.Bounds()
 	args.logger("dimensions: %dx%d", b.Dx(), b.Dy())
+	args.logger("resvg load %v", time.Since(start))
 	return img, nil
 }
 
