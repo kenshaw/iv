@@ -3,7 +3,7 @@ module github.com/kenshaw/iv
 go 1.26
 
 require (
-	github.com/cshum/vipsgen v1.3.8
+	github.com/cshum/vipsgen v1.3.9
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/gabriel-vasile/mimetype v1.4.13
 	github.com/gen2brain/go-fitz v1.24.15
@@ -17,10 +17,10 @@ require (
 	github.com/spakin/netpbm v1.3.2
 	github.com/stephenafamo/goldmark-pdf v0.4.2
 	github.com/tc-hib/winres v0.3.1
-	github.com/tdewolff/canvas v0.0.0-20260320214313-adbce01b5307
-	github.com/xo/ox v0.0.0-20260324015515-2f57aab5615f
-	github.com/xo/resvg v0.6.0
-	github.com/yuin/goldmark v1.7.17
+	github.com/tdewolff/canvas v0.0.0-20260406091912-5d4f7059846e
+	github.com/xo/ox v0.0.0-20260330053905-739fd0cf7bdb
+	github.com/xo/resvg v0.7.0
+	github.com/yuin/goldmark v1.8.2
 	golang.org/x/image v0.38.0
 )
 
@@ -33,7 +33,7 @@ require (
 	github.com/ByteArena/poly2tri-go v0.0.0-20170716161910-d102ad91854f // indirect
 	github.com/STARRY-S/zip v0.2.3 // indirect
 	github.com/alecthomas/chroma/v2 v2.23.1 // indirect
-	github.com/andybalholm/brotli v1.2.0 // indirect
+	github.com/andybalholm/brotli v1.2.1 // indirect
 	github.com/benoitkugler/textlayout v0.3.2 // indirect
 	github.com/benoitkugler/textprocessing v0.0.6 // indirect
 	github.com/bodgit/plumbing v1.3.0 // indirect
@@ -64,8 +64,8 @@ require (
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
 	github.com/tdewolff/font v0.0.0-20260314002930-9f995dac393e // indirect
-	github.com/tdewolff/minify/v2 v2.24.10 // indirect
-	github.com/tdewolff/parse/v2 v2.8.10 // indirect
+	github.com/tdewolff/minify/v2 v2.24.12 // indirect
+	github.com/tdewolff/parse/v2 v2.8.11 // indirect
 	github.com/ulikunitz/xz v0.5.15 // indirect
 	go4.org v0.0.0-20260112195520-a5071408f32f // indirect
 	golang.org/x/net v0.52.0 // indirect
