@@ -8,7 +8,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.13
 	github.com/gen2brain/go-fitz v1.24.15
 	github.com/kenshaw/colors v0.2.4
-	github.com/kenshaw/fontimg v0.3.1
+	github.com/kenshaw/fontimg v0.3.2
 	github.com/kenshaw/rasterm v0.1.16
 	github.com/mholt/archives v0.1.5
 	github.com/sergeymakinen/go-bmp v1.0.0
@@ -21,7 +21,7 @@ require (
 	github.com/xo/ox v0.0.0-20260330053905-739fd0cf7bdb
 	github.com/xo/resvg v0.7.0
 	github.com/yuin/goldmark v1.8.2
-	golang.org/x/image v0.38.0
+	golang.org/x/image v0.39.0
 )
 
 require (
@@ -39,7 +39,7 @@ require (
 	github.com/bodgit/plumbing v1.3.0 // indirect
 	github.com/bodgit/sevenzip v1.6.1 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
-	github.com/dlclark/regexp2 v1.11.5 // indirect
+	github.com/dlclark/regexp2 v1.12.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
 	github.com/ebitengine/purego v0.10.0 // indirect
 	github.com/go-fonts/latin-modern v0.3.3 // indirect
@@ -51,7 +51,7 @@ require (
 	github.com/jupiterrider/ffi v0.6.0 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
-	github.com/mattn/go-sixel v0.0.8 // indirect
+	github.com/mattn/go-sixel v0.0.9 // indirect
 	github.com/mikelolasagasti/xz v1.0.1 // indirect
 	github.com/minio/minlz v1.1.0 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
@@ -63,16 +63,16 @@ require (
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
-	github.com/tdewolff/font v0.0.0-20260314002930-9f995dac393e // indirect
+	github.com/tdewolff/font v0.0.0-20260420205100-f6940a171d9c // indirect
 	github.com/tdewolff/minify/v2 v2.24.12 // indirect
-	github.com/tdewolff/parse/v2 v2.8.11 // indirect
+	github.com/tdewolff/parse/v2 v2.8.12 // indirect
 	github.com/ulikunitz/xz v0.5.15 // indirect
 	go4.org v0.0.0-20260112195520-a5071408f32f // indirect
-	golang.org/x/net v0.52.0 // indirect
+	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/term v0.41.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
+	golang.org/x/term v0.42.0 // indirect
+	golang.org/x/text v0.36.0 // indirect
 	modernc.org/knuth v0.5.5 // indirect
 	modernc.org/token v1.1.0 // indirect
 	star-tex.org/x/tex v0.7.1 // indirect
