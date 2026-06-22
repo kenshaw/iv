@@ -93,6 +93,7 @@ type Args struct {
 	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
 	MermaidIcons    []string           `ox:"additional mermaid icon packages"`
 	MermaidBg       *colors.Color      `ox:"default mermaid background,default:white"`
+	ForceMime       string             `ox:"force mime type"`
 
 	ctx    context.Context
 	logger func(string, ...any)
@@ -218,11 +219,13 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	// determine type
-	mime, err := mimeDetect(f)
-	if err != nil {
-		defer f.Close()
-		return nil, "", fmt.Errorf("mime detection failed: %v", err)
+	mime := args.ForceMime
+	if mime == "" {
+		// determine mime
+		if mime, err = mimeDetect(f); err != nil {
+			defer f.Close()
+			return nil, "", fmt.Errorf("mime detection failed: %v", err)
+		}
 	}
 	args.logger("mime: %s", mime)
 	var g func(string, string, io.ReadCloser) (image.Image, error)
