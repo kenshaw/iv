@@ -355,7 +355,7 @@ func (args *Args) decodeFont(pathName, _ string, r io.ReadCloser) (image.Image, 
 }
 
 // decodeVips decodes a vips image from the reader.
-func (args *Args) decodeVips(pathName, _ string, r io.ReadCloser) (image.Image, error) {
+func (args *Args) decodeVips(pathName, mime string, r io.ReadCloser) (image.Image, error) {
 	vipsOnce.Do(vipsInit(args.logger, args.Verbose, int(args.VipsConcurrency)))
 	start := time.Now()
 	args.logger("load file: %v", time.Since(start))
@@ -364,6 +364,8 @@ func (args *Args) decodeVips(pathName, _ string, r io.ReadCloser) (image.Image, 
 		N: 1,
 		// Autorotate:  true,
 		FailOnError: true,
+		Unlimited:   mime != "image/jxl" && !strings.HasSuffix(mime, "/pdf"),
+		Memory:      true,
 	}
 	if args.Page != 0 {
 		v, err := vips.NewImageFromSource(vips.NewSource(r), opts)
