@@ -568,7 +568,7 @@ func (args *Args) decodeLibreOffice(pathName, _ string, _ io.ReadCloser) (image.
 	if err != nil {
 		return nil, err
 	}
-	img, err := args.decodeVips(pdfName, "", f)
+	img, err := args.decodeVips(pdfName, "application/pdf", f)
 	if err != nil {
 		defer f.Close()
 		return nil, err
@@ -812,7 +812,7 @@ func (args *Args) decodeMarkdown(pathName, _ string, r io.ReadCloser) (image.Ima
 	}
 	args.logger("markdown convert: %v", time.Since(start))
 	start = time.Now()
-	pdf, err := args.decodeVips(pathName, "", io.NopCloser(buf))
+	pdf, err := args.decodeVips(pathName, "application/pdf", io.NopCloser(buf))
 	if err != nil {
 		return nil, fmt.Errorf("vips can't load rendered pdf for %s: %w", pathName, err)
 	}
