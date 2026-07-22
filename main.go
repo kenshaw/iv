@@ -245,7 +245,7 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 		g, notStream = args.decodeMermaid, true
 	case mime == "text/plain":
 		g = args.decodeMarkdown
-	case strings.HasPrefix(mime, "font/"):
+	case isFont(mime, ext):
 		g = args.decodeFont
 	case strings.HasPrefix(mime, "video/"):
 		g, notStream = args.decodeFfmpeg, true
@@ -1092,6 +1092,18 @@ func isLibreOffice(typ, ext string) bool {
 		typ == "text/csv",
 		typ == "text/tab-separated-values",
 		typ == "text/plain" && (ext == "csv" || ext == "tsv"):
+		return true
+	}
+	return false
+}
+
+// isFont returns true if the mime type is supported by fontimg, or if it's a
+// known file extension.
+func isFont(typ, ext string) bool {
+	switch {
+	case
+		strings.HasPrefix(typ, "font/"),
+		typ == "application/octet-stream" && (ext == "ttf" || ext == "otf"):
 		return true
 	}
 	return false
