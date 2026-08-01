@@ -1116,9 +1116,9 @@ func isComicArchive(typ, ext string) bool {
 	case
 		typ == "application/x-7z-compressed" && ext == "cb7", // 7z
 		// typ == "application" && ext == "cba",           // ACE -- no support for the compression format
-		typ == "application/x-rar-compressed" && ext == "cbr", // rar
-		typ == "application/x-tar" && ext == "cbt",            // tar
-		typ == "application/zip" && ext == "cbz":              // zip
+		(typ == "application/vnd.rar" || typ == "application/x-rar" || typ == "application/x-rar-compressed") && ext == "cbr", // rar
+		typ == "application/x-tar" && ext == "cbt", // tar
+		typ == "application/zip" && ext == "cbz":   // zip
 		return true
 	}
 	return false
