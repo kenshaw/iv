@@ -5,7 +5,7 @@ go 1.26
 require (
 	github.com/cshum/vipsgen v1.3.10
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
-	github.com/gabriel-vasile/mimetype v1.4.14-rc1
+	github.com/gabriel-vasile/mimetype v1.4.15
 	github.com/gen2brain/go-fitz v1.28.2
 	github.com/kenshaw/colors v0.2.4
 	github.com/kenshaw/fontimg v0.3.3
@@ -20,7 +20,7 @@ require (
 	github.com/tdewolff/canvas v0.0.0-20260714230319-248e24504c3b
 	github.com/xo/ox v0.0.0-20260622193027-2d66424338ed
 	github.com/xo/resvg v0.7.0
-	github.com/yuin/goldmark v1.8.4
+	github.com/yuin/goldmark v1.8.5
 	golang.org/x/image v0.44.0
 )
 
@@ -54,7 +54,7 @@ require (
 	github.com/mikelolasagasti/xz v1.0.1 // indirect
 	github.com/minio/minlz v1.2.0 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
-	github.com/nwaples/rardecode/v2 v2.2.5 // indirect
+	github.com/nwaples/rardecode/v2 v2.3.0 // indirect
 	github.com/phpdave11/gofpdf v1.4.3 // indirect
 	github.com/pierrec/lz4/v4 v4.1.27 // indirect
 	github.com/soniakeys/quant v1.0.0 // indirect
@@ -64,8 +64,8 @@ require (
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
 	github.com/stangelandcl/ppmd v0.1.1 // indirect
 	github.com/tdewolff/font v0.0.0-20260527091451-1663e68cb8a4 // indirect
-	github.com/tdewolff/minify/v2 v2.24.13 // indirect
-	github.com/tdewolff/parse/v2 v2.8.13 // indirect
+	github.com/tdewolff/minify/v2 v2.24.14 // indirect
+	github.com/tdewolff/parse/v2 v2.8.14 // indirect
 	github.com/ulikunitz/xz v0.5.16 // indirect
 	go4.org v0.0.0-20260112195520-a5071408f32f // indirect
 	golang.org/x/net v0.57.0 // indirect
