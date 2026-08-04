@@ -74,6 +74,7 @@ func main() {
 
 type Args struct {
 	Verbose         bool               `ox:"enable verbose,short:v"`
+	Quiet           bool               `ox:"enable quiet,short:q"`
 	Width           uint               `ox:"display width,short:W"`
 	Height          uint               `ox:"display height,short:H"`
 	MinWidth        uint               `ox:"minimum width,short:w,default:64"`
@@ -191,7 +192,9 @@ type target struct {
 
 // render renders the file to w.
 func (args *Args) render(w io.Writer, v target) error {
-	fmt.Fprintln(w, v.path+":")
+	if !args.Quiet {
+		fmt.Fprintln(w, v.path+":")
+	}
 	start := time.Now()
 	var img image.Image
 	var mime string
