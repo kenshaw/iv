@@ -1,5 +1,13 @@
 #!/bin/bash
 
+set -eu
+
+IVBIN=$(which iv)
+if [ -e ./iv ]; then
+  IVBIN=./iv
+fi
+IVBIN=$(realpath $IVBIN)
+
 urls=(
   "wifi://testssid"
   "WIFI:testssid"
@@ -11,5 +19,5 @@ urls=(
 )
 
 for url in ${urls[@]}; do
-  ./iv -q "$url"
+  $IVBIN -q "$url"
 done
