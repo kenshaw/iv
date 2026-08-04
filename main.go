@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"image"
@@ -174,7 +175,9 @@ func open(pathName string) ([]target, error) {
 		if _, err := url.Parse(pathName); err == nil {
 			return []target{{pathName, true}}, nil
 		}
-	case strings.HasPrefix(pathName, "WIFI:"):
+	case
+		strings.HasPrefix(pathName, "data:image/"),
+		strings.HasPrefix(pathName, "WIFI:"):
 		return []target{{pathName, true}}, nil
 	}
 	return nil, fmt.Errorf("unable to open %q", pathName)
@@ -194,10 +197,15 @@ func (args *Args) render(w io.Writer, v target) error {
 	var mime string
 	var err error
 	// render
-	if !v.isURL {
+	switch {
+	case !v.isURL:
 		img, mime, err = args.renderFile(v.path)
-	} else {
-		img, mime, err = args.renderURL(v.path)
+	case strings.HasPrefix(v.path, "data:image/"):
+		img, mime, err = args.renderDataImage(v.path)
+	case v.isURL, strings.HasPrefix(v.path, "WIFI:"):
+		img, mime, err = args.renderWifiQR(v.path)
+	default:
+		return errors.New("unknown url scheme")
 	}
 	if err != nil {
 		return err
@@ -228,36 +236,7 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 		}
 	}
 	args.logger("mime: %s", mime)
-	var g func(string, string, io.ReadCloser) (image.Image, error)
-	var notStream bool
-	switch ext := fileExt(pathName); {
-	case mime == "image/svg":
-		g = args.decodeResvg
-	case isBuiltin(mime): // builtin
-		g = args.decodeBuiltin
-	case isLibreOffice(mime, ext): // soffice
-		g, notStream = args.decodeLibreOffice, true
-	case isVips(mime): // use vips
-		g = args.decodeVips
-	case isFitz(mime, ext):
-		g = args.decodeFitz
-	case isMermaid(mime, ext):
-		g, notStream = args.decodeMermaid, true
-	case mime == "text/plain":
-		g = args.decodeMarkdown
-	case isFont(mime, ext):
-		g = args.decodeFont
-	case strings.HasPrefix(mime, "video/"):
-		g, notStream = args.decodeFfmpeg, true
-	case strings.HasPrefix(mime, "audio/"):
-		g = args.decodeTag
-	case isComicArchive(mime, ext):
-		g = args.decodeComicArchive
-	case isWindowsPE(mime, ext):
-		g = args.decodeWindowsPE
-	default:
-		return nil, "", fmt.Errorf("mime type %q not supported", mime)
-	}
+	g, notStream, err := args.decoder(mime, fileExt(pathName))
 	if notStream {
 		if err := f.Close(); err != nil {
 			return nil, "", fmt.Errorf("could not close file: %w", err)
@@ -284,8 +263,8 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 	return img, mime, nil
 }
 
-// renderURL renders a URL as a QR code.
-func (args *Args) renderURL(urlstr string) (image.Image, string, error) {
+// renderWifiQR renders a WIFI: URL as a QR code.
+func (args *Args) renderWifiQR(urlstr string) (image.Image, string, error) {
 	q, err := qrcode.New(urlstr, qrcode.Medium)
 	if err != nil {
 		return nil, "", err
@@ -303,6 +282,65 @@ func (args *Args) addBorder(src image.Image) image.Image {
 	r := image.Rect(w, w, w+b.Dx(), w+b.Dy())
 	draw.Draw(dst, r, src, b.Min, draw.Over)
 	return dst
+}
+
+// renderDataImage renders a data: URL as a image.
+func (args *Args) renderDataImage(urlstr string) (image.Image, string, error) {
+	mime, data, ok := strings.Cut(strings.TrimPrefix(urlstr, "data:"), ",")
+	if !ok {
+		return nil, "", fmt.Errorf("malformed data: missing %q", ',')
+	}
+	mime = strings.ToLower(mime)
+	var b []byte
+	var err error
+	if strings.HasSuffix(mime, ";base64") {
+		mime = strings.TrimSuffix(mime, ";base64")
+		b, err = base64.StdEncoding.AppendDecode(b, []byte(data))
+	} else {
+		var s string
+		s, err = url.QueryUnescape(data)
+		b = []byte(s)
+	}
+	if err != nil {
+		return nil, "", fmt.Errorf("malformed data: %w", err)
+	}
+	g, _, err := args.decoder(strings.TrimSuffix(mime, "+xml"), "")
+	if err != nil {
+		return nil, "", fmt.Errorf("data mime type %q not supported", mime)
+	}
+	img, err := g("", mime, io.NopCloser(bytes.NewReader(b)))
+	return img, mime, err
+}
+
+// decoder returns the decoder func to use with the mime and extension type.
+func (args *Args) decoder(mime, ext string) (func(string, string, io.ReadCloser) (image.Image, error), bool, error) {
+	switch {
+	case mime == "image/svg":
+		return args.decodeResvg, false, nil
+	case isBuiltin(mime): // builtin
+		return args.decodeBuiltin, false, nil
+	case isLibreOffice(mime, ext): // soffice
+		return args.decodeLibreOffice, true, nil
+	case isVips(mime): // use vips
+		return args.decodeVips, false, nil
+	case isFitz(mime, ext):
+		return args.decodeFitz, false, nil
+	case isMermaid(mime, ext):
+		return args.decodeMermaid, true, nil
+	case mime == "text/plain":
+		return args.decodeMarkdown, false, nil
+	case isFont(mime, ext):
+		return args.decodeFont, false, nil
+	case strings.HasPrefix(mime, "video/"):
+		return args.decodeFfmpeg, true, nil
+	case strings.HasPrefix(mime, "audio/"):
+		return args.decodeTag, false, nil
+	case isComicArchive(mime, ext):
+		return args.decodeComicArchive, false, nil
+	case isWindowsPE(mime, ext):
+		return args.decodeWindowsPE, false, nil
+	}
+	return nil, false, fmt.Errorf("mime type %q not supported", mime)
 }
 
 // decodeBuiltin decodes the image from the reader.
