@@ -464,9 +464,10 @@ func (args *Args) decodeVipsPdf(pathName, mime string, r io.ReadCloser) (image.I
 			break
 		}
 		// collect password
-		fmt.Fprint(os.Stdout, "Password: ")
+		_, _ = fmt.Fprint(os.Stdout, "Password: ")
 		pass, err = term.ReadPassword(int(os.Stdin.Fd()))
-		if _, _ = fmt.Fprintln(os.Stdin); err != nil {
+		_, _ = fmt.Fprintln(os.Stdout)
+		if err != nil {
 			break
 		}
 	}
