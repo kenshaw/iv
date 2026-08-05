@@ -476,6 +476,8 @@ func (args *Args) decodeVipsPdf(pathName, mime string, r io.ReadCloser) (image.I
 		return nil, fmt.Errorf("vips load: %w", err)
 	case 3 <= i:
 		return nil, fmt.Errorf("vips load: invalid password")
+	case v == nil:
+		return nil, fmt.Errorf("vips load: unknown error encountered")
 	}
 	return args.vipsExport(v)
 }
