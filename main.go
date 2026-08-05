@@ -140,13 +140,13 @@ func run(w io.Writer, args *Args) func(context.Context, []string) error {
 			if v, err := open(pathName); err == nil {
 				targets = append(targets, v...)
 			} else {
-				fmt.Fprintf(w, "error: unable to open %q: %v\n\n", pathName, err)
+				fmt.Fprintf(w, "error: open %q: %v\n\n", pathName, err)
 			}
 		}
 		// render
 		for _, v := range targets {
 			if err := args.render(w, v); err != nil {
-				fmt.Fprintf(w, "error: unable to render %q: %v\n\n", v.path, err)
+				fmt.Fprintf(w, "error: render %q: %v\n\n", v.path, err)
 			}
 		}
 		return nil
@@ -159,7 +159,7 @@ func open(pathName string) ([]target, error) {
 	case err == nil && fi.IsDir():
 		entries, err := os.ReadDir(pathName)
 		if err != nil {
-			return nil, fmt.Errorf("unable to read directory %q: %v", pathName, err)
+			return nil, fmt.Errorf("read dir %q: %v", pathName, err)
 		}
 		var d []target
 		for _, entry := range entries {
@@ -182,7 +182,7 @@ func open(pathName string) ([]target, error) {
 		strings.HasPrefix(pathName, "WIFI:"):
 		return []target{{pathName, true}}, nil
 	}
-	return nil, fmt.Errorf("unable to open %q", pathName)
+	return nil, fmt.Errorf("open %q", pathName)
 }
 
 // targets are either paths that exist on disk, or a url.
@@ -236,20 +236,20 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 		// determine mime
 		if mime, err = mimeDetect(f); err != nil {
 			defer f.Close()
-			return nil, "", fmt.Errorf("mime detection failed: %v", err)
+			return nil, "", fmt.Errorf("read mime: %w", err)
 		}
 	}
 	args.logger("mime: %s", mime)
 	g, notStream, err := args.decoder(mime, fileExt(pathName))
 	if notStream {
 		if err := f.Close(); err != nil {
-			return nil, "", fmt.Errorf("could not close file: %w", err)
+			return nil, "", fmt.Errorf("close file: %w", err)
 		}
 	} else {
 		// reset reader
 		if _, err := f.Seek(0, io.SeekStart); err != nil {
 			defer f.Close()
-			return nil, "", fmt.Errorf("could not seek start: %w", err)
+			return nil, "", fmt.Errorf("seek start: %w", err)
 		}
 	}
 	img, err := g(pathName, mime, f)
@@ -261,7 +261,7 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 	}
 	if !notStream {
 		if err := f.Close(); err != nil {
-			return nil, "", fmt.Errorf("could not close file: %w", err)
+			return nil, "", fmt.Errorf("close file: %w", err)
 		}
 	}
 	return img, mime, nil
@@ -310,7 +310,7 @@ func (args *Args) renderDataImage(urlstr string) (image.Image, string, error) {
 	}
 	g, _, err := args.decoder(strings.TrimSuffix(mime, "+xml"), "")
 	if err != nil {
-		return nil, "", fmt.Errorf("data mime type %q not supported", mime)
+		return nil, "", fmt.Errorf("data mime type %q: not supported", mime)
 	}
 	img, err := g("", mime, io.NopCloser(bytes.NewReader(b)))
 	return img, mime, err
@@ -346,7 +346,7 @@ func (args *Args) decoder(mime, ext string) (func(string, string, io.ReadCloser)
 	case isWindowsPE(mime, ext):
 		return args.decodeWindowsPE, false, nil
 	}
-	return nil, false, fmt.Errorf("mime type %q not supported", mime)
+	return nil, false, fmt.Errorf("mime type %q: not supported", mime)
 }
 
 // decodeBuiltin decodes the image from the reader.
@@ -486,15 +486,15 @@ func (args *Args) decodeFitz(pathName, _ string, r io.ReadCloser) (image.Image, 
 	// open
 	d, err := fitz.NewFromReader(r)
 	if err != nil {
-		return nil, fmt.Errorf("fitz load: %w", pathName, err)
+		return nil, fmt.Errorf("fitz load: %w", err)
 	}
 	defer d.Close()
 	args.logger("fitz load: %v", time.Since(start))
 	args.logger("fitz pages: %d", d.NumPage())
 	// page
-	page := int(args.Page)
-	if page != 0 {
-		page--
+	page := 0
+	if p := int(args.Page); p != 0 && p <= d.NumPage() {
+		page = p - 1
 	}
 	// render
 	var img *image.RGBA
@@ -505,7 +505,7 @@ func (args *Args) decodeFitz(pathName, _ string, r io.ReadCloser) (image.Image, 
 		img, err = d.Image(page)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("fitz render: %w", pathName, err)
+		return nil, fmt.Errorf("fitz render: %w", err)
 	}
 	args.logger("fitz render: %v", time.Since(start))
 	return img, nil
@@ -735,7 +735,7 @@ func (args *Args) vipsExport(v *vips.Image) (image.Image, error) {
 	buf := new(bytes.Buffer)
 	target := vips.NewTarget(nopWriteCloser{buf})
 	if err := v.PngsaveTarget(target, nil); err != nil {
-		return nil, fmt.Errorf("vips export: %w", name, err)
+		return nil, fmt.Errorf("vips export: %w", err)
 	}
 	args.logger("vips export: %v", time.Since(start))
 	start = time.Now()
@@ -814,7 +814,7 @@ func (args *Args) decodeWindowsPE(pathName, mime string, r io.ReadCloser) (image
 	}
 	rs, err := winres.LoadFromEXE(file)
 	if err != nil {
-		return nil, fmt.Errorf("unable to load resources: %w", err)
+		return nil, fmt.Errorf("unable to load: %w", err)
 	}
 	var icons []image.Image
 	var count int
@@ -904,7 +904,7 @@ func (args *Args) decodeMarkdown(pathName, _ string, r io.ReadCloser) (image.Ima
 	)
 	buf := new(bytes.Buffer)
 	if err := md.Convert(src, buf); err != nil {
-		return nil, fmt.Errorf("unable to convert markdown to pdf: %w", err)
+		return nil, fmt.Errorf("convert markdown: %w", err)
 	}
 	args.logger("markdown convert: %v", time.Since(start))
 	start = time.Now()
