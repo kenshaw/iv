@@ -476,8 +476,6 @@ func (args *Args) decodeVipsPdf(pathName, mime string, r io.ReadCloser) (image.I
 		return nil, fmt.Errorf("vips load: %w", err)
 	case 3 <= i:
 		return nil, fmt.Errorf("vips load: invalid password")
-	case v == nil:
-		return nil, fmt.Errorf("vips load: unknown error encountered")
 	}
 	return args.vipsExport(v)
 }
@@ -718,6 +716,9 @@ func (args *Args) decodeMermaid(pathName, _ string, _ io.ReadCloser) (image.Imag
 
 // vipsExport exports the vips image as a png image.
 func (args *Args) vipsExport(v *vips.Image) (image.Image, error) {
+	if v == nil {
+		return nil, fmt.Errorf("vips export: invalid image")
+	}
 	start := time.Now()
 	ext, w, h := strings.TrimPrefix(string(v.Format()), "."), v.Width(), v.Height()
 	args.logger("vips format: %s dimensions: %dx%d pages: %d", ext, w, h, v.Pages())
