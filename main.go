@@ -51,6 +51,7 @@ import (
 	"github.com/yuin/goldmark"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
+	"golang.org/x/term"
 )
 
 var (
@@ -104,7 +105,7 @@ type Args struct {
 	mbgc *color.NRGBA
 }
 
-// run renders the specified files to w.
+// run emits all cliargs to w.
 func run(w io.Writer, args *Args) func(context.Context, []string) error {
 	return func(ctx context.Context, cliargs []string) error {
 		args.ctx = ctx
@@ -190,7 +191,7 @@ type target struct {
 	isURL bool
 }
 
-// render renders the file to w.
+// render renders the target v to w.
 func (args *Args) render(w io.Writer, v target) error {
 	if !args.Quiet {
 		fmt.Fprintln(w, v.path+":")
@@ -324,6 +325,8 @@ func (args *Args) decoder(mime, ext string) (func(string, string, io.ReadCloser)
 		return args.decodeBuiltin, false, nil
 	case isLibreOffice(mime, ext): // soffice
 		return args.decodeLibreOffice, true, nil
+	case isPdf(mime):
+		return args.decodeVipsPdf, false, nil
 	case isVips(mime): // use vips
 		return args.decodeVips, false, nil
 	case isFitz(mime, ext):
@@ -402,8 +405,6 @@ func (args *Args) decodeFont(pathName, _ string, r io.ReadCloser) (image.Image, 
 func (args *Args) decodeVips(pathName, mime string, r io.ReadCloser) (image.Image, error) {
 	vipsOnce.Do(vipsInit(args.logger, args.Verbose, int(args.VipsConcurrency)))
 	start := time.Now()
-	args.logger("load file: %v", time.Since(start))
-	start = time.Now()
 	opts := &vips.LoadOptions{
 		N: 1,
 		// Autorotate:  true,
@@ -414,7 +415,7 @@ func (args *Args) decodeVips(pathName, mime string, r io.ReadCloser) (image.Imag
 	if args.Page != 0 {
 		v, err := vips.NewImageFromSource(vips.NewSource(r), opts)
 		if err != nil {
-			return nil, fmt.Errorf("vips can't load %s: %w", pathName, err)
+			return nil, fmt.Errorf("vips load: %w", err)
 		}
 		if page := int(args.Page - 1); 0 <= page && page < v.Pages() {
 			opts.Page = page
@@ -422,19 +423,69 @@ func (args *Args) decodeVips(pathName, mime string, r io.ReadCloser) (image.Imag
 	}
 	v, err := vips.NewImageFromSource(vips.NewSource(r), opts)
 	if err != nil {
-		return nil, fmt.Errorf("vips can't load %s: %w", pathName, err)
+		return nil, fmt.Errorf("vips load: %w", err)
 	}
 	args.logger("vips load: %v", time.Since(start))
 	return args.vipsExport(v)
 }
 
-// decodeFitz renders the image using the fitz (mupdf) package.
+// decodeVipsPdf decodes a pdf using vips from the reader.
+//
+// Similar to decodeVips, but supports password protected PDFs.
+func (args *Args) decodeVipsPdf(pathName, mime string, r io.ReadCloser) (image.Image, error) {
+	vipsOnce.Do(vipsInit(args.logger, args.Verbose, int(args.VipsConcurrency)))
+	var err error
+	var v *vips.Image
+	var pass []byte
+	var i int
+	for ; i < 3; i++ {
+		start := time.Now()
+		args.logger("vips load: %v", time.Since(start))
+		opts := &vips.PdfloadSourceOptions{
+			FailOn:   vips.FailOnError,
+			Memory:   true,
+			Password: string(pass),
+		}
+		if args.Page != 0 {
+			var vv *vips.Image
+			switch vv, err = vips.NewPdfloadSource(vips.NewSource(r), opts); {
+			case isVipsEncError(err):
+			case err != nil:
+				break
+			default:
+				if page := int(args.Page - 1); 0 <= page && page < vv.Pages() {
+					opts.Page = page
+				}
+			}
+		}
+		v, err = vips.NewPdfloadSource(vips.NewSource(r), opts)
+		if !isVipsEncError(err) {
+			args.logger("vips load: %v", time.Since(start))
+			break
+		}
+		// collect password
+		fmt.Fprint(os.Stdout, "Password: ")
+		pass, err = term.ReadPassword(int(os.Stdin.Fd()))
+		if _, _ = fmt.Fprintln(os.Stdin); err != nil {
+			break
+		}
+	}
+	switch {
+	case err != nil:
+		return nil, fmt.Errorf("vips load: %w", err)
+	case 3 <= i:
+		return nil, fmt.Errorf("vips load: invalid password")
+	}
+	return args.vipsExport(v)
+}
+
+// decodeFitz decodes the image using the fitz (mupdf) package.
 func (args *Args) decodeFitz(pathName, _ string, r io.ReadCloser) (image.Image, error) {
 	start := time.Now()
 	// open
 	d, err := fitz.NewFromReader(r)
 	if err != nil {
-		return nil, fmt.Errorf("fitz can't open %s: %w", pathName, err)
+		return nil, fmt.Errorf("fitz load: %w", pathName, err)
 	}
 	defer d.Close()
 	args.logger("fitz load: %v", time.Since(start))
@@ -453,7 +504,7 @@ func (args *Args) decodeFitz(pathName, _ string, r io.ReadCloser) (image.Image, 
 		img, err = d.Image(page)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("fitz can't render %s: %w", pathName, err)
+		return nil, fmt.Errorf("fitz render: %w", pathName, err)
 	}
 	args.logger("fitz render: %v", time.Since(start))
 	return img, nil
@@ -562,7 +613,7 @@ func formatTimecode(d time.Duration) string {
 	return fmt.Sprintf("%02d:%02d", secs, rem)
 }
 
-// decodeLibreOffice renders the image using the `soffice` command.
+// decodeLibreOffice decodes the image using the `soffice` command.
 func (args *Args) decodeLibreOffice(pathName, _ string, _ io.ReadCloser) (image.Image, error) {
 	var err error
 	sofficeOnce.Do(func() {
@@ -609,7 +660,7 @@ func (args *Args) decodeLibreOffice(pathName, _ string, _ io.ReadCloser) (image.
 	if err != nil {
 		return nil, err
 	}
-	img, err := args.decodeVips(pdfName, "application/pdf", f)
+	img, err := args.decodeVipsPdf(pdfName, "application/pdf", f)
 	if err != nil {
 		defer f.Close()
 		return nil, err
@@ -624,7 +675,7 @@ func (args *Args) decodeLibreOffice(pathName, _ string, _ io.ReadCloser) (image.
 	return img, nil
 }
 
-// decodeMermaid renders the image using the `mmdc` command.
+// decodeMermaid decodes the image using the `mmdc` command.
 func (args *Args) decodeMermaid(pathName, _ string, _ io.ReadCloser) (image.Image, error) {
 	var err error
 	mmdcOnce.Do(func() {
@@ -680,20 +731,20 @@ func (args *Args) vipsExport(v *vips.Image) (image.Image, error) {
 	buf := new(bytes.Buffer)
 	target := vips.NewTarget(nopWriteCloser{buf})
 	if err := v.PngsaveTarget(target, nil); err != nil {
-		return nil, fmt.Errorf("vips can't export %s: %w", name, err)
+		return nil, fmt.Errorf("vips export: %w", name, err)
 	}
 	args.logger("vips export: %v", time.Since(start))
 	start = time.Now()
 	img, _, err := image.Decode(buf)
 	if err != nil {
-		return nil, fmt.Errorf("can't decode vips image %s: %w", name, err)
+		return nil, fmt.Errorf("vips decode: %w", err)
 	}
 	args.logger("go vips decode: %v", time.Since(start))
 	args.logger("image type: %T", img)
 	return img, nil
 }
 
-// decodeTag renders the embedded picture from music metadata (ie, album art).
+// decodeTag decodes the embedded picture from music metadata (ie, album art).
 func (args *Args) decodeTag(_, _ string, r io.ReadCloser) (image.Image, error) {
 	f, ok := r.(*os.File)
 	if !ok {
@@ -711,7 +762,7 @@ func (args *Args) decodeTag(_, _ string, r io.ReadCloser) (image.Image, error) {
 	return img, err
 }
 
-// decodeComicArchive renders the first file in the comic archive with integer
+// decodeComicArchive decodes the first file in the comic archive with integer
 // suffix.
 func (args *Args) decodeComicArchive(pathName, mime string, r io.ReadCloser) (image.Image, error) {
 	file, ok := r.(*os.File)
@@ -826,8 +877,8 @@ func (args *Args) addBackground(mime string, src image.Image) image.Image {
 	return img
 }
 
-// decodeMarkdown renders the markdown file, rendering it as a pdf then using
-// libvips to export it as a standard image.
+// decodeMarkdown renders the markdown file, rendering it as a pdf then decodes
+// using vips.
 func (args *Args) decodeMarkdown(pathName, _ string, r io.ReadCloser) (image.Image, error) {
 	src, err := io.ReadAll(r)
 	if err != nil {
@@ -853,9 +904,9 @@ func (args *Args) decodeMarkdown(pathName, _ string, r io.ReadCloser) (image.Ima
 	}
 	args.logger("markdown convert: %v", time.Since(start))
 	start = time.Now()
-	pdf, err := args.decodeVips(pathName, "application/pdf", io.NopCloser(buf))
+	pdf, err := args.decodeVipsPdf(pathName, "application/pdf", io.NopCloser(buf))
 	if err != nil {
-		return nil, fmt.Errorf("vips can't load rendered pdf for %s: %w", pathName, err)
+		return nil, err
 	}
 	args.logger("markdown render: %v", time.Since(start))
 	return pdf, nil
@@ -1085,6 +1136,11 @@ func isBuiltin(typ string) bool {
 	return strings.HasPrefix(typ, "image/x-portable-")
 }
 
+// isPdf returns true if the mime type is a pdf.
+func isPdf(typ string) bool {
+	return typ == "application/pdf"
+}
+
 // isVips returns true if the mime type is supported by libvips.
 func isVips(typ string) bool {
 	switch typ {
@@ -1174,6 +1230,22 @@ func isWindowsPE(typ, ext string) bool {
 func fileExt(s string) string {
 	return strings.ToLower(strings.TrimPrefix(filepath.Ext(s), "."))
 }
+
+// isVipsEncError returns true if the error is the vips pdf "document is
+// encrypted" error.
+func isVipsEncError(err error) bool {
+	return err != nil && strings.Contains(strings.ToLower(err.Error()), "document is encrypted")
+}
+
+/*
+// isCharDevice returns true when f is a char device.
+func isCharDevice(f *os.File) bool {
+	if fi, err := f.Stat(); err == nil {
+		return fi.Mode()&os.ModeCharDevice == 0
+	}
+	return false
+}
+*/
 
 // urlRE matches http/s URLs.
 var urlRE = regexp.MustCompile(`(?i)^https?://`)
