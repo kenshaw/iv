@@ -743,7 +743,7 @@ func (args *Args) vipsExport(v *vips.Image) (image.Image, error) {
 	if err != nil {
 		return nil, fmt.Errorf("vips decode: %w", err)
 	}
-	args.logger("go vips decode: %v", time.Since(start))
+	args.logger("vips decode: %v", time.Since(start))
 	args.logger("image type: %T", img)
 	return img, nil
 }
