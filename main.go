@@ -34,6 +34,7 @@ import (
 	"github.com/dhowden/tag"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gen2brain/go-fitz"
+	_ "github.com/jackmordaunt/icns/v3"
 	"github.com/kenshaw/colors"
 	"github.com/kenshaw/fontimg"
 	"github.com/kenshaw/rasterm"
@@ -1132,7 +1133,8 @@ func isBuiltin(typ string) bool {
 		"image/gif",
 		"image/webp",
 		"image/tiff",
-		"image/x-icon":
+		"image/x-icon",
+		"image/x-icns":
 		return true
 	case "image/x-portable-floatmap":
 		return false

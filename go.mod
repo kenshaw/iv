@@ -7,6 +7,7 @@ require (
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/gabriel-vasile/mimetype v1.4.15
 	github.com/gen2brain/go-fitz v1.28.2
+	github.com/jackmordaunt/icns/v3 v3.0.1
 	github.com/kenshaw/colors v0.2.4
 	github.com/kenshaw/fontimg v0.3.3
 	github.com/kenshaw/rasterm v0.1.17
@@ -17,11 +18,12 @@ require (
 	github.com/spakin/netpbm v1.3.2
 	github.com/stephenafamo/goldmark-pdf v0.4.2
 	github.com/tc-hib/winres v0.3.1
-	github.com/tdewolff/canvas v0.0.0-20260714230319-248e24504c3b
+	github.com/tdewolff/canvas v0.0.0-20260803134256-8e86b9abb917
 	github.com/xo/ox v0.0.0-20260622193027-2d66424338ed
 	github.com/xo/resvg v0.7.0
 	github.com/yuin/goldmark v1.8.5
 	golang.org/x/image v0.44.0
+	golang.org/x/term v0.45.0
 )
 
 require (
@@ -39,7 +41,7 @@ require (
 	github.com/bodgit/plumbing v1.3.0 // indirect
 	github.com/bodgit/sevenzip v1.6.5 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
-	github.com/dlclark/regexp2/v2 v2.5.2 // indirect
+	github.com/dlclark/regexp2/v2 v2.6.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
 	github.com/ebitengine/purego v0.10.2 // indirect
 	github.com/go-fonts/latin-modern v0.3.3 // indirect
@@ -48,7 +50,7 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jellydator/ttlcache/v3 v3.4.1 // indirect
-	github.com/klauspost/compress v1.19.1 // indirect
+	github.com/klauspost/compress v1.19.2 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/mattn/go-sixel v0.0.12 // indirect
 	github.com/mikelolasagasti/xz v1.0.1 // indirect
@@ -56,7 +58,7 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/nwaples/rardecode/v2 v2.3.0 // indirect
 	github.com/phpdave11/gofpdf v1.4.3 // indirect
-	github.com/pierrec/lz4/v4 v4.1.27 // indirect
+	github.com/pierrec/lz4/v4 v4.1.28 // indirect
 	github.com/soniakeys/quant v1.0.0 // indirect
 	github.com/sorairolake/lzip-go v0.3.8 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
@@ -64,14 +66,13 @@ require (
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
 	github.com/stangelandcl/ppmd v0.1.1 // indirect
 	github.com/tdewolff/font v0.0.0-20260527091451-1663e68cb8a4 // indirect
-	github.com/tdewolff/minify/v2 v2.24.14 // indirect
-	github.com/tdewolff/parse/v2 v2.8.14 // indirect
+	github.com/tdewolff/minify/v2 v2.24.16 // indirect
+	github.com/tdewolff/parse/v2 v2.8.15 // indirect
 	github.com/ulikunitz/xz v0.5.16 // indirect
 	go4.org v0.0.0-20260112195520-a5071408f32f // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/term v0.45.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
 	modernc.org/knuth v0.5.5 // indirect
 	modernc.org/token v1.1.0 // indirect
