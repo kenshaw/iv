@@ -1292,6 +1292,7 @@ var extensions = map[string]bool{
 	"heic":     true,
 	"heif":     true,
 	"ico":      true,
+	"icns":     true,
 	"jp2":      true,
 	"jpeg":     true,
 	"jpf":      true,
