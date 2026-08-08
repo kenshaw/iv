@@ -141,7 +141,7 @@ func run(w io.Writer, args *Args) func(context.Context, []string) error {
 			if v, err := open(pathName); err == nil {
 				targets = append(targets, v...)
 			} else {
-				fmt.Fprintf(w, "error: open %q: %v\n\n", pathName, err)
+				fmt.Fprintf(w, "error: %v\n\n", err)
 			}
 		}
 		// render
@@ -160,7 +160,7 @@ func open(pathName string) ([]target, error) {
 	case err == nil && fi.IsDir():
 		entries, err := os.ReadDir(pathName)
 		if err != nil {
-			return nil, fmt.Errorf("read dir %q: %v", pathName, err)
+			return nil, err
 		}
 		var d []target
 		for _, entry := range entries {
@@ -183,7 +183,7 @@ func open(pathName string) ([]target, error) {
 		strings.HasPrefix(pathName, "WIFI:"):
 		return []target{{pathName, true}}, nil
 	}
-	return nil, fmt.Errorf("open %q", pathName)
+	return nil, fmt.Errorf("open %q: not supported", pathName)
 }
 
 // targets are either paths that exist on disk, or a url.
@@ -237,20 +237,20 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 		// determine mime
 		if mime, err = mimeDetect(f); err != nil {
 			defer f.Close()
-			return nil, "", fmt.Errorf("read mime: %w", err)
+			return nil, "", fmt.Errorf("mime read: %w", err)
 		}
 	}
 	args.logger("mime: %s", mime)
 	g, notStream, err := args.decoder(mime, fileExt(pathName))
 	if notStream {
 		if err := f.Close(); err != nil {
-			return nil, "", fmt.Errorf("close file: %w", err)
+			return nil, "", fmt.Errorf("file close: %w", err)
 		}
 	} else {
 		// reset reader
 		if _, err := f.Seek(0, io.SeekStart); err != nil {
 			defer f.Close()
-			return nil, "", fmt.Errorf("seek start: %w", err)
+			return nil, "", fmt.Errorf("file seek: %w", err)
 		}
 	}
 	img, err := g(pathName, mime, f)
@@ -262,7 +262,7 @@ func (args *Args) renderFile(pathName string) (image.Image, string, error) {
 	}
 	if !notStream {
 		if err := f.Close(); err != nil {
-			return nil, "", fmt.Errorf("close file: %w", err)
+			return nil, "", fmt.Errorf("file close: %w", err)
 		}
 	}
 	return img, mime, nil
@@ -905,15 +905,15 @@ func (args *Args) decodeMarkdown(pathName, _ string, r io.ReadCloser) (image.Ima
 	)
 	buf := new(bytes.Buffer)
 	if err := md.Convert(src, buf); err != nil {
-		return nil, fmt.Errorf("convert markdown: %w", err)
+		return nil, fmt.Errorf("md convert: %w", err)
 	}
-	args.logger("markdown convert: %v", time.Since(start))
+	args.logger("md convert: %v", time.Since(start))
 	start = time.Now()
 	pdf, err := args.decodeVipsPdf(pathName, "application/pdf", io.NopCloser(buf))
 	if err != nil {
 		return nil, err
 	}
-	args.logger("markdown render: %v", time.Since(start))
+	args.logger("md render: %v", time.Since(start))
 	return pdf, nil
 }
 
