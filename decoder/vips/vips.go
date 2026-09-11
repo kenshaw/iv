@@ -135,7 +135,7 @@ func DecodePdf(ctx context.Context, r io.Reader) (any, error) {
 		}
 		if page := int(ivctx.Get(ctx).Page); page != 0 {
 			switch v, err := vips.NewPdfloadSource(vips.NewSource(io.NopCloser(r)), opts); {
-			case ivvips.IsEncrypted(err):
+			case ivvips.IsEncryptedErr(err):
 			case err != nil:
 				return nil, fmt.Errorf("vips load: %w", err)
 			default:
@@ -151,7 +151,7 @@ func DecodePdf(ctx context.Context, r io.Reader) (any, error) {
 		switch {
 		case err == nil:
 			return ivvips.Export(ctx, v)
-		case !ivvips.IsEncrypted(err):
+		case !ivvips.IsEncryptedErr(err):
 			return nil, fmt.Errorf("vips load: %w", err)
 		case i == maxPasswordAttempts-1:
 			return nil, fmt.Errorf("vips load: invalid password")

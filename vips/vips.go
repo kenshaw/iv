@@ -83,9 +83,9 @@ func Export(ctx context.Context, v *vips.Image) (image.Image, error) {
 	return img, nil
 }
 
-// IsEncrypted reports whether the error is the vips "document is encrypted"
+// IsEncryptedErr reports whether the error is the vips "document is encrypted"
 // error, raised for password protected pdfs.
-func IsEncrypted(err error) bool {
+func IsEncryptedErr(err error) bool {
 	return err != nil && strings.Contains(strings.ToLower(err.Error()), "document is encrypted")
 }
 

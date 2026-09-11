@@ -8,7 +8,7 @@ import (
 	"github.com/cshum/vipsgen/vips"
 )
 
-func TestIsEncrypted(t *testing.T) {
+func TestIsEncryptedErr(t *testing.T) {
 	for _, test := range []struct {
 		err error
 		exp bool
@@ -18,7 +18,7 @@ func TestIsEncrypted(t *testing.T) {
 		{errors.New("vips load: document is encrypted"), true},
 		{errors.New("pdfload: unable to load"), false},
 	} {
-		if got := IsEncrypted(test.err); got != test.exp {
+		if got := IsEncryptedErr(test.err); got != test.exp {
 			t.Errorf("IsEncrypted(%v) = %v, want %v", test.err, got, test.exp)
 		}
 	}
