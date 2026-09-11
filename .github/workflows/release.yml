@@ -12,8 +12,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # amd64 and arm64 build natively on their own runner image. armhf has
-        # no hosted runner, so it stays a cross build -- triplet marks it.
         # 26.04 rather than 24.04 (ubuntu-latest): vipsgen's bindings are
         # generated against libvips 8.18, and 24.04 only has 8.15
         include:
@@ -21,30 +19,7 @@ jobs:
             os: ubuntu-26.04
           - arch: arm64
             os: ubuntu-26.04-arm
-          - arch: arm
-            os: ubuntu-26.04
-            triplet: arm-linux-gnueabihf
     steps:
-      # ubuntu's amd64 mirrors don't carry armhf packages: pin every existing
-      # source to amd64 and let ports.ubuntu.com supply the rest
-      - name: Enable armhf packages
-        if: matrix.triplet
-        run: |
-          . /etc/os-release
-          sudo sed -i 's/^Types: deb$/Types: deb\nArchitectures: amd64/' \
-            /etc/apt/sources.list.d/*.sources
-          sudo sed -i -E 's|^deb (\[[^]]*\] )?(http)|deb [arch=amd64] \2|' \
-            /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null || true
-          sudo tee /etc/apt/sources.list.d/ubuntu-ports.sources >/dev/null <<EOF
-          Types: deb
-          URIs: http://ports.ubuntu.com/ubuntu-ports
-          Suites: $VERSION_CODENAME $VERSION_CODENAME-updates $VERSION_CODENAME-security
-          Components: main universe
-          Architectures: armhf
-          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
-          EOF
-          sudo dpkg --add-architecture armhf
-
       - name: Install build dependencies
         run: |
           sudo apt-get -qq update
@@ -77,18 +52,6 @@ jobs:
             libopenjp2-7-dev \
             liblcms2-dev \
             libimagequant-dev
-
-      - name: Install armhf cross toolchain
-        if: matrix.triplet
-        run: |
-          sudo apt-get install -y \
-            qemu-user \
-            gcc-arm-linux-gnueabihf \
-            g++-arm-linux-gnueabihf \
-            libstdc++6-armhf-cross \
-            libc6-dev-armhf-cross \
-            libvips-dev:armhf
-
       - name: Checkout
         uses: actions/checkout@v7
       - name: Setup Go
@@ -97,15 +60,8 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
       - name: Build ${{ matrix.arch }}
         run: |
-          # cgo shells out to pkg-config for libvips, which answers with the
-          # host's x86_64 paths unless it is pointed at the target's multiarch
-          # directory -- the cross compiler then chokes on x86_64 glibc headers
-          if [ -n "${{ matrix.triplet }}" ]; then
-            export PKG_CONFIG_LIBDIR=/usr/lib/${{ matrix.triplet }}/pkgconfig:/usr/share/pkgconfig
-          fi
           ./build.sh -v $VER -a ${{ matrix.arch }}
       #    - name: Build ${{ matrix.arch }} (static)
-      #      if: matrix.arch != 'arm'
       #      run: |
       #        ./build.sh -v $VER -a ${{ matrix.arch }} -s
       - name: Archive artifacts

@@ -28,10 +28,8 @@ jobs:
             shell: bash
           - os: windows-latest
             shell: 'msys2 {0}'
-            # xo/magic's vendored libmagic calls PathRemoveFileSpecA but its
-            # cgo LDFLAGS never link shlwapi. -extldflags is emitted after
-            # every package's own flags, which is the only place ld can still
-            # resolve it -- cgo LDFLAGS land ahead of -lmagic.
+            # xo/magic's libmagic needs shlwapi, which its cgo LDFLAGS miss.
+            # -extldflags is emitted last, where ld can still resolve it
             goflags: '-ldflags=-extldflags=-lshlwapi'
     defaults:
       run:
@@ -42,11 +40,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      # libvips is the only dependency that has to come from the system:
-      # go-fitz, resvg, and xo/magic all vendor static libraries, and
-      # go-graphviz runs in wazero. debian/ubuntu ship libheif without any
-      # codec, so heic/avif need the plugin packages on top -- brew's and
-      # msys2's libheif bundle theirs.
+      # debian/ubuntu ship libheif without any codec, so heic/avif need the
+      # plugin packages on top -- brew's and msys2's libheif bundle theirs
       - name: Install build dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -66,11 +61,8 @@ jobs:
           brew install --quiet vips
           command -v pkg-config >/dev/null || brew install --quiet pkgconf
 
-      # MSYS2 supplies both the mingw-w64 toolchain that cgo needs and a
-      # libvips build with working pkg-config files. UCRT64 rather than
-      # MINGW64: go-fitz's vendored libmupdf calls __intrinsic_setjmpex, which
-      # is what mingw-w64's setjmp.h expands setjmp to when building against
-      # ucrt -- msvcrt only has _setjmp, so MINGW64 fails to link.
+      # UCRT64 rather than MINGW64: go-fitz's libmupdf calls
+      # __intrinsic_setjmpex, which only ucrt has
       - name: Install build dependencies (Windows)
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
