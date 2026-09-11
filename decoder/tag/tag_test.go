@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/base64"
 	"image"
+	"image/color"
+	"image/png"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -271,5 +273,126 @@ func TestHsvHex(t *testing.T) {
 		if got := hsvHex(test.h, test.s, test.v); got != test.exp {
 			t.Errorf("expected hsvHex(%v, %v, %v) == %q, got %q", test.h, test.s, test.v, test.exp, got)
 		}
+	}
+}
+
+// pngBytes encodes a 1x1 png of the given color.
+func pngBytes(t *testing.T, c color.Color) []byte {
+	t.Helper()
+	img := image.NewRGBA(image.Rect(0, 0, 1, 1))
+	img.Set(0, 0, c)
+	var b bytes.Buffer
+	if err := png.Encode(&b, img); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	return b.Bytes()
+}
+
+// write writes a file into dir, returning nothing -- a failure to write test
+// data is a test failure.
+func write(t *testing.T, dir, name string, buf []byte) {
+	t.Helper()
+	if err := os.WriteFile(filepath.Join(dir, name), buf, 0o644); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+}
+
+func TestSidecarNone(t *testing.T) {
+	if buf, _ := sidecar(context.Background(), ""); buf != nil {
+		t.Error("expected no cover without a path")
+	}
+	dir := t.TempDir()
+	write(t, dir, "track.mp3", []byte("audio"))
+	if buf, _ := sidecar(context.Background(), filepath.Join(dir, "track.mp3")); buf != nil {
+		t.Error("expected no cover in a directory without one")
+	}
+	if buf, _ := sidecar(context.Background(), filepath.Join(dir, "nope", "track.mp3")); buf != nil {
+		t.Error("expected no cover from a directory that does not exist")
+	}
+}
+
+func TestSidecarFinds(t *testing.T) {
+	for _, name := range []string{"cover.png", "Cover.PNG", "folder.png", "FRONT.png", "artwork.png"} {
+		t.Run(name, func(t *testing.T) {
+			dir := t.TempDir()
+			want := pngBytes(t, color.RGBA{1, 2, 3, 255})
+			write(t, dir, name, want)
+			buf, mime := sidecar(context.Background(), filepath.Join(dir, "track.mp3"))
+			if !bytes.Equal(buf, want) {
+				t.Errorf("expected %s to be found", name)
+			}
+			if mime != "image/png" {
+				t.Errorf("expected mime %q, got %q", "image/png", mime)
+			}
+		})
+	}
+}
+
+func TestSidecarPrefersCover(t *testing.T) {
+	dir := t.TempDir()
+	want := pngBytes(t, color.RGBA{1, 2, 3, 255})
+	write(t, dir, "cover.jpg", want)
+	write(t, dir, "folder.png", pngBytes(t, color.RGBA{9, 9, 9, 255}))
+	buf, mime := sidecar(context.Background(), filepath.Join(dir, "track.mp3"))
+	if !bytes.Equal(buf, want) {
+		t.Error("expected cover to be preferred over folder")
+	}
+	// the name is only a hint about where to look: the content decides
+	if mime != "image/png" {
+		t.Errorf("expected the sniffed mime %q, got %q", "image/png", mime)
+	}
+}
+
+func TestSidecarSkipsUnusable(t *testing.T) {
+	dir := t.TempDir()
+	want := pngBytes(t, color.RGBA{1, 2, 3, 255})
+	// a cover.jpg holding something that is not an image at all, and a
+	// directory in the way of the next candidate
+	write(t, dir, "cover.jpg", []byte("this is not an image"))
+	if err := os.Mkdir(filepath.Join(dir, "front.png"), 0o755); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	write(t, dir, "album.png", want)
+	buf, _ := sidecar(context.Background(), filepath.Join(dir, "track.mp3"))
+	if !bytes.Equal(buf, want) {
+		t.Error("expected the unusable candidates to be skipped")
+	}
+}
+
+func TestSidecarSkipsOversized(t *testing.T) {
+	dir := t.TempDir()
+	write(t, dir, "cover.png", make([]byte, maxCover+1))
+	if buf, _ := sidecar(context.Background(), filepath.Join(dir, "track.mp3")); buf != nil {
+		t.Error("expected an oversized cover to be skipped")
+	}
+}
+
+// TestSidecarNotUsedWhenEmbedded checks that a picture in the tags wins over
+// a cover sitting next to the file.
+func TestSidecarNotUsedWhenEmbedded(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join("..", "..", "testdata", "tag", "silent.flac")
+	audio, err := os.ReadFile(src)
+	if err != nil {
+		t.Skipf("no test data: %v", err)
+	}
+	write(t, dir, "silent.flac", audio)
+	write(t, dir, "cover.png", pngBytes(t, color.RGBA{1, 2, 3, 255}))
+	pathName := filepath.Join(dir, "silent.flac")
+	f, err := os.Open(pathName)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	defer f.Close()
+	res, err := decode(ivctx.WithPathName(context.Background(), pathName), f)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	buf, err := readAll(res.(*decoder.Image))
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if got := embedded(t, buf).Bounds().Size(); got == image.Pt(1, 1) {
+		t.Error("expected the embedded picture rather than the sidecar cover")
 	}
 }

@@ -54,6 +54,11 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 		return nil, fmt.Errorf("seek: %w", err)
 	}
 	pathName := ivctx.PathName(ctx)
+	if c.art == nil {
+		// nothing embedded, so fall back to the album's cover sitting next to
+		// the audio, which is where a ripper leaves it
+		c.art, c.artMime = sidecar(ctx, pathName)
+	}
 	if c.title == "" {
 		c.title = strings.TrimSuffix(filepath.Base(pathName), filepath.Ext(pathName))
 	}
