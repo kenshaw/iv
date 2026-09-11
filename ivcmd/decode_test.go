@@ -205,15 +205,17 @@ func readString(pathName string) (string, error) {
 	return strings.TrimRight(string(buf), "\r\n"), nil
 }
 
-// TestDecodeTagArt checks that the album art extracted from each audio
-// container is the cover that was embedded, pixel for pixel -- the decoder
-// hands the picture back to the pipeline rather than decoding it itself, so
-// this covers the round trip through mime detection as well.
-func TestDecodeTagArt(t *testing.T) {
-	want, err := loadImage(t, filepath.Join("..", "testdata", "png", "tux.png"))
-	if err != nil {
-		t.Skipf("no cover art: %v", err)
-	}
+// TestDecodeTagCard checks that every audio container renders to the card the
+// tag decoder draws -- an svg the decoder hands back to the pipeline, which
+// resvg rasterizes, so this covers the round trip through mime detection as
+// well. That the card carries the right cover art is checked in the tag
+// package, which can read the svg before it is rasterized.
+const (
+	cardWidth  = 1000
+	cardHeight = 448
+)
+
+func TestDecodeTagCard(t *testing.T) {
 	for _, name := range []string{
 		"silent.mp3",
 		"silent.flac",
@@ -230,27 +232,15 @@ func TestDecodeTagArt(t *testing.T) {
 			if err != nil {
 				t.Fatalf("expected no error, got: %v", err)
 			}
-			// the pipeline reports the mime of the picture, not the container
-			if mime != "image/png" {
-				t.Errorf("expected mime %q, got %q", "image/png", mime)
+			// the pipeline reports the mime of the card, not the container
+			if mime != "image/svg+xml" {
+				t.Errorf("expected mime %q, got %q", "image/svg+xml", mime)
 			}
-			if err := sameImage(got, want); err != nil {
-				t.Error(err)
+			if exp := image.Pt(cardWidth, cardHeight); got.Bounds().Size() != exp {
+				t.Errorf("expected card %v, got %v", exp, got.Bounds().Size())
 			}
 		})
 	}
-}
-
-// loadImage decodes an image from a file.
-func loadImage(t *testing.T, pathName string) (image.Image, error) {
-	t.Helper()
-	f, err := os.Open(pathName)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	img, _, err := image.Decode(f)
-	return img, err
 }
 
 // sameImage reports whether two images have the same bounds and pixels.
