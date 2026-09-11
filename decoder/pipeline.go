@@ -61,7 +61,10 @@ func DecodeString(ctx context.Context, s string) (image.Image, string, error) {
 			continue
 		}
 		ivctx.Logf(ctx, "%s decode: %v", d.Name, time.Since(start))
-		return resolve(ctx, d.Name, res, 0)
+		// a string carries no mime type of its own: a decoder that hands
+		// back bytes (data:) supplies one when the pipeline re-enters, and
+		// one that builds an image outright (qr) has none to give
+		return resolve(ctx, "", res, 0)
 	}
 	return nil, "", fmt.Errorf("%q: %w", elide(s), errors.Join(errs...))
 }

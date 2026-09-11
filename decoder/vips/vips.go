@@ -31,7 +31,7 @@ func init() {
 		decoder.After("png", "jpeg", "gif", "nativewebp", "tiff", "bmp", "ico", "icns", "netpbm", "resvg"),
 		decoder.Extension(
 			"avif", "heic", "heif", "jp2", "jpf", "jxl", "jxs", "j2k",
-			"exr", "fits", "hdr", "mat", "nii", "pfm", "rad", "svgz", "v",
+			"exr", "fits", "hdr", "mat", "nii", "pfm", "rad", "v",
 		),
 		decoder.MatcherContext(match),
 		decoder.Decoder(decode),

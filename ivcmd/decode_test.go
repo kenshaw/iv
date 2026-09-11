@@ -1,7 +1,6 @@
 package ivcmd
 
 import (
-	"archive/zip"
 	"bytes"
 	"context"
 	"errors"
@@ -10,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
@@ -26,49 +26,54 @@ func TestDecodeFile(t *testing.T) {
 		name string
 		file string
 		mime string
+		dec  string // decoder the file must route to
 		cmd  string // external command the decoder needs
 	}{
-		{"png", "png/rose.png", "image/png", ""},
-		{"bmp", "bmp/rose.bmp", "image/bmp", ""},
-		{"webp lossless", "nativewebp/rose-lossless.webp", "image/webp", ""},
-		{"webp lossy", "nativewebp/rose-lossy.webp", "image/webp", ""},
-		{"jpeg", "jpeg/precision.jpg", "image/jpeg", ""},
-		{"gif", "gif/tux.gif", "image/gif", ""},
-		{"gif animated", "gif/animated.gif", "image/gif", ""},
-		{"tiff uncompressed", "tiff/tux-uncompressed.tiff", "image/tiff", ""},
-		{"tiff deflate", "tiff/tux-deflate.tiff", "image/tiff", ""},
-		{"tiff deflate predictor", "tiff/test-deflate-predictor.tiff", "image/tiff", ""},
-		{"netpbm pbm", "netpbm/test.pbm", "image/x-portable-bitmap", ""},
-		{"netpbm pgm", "netpbm/test.pgm", "image/x-portable-graymap", ""},
-		{"netpbm ppm", "netpbm/tux.ppm", "image/x-portable-pixmap", ""},
-		{"netpbm pam", "netpbm/tux.pam", "image/x-portable-arbitrarymap", ""},
-		{"netpbm pbm plain", "netpbm/test-plain.pbm", "image/x-portable-bitmap", ""},
-		{"netpbm pgm plain", "netpbm/test-plain.pgm", "image/x-portable-graymap", ""},
-		{"netpbm ppm plain", "netpbm/tux-plain.ppm", "image/x-portable-pixmap", ""},
-		{"svg", "resvg/rect.svg", "image/svg+xml", ""},
-		{"svg choropleth", "resvg/choropleth.svg", "image/svg+xml", ""},
-		{"ico", "ico/1.ico", "image/x-icon", ""},
-		{"ico multi", "ico/Mathijssen-Tuxlets-Test-Dummy-Tux.ico", "image/x-icon", ""},
-		{"icns", "icns/test.icns", "image/x-icns", ""},
-		{"dot", "graphviz/booktest_sqlite3.dot", "text/vnd.graphviz", ""},
-		{"ttf", "fontimg/Ubuntu-R.ttf", "font/ttf", ""},
-		{"jxl", "vips/precision.jxl", "image/jxl", ""},
-		{"heic", "vips/cyberpunk.heic", "image/heic", ""},
-		{"pdf", "vips/file-sample_150kB.pdf", "application/pdf", ""},
-		{"xps", "fitz/example.xps", "application/zip", ""},
-		{"windows pe", "winres/go-winres.exe", "application/vnd.microsoft.portable-executable", ""},
-		{"markdown", "markdown/sample.md", "text/plain", ""},
-		{"tag mp3", "tag/silent.mp3", "audio/mpeg", ""},
-		{"tag flac", "tag/silent.flac", "audio/flac", ""},
-		{"tag m4a", "tag/silent.m4a", "audio/x-m4a", ""},
-		{"tag ogg", "tag/silent.ogg", "audio/ogg", ""},
-		{"tag aac", "tag/silent.aac", "audio/mpeg", ""},
-		{"docx", "libreoffice/file-sample_100kB.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "soffice"},
-		{"doc", "libreoffice/file-sample_100kB.doc", "application/x-ole-storage", "soffice"},
-		{"odt", "libreoffice/file-sample_100kB.odt", "application/vnd.oasis.opendocument.text", "soffice"},
-		{"mermaid", "mermaid/gantt.mmd", "text/plain", "mmdc"},
-		{"video", "ffmpeg/sample_960x540.mp4", "video/mp4", "ffmpeg"},
-		{"binwalk", "binwalk/icon.afdesign", "application/octet-stream", "binwalk"},
+		{"png", "png/rose.png", "image/png", "png", ""},
+		{"bmp", "bmp/rose.bmp", "image/bmp", "bmp", ""},
+		{"webp lossless", "nativewebp/rose-lossless.webp", "image/webp", "nativewebp", ""},
+		{"webp lossy", "nativewebp/rose-lossy.webp", "image/webp", "nativewebp", ""},
+		{"jpeg", "jpeg/precision.jpg", "image/jpeg", "jpeg", ""},
+		{"gif", "gif/tux.gif", "image/gif", "gif", ""},
+		{"gif animated", "gif/animated.gif", "image/gif", "gif", ""},
+		{"tiff uncompressed", "tiff/tux-uncompressed.tiff", "image/tiff", "tiff", ""},
+		{"tiff deflate", "tiff/tux-deflate.tiff", "image/tiff", "tiff", ""},
+		{"tiff deflate predictor", "tiff/test-deflate-predictor.tiff", "image/tiff", "tiff", ""},
+		{"netpbm pbm", "netpbm/test.pbm", "image/x-portable-bitmap", "netpbm", ""},
+		{"netpbm pgm", "netpbm/test.pgm", "image/x-portable-graymap", "netpbm", ""},
+		{"netpbm ppm", "netpbm/tux.ppm", "image/x-portable-pixmap", "netpbm", ""},
+		{"netpbm pam", "netpbm/tux.pam", "image/x-portable-arbitrarymap", "netpbm", ""},
+		{"netpbm pbm plain", "netpbm/test-plain.pbm", "image/x-portable-bitmap", "netpbm", ""},
+		{"netpbm pgm plain", "netpbm/test-plain.pgm", "image/x-portable-graymap", "netpbm", ""},
+		{"netpbm ppm plain", "netpbm/tux-plain.ppm", "image/x-portable-pixmap", "netpbm", ""},
+		{"svg", "resvg/rect.svg", "image/svg+xml", "resvg", ""},
+		{"svg choropleth", "resvg/choropleth.svg", "image/svg+xml", "resvg", ""},
+		{"svgz", "resvg/rect.svgz", "application/gzip", "resvg", ""},
+		{"ico", "ico/1.ico", "image/x-icon", "ico", ""},
+		{"ico multi", "ico/Mathijssen-Tuxlets-Test-Dummy-Tux.ico", "image/x-icon", "ico", ""},
+		{"icns", "icns/test.icns", "image/x-icns", "icns", ""},
+		{"dot", "graphviz/booktest_sqlite3.dot", "text/vnd.graphviz", "graphviz", ""},
+		{"ttf", "fontimg/Ubuntu-R.ttf", "font/ttf", "fontimg", ""},
+		{"jxl", "vips/precision.jxl", "image/jxl", "vips", ""},
+		{"heic", "vips/cyberpunk.heic", "image/heic", "vips", ""},
+		{"pdf", "vips/file-sample_150kB.pdf", "application/pdf", "vips-pdf", ""},
+		{"xps", "fitz/example.xps", "application/zip", "fitz", ""},
+		{"windows pe", "winres/go-winres.exe", "application/vnd.microsoft.portable-executable", "winres", ""},
+		{"markdown", "markdown/sample.md", "text/plain", "markdown", ""},
+		{"tag mp3", "tag/silent.mp3", "audio/mpeg", "tag", ""},
+		{"tag flac", "tag/silent.flac", "audio/flac", "tag", ""},
+		{"tag m4a", "tag/silent.m4a", "audio/x-m4a", "tag", ""},
+		{"tag ogg", "tag/silent.ogg", "audio/ogg", "tag", ""},
+		{"tag aac", "tag/silent.aac", "audio/mpeg", "tag", ""},
+		{"docx", "libreoffice/file-sample_100kB.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "libreoffice", "soffice"},
+		{"doc", "libreoffice/file-sample_100kB.doc", "application/x-ole-storage", "libreoffice", "soffice"},
+		{"odt", "libreoffice/file-sample_100kB.odt", "application/vnd.oasis.opendocument.text", "libreoffice", "soffice"},
+		{"mermaid", "mermaid/gantt.mmd", "text/plain", "mermaid", "mmdc"},
+		{"video", "ffmpeg/sample_960x540.mp4", "video/mp4", "ffmpeg", "ffmpeg"},
+		{"cbz", "archives/science-preview.cbz", "application/zip", "archives", ""},
+		{"cbr", "archives/science-preview.cbr", "application/vnd.rar", "archives", ""},
+		{"cbt", "archives/science-preview.cbt", "application/x-tar", "archives", ""},
+		{"binwalk", "binwalk/icon.afdesign", "application/octet-stream", "binwalk", "binwalk"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			pathName := filepath.Join("..", "testdata", filepath.FromSlash(test.file))
@@ -89,8 +94,18 @@ func TestDecodeFile(t *testing.T) {
 			if mime != test.mime {
 				t.Errorf("expected mime %q, got %q", test.mime, mime)
 			}
-			// detection is iv's own work and always runs; only the decode
-			// needs the external tool
+			// routing is iv's own work: check the file reaches the decoder
+			// it is supposed to, not merely that something decoded it
+			matched := decoder.Match(ctx, mime, ivctx.FileExt(pathName))
+			var names []string
+			for _, d := range matched {
+				names = append(names, d.Name)
+			}
+			if len(matched) == 0 || matched[0].Name != test.dec {
+				t.Errorf("expected the %s decoder, got %v", test.dec, names)
+			}
+			// detection and routing are iv's own work and always run; only
+			// the decode needs the external tool
 			if test.cmd != "" {
 				if err := usable(test.cmd); err != nil {
 					t.Skipf("skipping decode: %v", err)
@@ -105,23 +120,86 @@ func TestDecodeFile(t *testing.T) {
 	}
 }
 
+// StringExt is the extension of the files in testdata/strings. Each holds a
+// single command line argument that iv accepts in place of a file -- a data:
+// URL, a WIFI: code -- with a trailing newline so they stay ordinary text
+// files.
+const StringExt = ".iv_test_string"
+
+// TestDecodeString decodes every string in testdata/strings. The expectations
+// are keyed by file name and checked for completeness, so a string added
+// without being described here fails rather than going quietly untested.
 func TestDecodeString(t *testing.T) {
-	for _, test := range []struct {
-		name string
-		in   string
+	exp := map[string]struct {
+		mime string
+		size image.Point
 	}{
-		{"wifi", "WIFI:S:testssid;T:WPA;P:secret;;"},
-		{"data svg base64", "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0MCIgc3Ryb2tlPSJncmVlbiIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJ5ZWxsb3ciIC8+PC9zdmc+"},
-		{"data svg escaped", "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2264px%22%20height%3D%2264px%22%3E%3Crect%20fill%3D%22%2350c848%22%20width%3D%2264%22%20height%3D%2264%22/%3E%3C/svg%3E"},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			img, _, err := decoder.DecodeString(testContext(t), test.in)
+		// a QR code is built outright, so it has no mime type of its own
+		"wifi":                {"", image.Pt(350, 350)},
+		"data-svg-base64":     {"image/svg+xml", image.Pt(100, 100)},
+		"data-svg-urlencoded": {"image/svg+xml", image.Pt(64, 64)},
+		"data-png-base64":     {"image/png", image.Pt(1, 1)},
+	}
+	dir := filepath.Join("..", "testdata", "strings")
+	names, err := filepath.Glob(filepath.Join(dir, "*"+StringExt))
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if len(names) == 0 {
+		t.Fatalf("no %s files in %s", StringExt, dir)
+	}
+	seen := make(map[string]bool, len(names))
+	for _, pathName := range names {
+		name := strings.TrimSuffix(filepath.Base(pathName), StringExt)
+		seen[name] = true
+		t.Run(name, func(t *testing.T) {
+			want, ok := exp[name]
+			if !ok {
+				t.Fatalf("%s is not described in the test table", filepath.Base(pathName))
+			}
+			s, err := readString(pathName)
 			if err != nil {
 				t.Fatalf("expected no error, got: %v", err)
 			}
-			assertImage(t, img)
+			img, mime, err := decoder.DecodeString(testContext(t), s)
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			if mime != want.mime {
+				t.Errorf("expected mime %q, got %q", want.mime, mime)
+			}
+			if got := img.Bounds().Size(); got != want.size {
+				t.Errorf("expected size %v, got %v", want.size, got)
+			}
 		})
 	}
+	for name := range exp {
+		if !seen[name] {
+			t.Errorf("%s%s is described but missing from %s", name, StringExt, dir)
+		}
+	}
+}
+
+func TestDecodeStringUnsupported(t *testing.T) {
+	for _, s := range []string{
+		"ftp://example.com/a.png",
+		"not a url at all",
+		"",
+	} {
+		if _, _, err := decoder.DecodeString(testContext(t), s); !errors.Is(err, decoder.ErrNotSupported) {
+			t.Errorf("%q: expected ErrNotSupported, got: %v", s, err)
+		}
+	}
+}
+
+// readString reads a string argument from a testdata/strings file. The
+// trailing newline is not part of the argument.
+func readString(pathName string) (string, error) {
+	buf, err := os.ReadFile(pathName)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimRight(string(buf), "\r\n"), nil
 }
 
 // TestDecodeTagArt checks that the album art extracted from each audio
@@ -275,48 +353,75 @@ func TestDecodeIcnsResolutions(t *testing.T) {
 	}
 }
 
-// TestDecodeComicArchive builds a cbz from the test images and decodes each of
-// its pages.
+// TestDecodeComicArchive decodes the same two page comic from each archive
+// format. Nothing but the extension distinguishes a cbz from any other zip,
+// so routing is checked as well as the decode.
 func TestDecodeComicArchive(t *testing.T) {
-	names := []string{"png/rose.png", "png/logo.png", "png/card.png"}
-	cbz := filepath.Join(t.TempDir(), "test.cbz")
-	f, err := os.Create(cbz)
+	// the archives all hold the same two pages
+	sizes := []image.Point{{X: 400, Y: 605}, {X: 400, Y: 604}}
+	formats := []struct {
+		file string
+		mime string
+	}{
+		{"science-preview.cbz", "application/zip"},
+		{"science-preview.cbr", "application/vnd.rar"},
+		{"science-preview.cbt", "application/x-tar"},
+	}
+	ctx := testContext(t)
+	for _, f := range formats {
+		matched := decoder.Match(ctx, f.mime, ivctx.FileExt(f.file))
+		if len(matched) == 0 || matched[0].Name != "archives" {
+			var got []string
+			for _, d := range matched {
+				got = append(got, d.Name)
+			}
+			t.Errorf("%s: expected the archives decoder, got %v", f.file, got)
+		}
+	}
+	// pages[page][format]
+	pages := make([][]image.Image, len(sizes))
+	for page := range sizes {
+		pages[page] = make([]image.Image, len(formats))
+		for i, f := range formats {
+			pathName := filepath.Join("..", "testdata", "archives", f.file)
+			if _, err := os.Stat(pathName); err != nil {
+				t.Skipf("no test data: %v", err)
+			}
+			c := ivctx.New()
+			c.Page = uint(page + 1)
+			img, _, err := decoder.DecodeFile(ivctx.WithConfig(context.Background(), c), pathName)
+			if err != nil {
+				t.Fatalf("%s page %d: expected no error, got: %v", f.file, page+1, err)
+			}
+			if got := img.Bounds().Size(); got != sizes[page] {
+				t.Errorf("%s page %d: expected size %v, got %v", f.file, page+1, sizes[page], got)
+			}
+			pages[page][i] = img
+		}
+	}
+	// the three formats hold the same images, so each page must come out
+	// identical whichever container it was read from
+	for page := range pages {
+		for i := 1; i < len(formats); i++ {
+			if err := sameImage(pages[page][i], pages[page][0]); err != nil {
+				t.Errorf("page %d: %s differs from %s: %v", page+1, formats[i].file, formats[0].file, err)
+			}
+		}
+	}
+	// and the pages themselves must differ, or the page was never applied
+	if err := sameImage(pages[1][0], pages[0][0]); err == nil {
+		t.Error("expected the two pages to differ; page selection may not be applied")
+	}
+	// a page past the end falls back to the first
+	c := ivctx.New()
+	c.Page = uint(len(sizes)) + 1
+	img, _, err := decoder.DecodeFile(ivctx.WithConfig(context.Background(), c),
+		filepath.Join("..", "testdata", "archives", "science-preview.cbz"))
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("expected no error, got: %v", err)
 	}
-	zw := zip.NewWriter(f)
-	for i, name := range names {
-		buf, err := os.ReadFile(filepath.Join("..", "testdata", filepath.FromSlash(name)))
-		if err != nil {
-			t.Skipf("no test data: %v", err)
-		}
-		w, err := zw.Create(string(rune('a'+i)) + ".png")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if _, err := w.Write(buf); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := zw.Close(); err != nil {
-		t.Fatal(err)
-	}
-	if err := f.Close(); err != nil {
-		t.Fatal(err)
-	}
-	var sizes []image.Point
-	for page := range uint(len(names)) {
-		c := ivctx.New()
-		c.Page = page + 1
-		img, _, err := decoder.DecodeFile(ivctx.WithConfig(context.Background(), c), cbz)
-		if err != nil {
-			t.Fatalf("page %d: expected no error, got: %v", page+1, err)
-		}
-		assertImage(t, img)
-		sizes = append(sizes, img.Bounds().Size())
-	}
-	if sizes[0] == sizes[1] && sizes[1] == sizes[2] {
-		t.Error("expected the pages to differ; page selection may not be applied")
+	if got := img.Bounds().Size(); got != sizes[0] {
+		t.Errorf("expected size %v, got %v", sizes[0], got)
 	}
 }
 

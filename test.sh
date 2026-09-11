@@ -14,19 +14,16 @@ IVBIN=$(realpath $IVBIN)
 
 SRC=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
+# extension of the files in testdata/strings, kept in step with StringExt in
+# ivcmd/decode_test.go
+STRING_EXT=.iv_test_string
+
 # by default decode everything but throw the encoded output away; -t renders
 # to the terminal instead
 OUT=(--encoder png --out /dev/null)
 if [ "${1:-}" = "-t" ]; then
   OUT=()
 fi
-
-strings=(
-  "WIFI:S:testssid;T:WPA;P:secret;;"
-  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0MCIgc3Ryb2tlPSJncmVlbiIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJ5ZWxsb3ciIC8+PC9zdmc+"
-  "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2264px%22%20height%3D%2264px%22%20viewBox%3D%220%200%2064%2064%22%20version%3D%221.1%22%3E%3Crect%20fill%3D%22%2350c848%22%20cx%3D%2232%22%20cy%3D%2232%22%20width%3D%2264%22%20height%3D%2264%22%20r%3D%2232%22/%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20dy%3D%22.1em%22%3EKS%3C/text%3E%3C/svg%3E"
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
-)
 
 LOG=$(mktemp)
 trap 'rm -f "$LOG"' EXIT
@@ -43,16 +40,18 @@ run() {
   fi
 }
 
+# testdata/strings holds one command line argument per file -- a data: URL, a
+# WIFI: code -- rather than something to open
 echo '== strings =='
-for s in "${strings[@]}"; do
-  run "$s"
-done
+while read -r f; do
+  run "$(cat "$f")"
+done < <(find "$SRC/testdata/strings" -type f -name "*$STRING_EXT" | sort)
 
 echo
 echo '== files =='
 while read -r f; do
   run "$f"
-done < <(find "$SRC/testdata" -type f ! -name '*.enc.pdf' | sort)
+done < <(find "$SRC/testdata" -type f ! -name '*.enc.pdf' ! -name "*$STRING_EXT" | sort)
 
 echo
 if [ $fail -ne 0 ]; then

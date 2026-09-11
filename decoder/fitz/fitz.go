@@ -19,7 +19,10 @@ func init() {
 	decoder.Register(
 		"fitz",
 		decoder.Desc("mupdf (epub, xps, mobi, fb2, psd)"),
-		decoder.Extension("epub", "xps", "oxps", "mobi", "fb2", "psd", "cbz"),
+		// not cbz: mupdf opens comic archives too, but the archives decoder
+		// owns them, and a .cbz sniffs as a generic application/zip which
+		// would otherwise let this one claim it by extension first
+		decoder.Extension("epub", "xps", "oxps", "mobi", "fb2", "psd"),
 		decoder.MimeType(
 			"application/epub+zip",
 			"application/x-mobipocket-ebook",
