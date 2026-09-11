@@ -1,3 +1,5 @@
+//go:build !386 && !arm
+
 // Package fitz supplies a mupdf (fitz) decoder for iv, covering document
 // formats such as epub, xps, mobi, and fb2.
 //

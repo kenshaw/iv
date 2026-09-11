@@ -22,20 +22,31 @@ jobs:
           # generated against libvips 8.18, and 24.04 only has 8.15
           - os: ubuntu-26.04
             shell: bash
+          - os: ubuntu-26.04-arm
+            shell: bash
           - os: macos-latest
             shell: bash
           - os: windows-latest
             shell: 'msys2 {0}'
+            # xo/magic's vendored libmagic calls PathRemoveFileSpecA but its
+            # cgo LDFLAGS never link shlwapi. -extldflags is emitted after
+            # every package's own flags, which is the only place ld can still
+            # resolve it -- cgo LDFLAGS land ahead of -lmagic.
+            goflags: '-ldflags=-extldflags=-lshlwapi'
     defaults:
       run:
         shell: ${{ matrix.shell }}
+    env:
+      GOFLAGS: ${{ matrix.goflags }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
 
       # libvips is the only dependency that has to come from the system:
       # go-fitz, resvg, and xo/magic all vendor static libraries, and
-      # go-graphviz runs in wazero.
+      # go-graphviz runs in wazero. debian/ubuntu ship libheif without any
+      # codec, so heic/avif need the plugin packages on top -- brew's and
+      # msys2's libheif bundle theirs.
       - name: Install build dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -43,7 +54,11 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential \
             pkg-config \
-            libvips-dev
+            libvips-dev \
+            libheif-plugin-libde265 \
+            libheif-plugin-x265 \
+            libheif-plugin-aomdec \
+            libheif-plugin-aomenc
 
       - name: Install build dependencies (macOS)
         if: runner.os == 'macOS'
@@ -52,20 +67,22 @@ jobs:
           command -v pkg-config >/dev/null || brew install --quiet pkgconf
 
       # MSYS2 supplies both the mingw-w64 toolchain that cgo needs and a
-      # libvips build with working pkg-config files. MINGW64 rather than
-      # UCRT64: the vendored static libraries are built against msvcrt.
+      # libvips build with working pkg-config files. UCRT64 rather than
+      # MINGW64: go-fitz's vendored libmupdf calls __intrinsic_setjmpex, which
+      # is what mingw-w64's setjmp.h expands setjmp to when building against
+      # ucrt -- msvcrt only has _setjmp, so MINGW64 fails to link.
       - name: Install build dependencies (Windows)
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: UCRT64
           update: true
           # keep the runner's PATH so the Go installed below stays visible
           path-type: inherit
           install: >-
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-pkgconf
-            mingw-w64-x86_64-libvips
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-libvips
 
       - name: Install Go
         uses: actions/setup-go@v6
