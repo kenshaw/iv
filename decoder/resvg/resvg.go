@@ -9,10 +9,9 @@ import (
 )
 
 func init() {
-	decoder.Register(
+	decoder.RegisterBuiltin(
 		"resvg",
 		decoder.Desc("Scalable Vector Graphics"),
-		decoder.Builtin(),
 		decoder.Extension("svg", "svgz"),
 		decoder.MimeType("image/svg+xml", "image/svg"),
 		decoder.ImageDecoder(resvg.Decode),

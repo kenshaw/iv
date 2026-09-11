@@ -170,7 +170,7 @@ func TestOrderIsStable(t *testing.T) {
 
 func TestExtensions(t *testing.T) {
 	defer cleanup(t, "e-one", "e-two")
-	Register("e-one", Extension("zzb", "zza"), Builtin(), Decoder(nilDecode))
+	RegisterBuiltin("e-one", Extension("zzb", "zza"), Decoder(nilDecode))
 	Register("e-two", Extension("zza", "zzc"), Decoder(nilDecode))
 	if got, exp := Extensions(), []string{"zza", "zzb", "zzc"}; !slices.Equal(got, exp) {
 		t.Errorf("Extensions = %v, want %v", got, exp)
@@ -235,6 +235,45 @@ func TestInitClose(t *testing.T) {
 	}
 	if closes != 1 {
 		t.Errorf("expected the close func to run once, ran %d times", closes)
+	}
+}
+
+func TestRegisterBuiltin(t *testing.T) {
+	defer cleanup(t, "b-default", "b-custom")
+	// with no decode func, a builtin decoder goes through image.Decode
+	d := RegisterBuiltin("b-default", MimeType("image/bd"))
+	switch {
+	case !d.Builtin:
+		t.Error("expected the decoder to be marked builtin")
+	case d.decode == nil:
+		t.Fatal("expected a decode func")
+	}
+	if _, _, err := Decode(context.Background(), "image/bd", "", strings.NewReader("not an image")); err == nil {
+		t.Error("expected image.Decode to reject the input")
+	}
+	// an explicit decode func wins over the image.Decode default: the
+	// builtin mark says the format is in the registry, not that the decoder
+	// has to use it
+	var called bool
+	d = RegisterBuiltin("b-custom",
+		MimeType("image/bc"),
+		Decoder(func(context.Context, io.Reader) (any, error) {
+			called = true
+			return image.NewRGBA(image.Rect(0, 0, 2, 2)), nil
+		}),
+	)
+	if !d.Builtin {
+		t.Error("expected the decoder to be marked builtin")
+	}
+	img, _, err := Decode(context.Background(), "image/bc", "", strings.NewReader("not an image"))
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if !called {
+		t.Error("expected the registered decode func to be used")
+	}
+	if got := img.Bounds().Dx(); got != 2 {
+		t.Errorf("expected width 2, got %d", got)
 	}
 }
 

@@ -13,10 +13,9 @@ import (
 )
 
 func init() {
-	decoder.Register(
+	decoder.RegisterBuiltin(
 		"bmp",
 		decoder.Desc("Windows Bitmap"),
-		decoder.Builtin(),
 		decoder.Extension("bmp", "dib"),
 		decoder.MimeType("image/bmp", "image/x-bmp", "image/x-ms-bmp"),
 		decoder.Decoder(decode),

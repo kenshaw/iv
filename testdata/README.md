@@ -19,13 +19,13 @@ output.
 | `libreoffice` | `libreoffice` | Office documents; needs `soffice` in `$PATH`             |
 | `markdown` | `markdown`    |                                                             |
 | `mermaid`  | `mermaid`     | Needs `mmdc` in `$PATH`                                     |
+| `nativewebp` | `nativewebp` | Lossy and lossless webp, each with its png reference decode |
 | `netpbm`   | `netpbm`      | pbm/pgm/ppm/pam, raw and plain                              |
 | `png`      | `png`         |                                                             |
 | `resvg`    | `resvg`       | SVGs, from trivial to a large choropleth                    |
 | `tag`      | `tag`         | Silent audio carrying embedded cover art                    |
 | `tiff`     | `tiff`        | One file per compression the Go encoder supports            |
 | `vips`     | `vips`        | heic/heif/jxl, plus a plain and a password protected pdf    |
-| `webp`     | `webp`        | Lossy and lossless webp, each with its png reference decode |
 | `winres`   | `winres`      | Windows PE with embedded icons                              |
 
 No test data yet: `archives`, `data`, `http`, `qr`. Of those, `archives` is
@@ -53,12 +53,12 @@ every one of these without needing `soffice`.
 
 ## Provenance
 
-- `png/{card,dice,logo,rose,tux}.png` and all of `webp/` -- the
+- `png/{card,dice,logo,rose,tux}.png` and all of `nativewebp/` -- the
   [Google WebP gallery][webp-gallery]. `-lossy` is the lossy-with-alpha
   encoding, `-lossless` the lossless one; each `.png` alongside is that
   file's reference decode.
 - `png/precision.png`, `jpeg/precision.jpg`, `vips/precision.jxl`, and
-  `webp/precision.webp` -- the [JPEG XL test page][jxl-test], one image in
+  `nativewebp/precision.webp` -- the [JPEG XL test page][jxl-test], one image in
   four formats.
 - `bmp/rose.bmp` -- the gallery rose, converted to bmp.
 - `ico/Mathijssen-Tuxlets-Test-Dummy-Tux.ico` -- Mathijssen Tuxlets Test

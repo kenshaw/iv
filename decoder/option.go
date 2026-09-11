@@ -142,15 +142,6 @@ func After(names ...string) Option {
 	}
 }
 
-// Builtin is a decoder option marking the decoder's formats as decodable
-// through Go's [image.Decode] registry, so that container formats can render
-// them directly.
-func Builtin() Option {
-	return func(d *Entry) {
-		d.Builtin = true
-	}
-}
-
 // Fallback is a decoder option marking the decoder as a last resort, tried
 // only after every other decoder has declined or failed.
 func Fallback() Option {
@@ -159,7 +150,10 @@ func Fallback() Option {
 	}
 }
 
-// builtin marks the decoder as decoding through Go's [image.Decode] registry.
+// builtin marks the decoder's formats as being in Go's [image.Decode]
+// registry and defaults it to decoding through them. Applied by
+// [RegisterBuiltin] ahead of the caller's options, so a decode func passed
+// there wins.
 func builtin() Option {
 	return func(d *Entry) {
 		d.Builtin, d.decode = true, builtinDecode

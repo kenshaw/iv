@@ -9,10 +9,9 @@ import (
 )
 
 func init() {
-	decoder.Register(
+	decoder.RegisterBuiltin(
 		"icns",
 		decoder.Desc("Apple Icon Image"),
-		decoder.Builtin(),
 		decoder.Extension("icns"),
 		decoder.MimeType("image/x-icns", "image/icns"),
 		decoder.ImagesDecoder(icns.DecodeAll),

@@ -9,10 +9,9 @@ import (
 )
 
 func init() {
-	decoder.Register(
+	decoder.RegisterBuiltin(
 		"ico",
 		decoder.Desc("Windows Icon"),
-		decoder.Builtin(),
 		decoder.Extension("ico", "cur"),
 		decoder.MimeType("image/ico", "image/x-icon", "image/vnd.microsoft.icon"),
 		decoder.ImagesDecoder(ico.DecodeAll),

@@ -18,6 +18,7 @@ import (
 	_ "github.com/kenshaw/iv/decoder/libreoffice"
 	_ "github.com/kenshaw/iv/decoder/markdown"
 	_ "github.com/kenshaw/iv/decoder/mermaid"
+	_ "github.com/kenshaw/iv/decoder/nativewebp"
 	_ "github.com/kenshaw/iv/decoder/netpbm"
 	_ "github.com/kenshaw/iv/decoder/png"
 	_ "github.com/kenshaw/iv/decoder/qr"
@@ -25,6 +26,5 @@ import (
 	_ "github.com/kenshaw/iv/decoder/tag"
 	_ "github.com/kenshaw/iv/decoder/tiff"
 	_ "github.com/kenshaw/iv/decoder/vips"
-	_ "github.com/kenshaw/iv/decoder/webp"
 	_ "github.com/kenshaw/iv/decoder/winres"
 )

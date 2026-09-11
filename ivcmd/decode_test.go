@@ -30,8 +30,8 @@ func TestDecodeFile(t *testing.T) {
 	}{
 		{"png", "png/rose.png", "image/png", ""},
 		{"bmp", "bmp/rose.bmp", "image/bmp", ""},
-		{"webp lossless", "webp/rose-lossless.webp", "image/webp", ""},
-		{"webp lossy", "webp/rose-lossy.webp", "image/webp", ""},
+		{"webp lossless", "nativewebp/rose-lossless.webp", "image/webp", ""},
+		{"webp lossy", "nativewebp/rose-lossy.webp", "image/webp", ""},
 		{"jpeg", "jpeg/precision.jpg", "image/jpeg", ""},
 		{"gif", "gif/tux.gif", "image/gif", ""},
 		{"gif animated", "gif/animated.gif", "image/gif", ""},

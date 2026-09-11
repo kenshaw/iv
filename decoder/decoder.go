@@ -51,9 +51,10 @@ type Entry struct {
 	Name string
 	// Desc is the human readable description.
 	Desc string
-	// Builtin indicates the decoder goes through Go's [image.Decode]
-	// registry, and so can be used for images nested inside archives and
-	// other containers.
+	// Builtin indicates the decoder's formats are in Go's [image.Decode]
+	// registry, and so can be rendered from inside archives and other
+	// containers. The decoder may still supply a decode func of its own --
+	// see [RegisterBuiltin].
 	Builtin bool
 	// IsString indicates a string decoder, matched against a bare command
 	// line argument instead of a byte stream.
@@ -112,9 +113,14 @@ func Register(name string, opts ...Option) *Entry {
 	return d
 }
 
-// RegisterBuiltin registers a decoder that decodes through Go's [image.Decode]
-// registry. The corresponding image format package must be imported for its
-// side effects.
+// RegisterBuiltin registers a decoder for a format that is in Go's
+// [image.Decode] registry, which is what lets container formats such as comic
+// archives render it directly -- see [BuiltinExt]. The format's package must
+// be imported for its side effects.
+//
+// It decodes through [image.Decode] unless a [Decoder], [ImageDecoder], or
+// [ImagesDecoder] option supplies a decode func of its own, which formats
+// needing more than one image or a fallback do.
 func RegisterBuiltin(name string, opts ...Option) *Entry {
 	return Register(name, append([]Option{builtin()}, opts...)...)
 }

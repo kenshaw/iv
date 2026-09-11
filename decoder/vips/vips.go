@@ -28,7 +28,7 @@ func init() {
 		decoder.Desc("libvips (raster images, pdf)"),
 		// after the Go decoders, which handle the common formats without the
 		// cost of starting vips
-		decoder.After("png", "jpeg", "gif", "webp", "tiff", "bmp", "ico", "icns", "netpbm", "resvg"),
+		decoder.After("png", "jpeg", "gif", "nativewebp", "tiff", "bmp", "ico", "icns", "netpbm", "resvg"),
 		decoder.Extension(
 			"avif", "heic", "heif", "jp2", "jpf", "jxl", "jxs", "j2k",
 			"exr", "fits", "hdr", "mat", "nii", "pfm", "rad", "svgz", "v",
