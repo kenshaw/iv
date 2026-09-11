@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"image"
 	"os"
 	"os/exec"
@@ -35,6 +36,7 @@ func TestDecodeFile(t *testing.T) {
 		{"svg choropleth", "resvg/choropleth.svg", "image/svg+xml", ""},
 		{"ico", "ico/1.ico", "image/x-icon", ""},
 		{"ico multi", "ico/Mathijssen-Tuxlets-Test-Dummy-Tux.ico", "image/x-icon", ""},
+		{"icns", "icns/test.icns", "image/x-icns", ""},
 		{"dot", "graphviz/booktest_sqlite3.dot", "text/vnd.graphviz", ""},
 		{"ttf", "fontimg/Ubuntu-R.ttf", "font/ttf", ""},
 		{"jxl", "vips/precision.jxl", "image/jxl", ""},
@@ -96,6 +98,44 @@ func TestDecodeString(t *testing.T) {
 			}
 			assertImage(t, img)
 		})
+	}
+}
+
+// TestDecodeIcnsResolutions checks that every resolution in a multi
+// resolution icns is decoded, and that the page selects between them.
+func TestDecodeIcnsResolutions(t *testing.T) {
+	pathName := filepath.Join("..", "testdata", "icns", "test.icns")
+	// the entries an icns holds, largest first -- 512 and 256 appear twice,
+	// once as a size and once as the @2x variant of the size below it
+	exp := []int{1024, 512, 512, 256, 256, 128, 64, 32}
+	for i, size := range exp {
+		page := uint(i + 1)
+		t.Run(fmt.Sprint(size), func(t *testing.T) {
+			c := ivctx.New()
+			c.Page = page
+			img, mime, err := decoder.DecodeFile(ivctx.WithConfig(context.Background(), c), pathName)
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			if mime != "image/x-icns" {
+				t.Errorf("expected mime %q, got %q", "image/x-icns", mime)
+			}
+			if got, want := img.Bounds().Size(), (image.Point{X: size, Y: size}); got != want {
+				t.Errorf("page %d: expected %v, got %v", page, want, got)
+			}
+		})
+	}
+	// no page, and a page past the end, both give the first entry
+	for _, page := range []uint{0, uint(len(exp)) + 1} {
+		c := ivctx.New()
+		c.Page = page
+		img, _, err := decoder.DecodeFile(ivctx.WithConfig(context.Background(), c), pathName)
+		if err != nil {
+			t.Fatalf("expected no error, got: %v", err)
+		}
+		if got := img.Bounds().Dx(); got != exp[0] {
+			t.Errorf("page %d: expected %d, got %d", page, exp[0], got)
+		}
 	}
 }
 

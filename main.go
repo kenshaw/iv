@@ -8,7 +8,6 @@ import (
 
 	"github.com/kenshaw/iv/ivcmd"
 	"github.com/xo/ox"
-	_ "github.com/xo/ox/color"
 )
 
 var (

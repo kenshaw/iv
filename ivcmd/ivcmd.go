@@ -21,6 +21,7 @@ import (
 	"github.com/kenshaw/iv/ivctx"
 	"github.com/kenshaw/rasterm"
 	"github.com/tdewolff/canvas"
+	_ "github.com/xo/ox/color"
 	"github.com/xo/resvg"
 )
 
