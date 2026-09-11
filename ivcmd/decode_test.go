@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/kenshaw/iv/decoder"
@@ -57,16 +58,19 @@ func TestDecodeFile(t *testing.T) {
 		{"xps", "fitz/example.xps", "application/zip", ""},
 		{"windows pe", "winres/go-winres.exe", "application/vnd.microsoft.portable-executable", ""},
 		{"markdown", "markdown/sample.md", "text/plain", ""},
+		{"tag mp3", "tag/silent.mp3", "audio/mpeg", ""},
+		{"tag flac", "tag/silent.flac", "audio/flac", ""},
+		{"tag m4a", "tag/silent.m4a", "audio/x-m4a", ""},
+		{"tag ogg", "tag/silent.ogg", "audio/ogg", ""},
+		{"tag aac", "tag/silent.aac", "audio/mpeg", ""},
+		{"docx", "libreoffice/file-sample_100kB.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "soffice"},
+		{"doc", "libreoffice/file-sample_100kB.doc", "application/x-ole-storage", "soffice"},
+		{"odt", "libreoffice/file-sample_100kB.odt", "application/vnd.oasis.opendocument.text", "soffice"},
 		{"mermaid", "mermaid/gantt.mmd", "text/plain", "mmdc"},
 		{"video", "ffmpeg/sample_960x540.mp4", "video/mp4", "ffmpeg"},
 		{"binwalk", "binwalk/icon.afdesign", "application/octet-stream", "binwalk"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			if test.cmd != "" {
-				if _, err := exec.LookPath(test.cmd); err != nil {
-					t.Skipf("%s not in path", test.cmd)
-				}
-			}
 			pathName := filepath.Join("..", "testdata", filepath.FromSlash(test.file))
 			if _, err := os.Stat(pathName); err != nil {
 				t.Skipf("no test data: %v", err)
@@ -84,6 +88,13 @@ func TestDecodeFile(t *testing.T) {
 			}
 			if mime != test.mime {
 				t.Errorf("expected mime %q, got %q", test.mime, mime)
+			}
+			// detection is iv's own work and always runs; only the decode
+			// needs the external tool
+			if test.cmd != "" {
+				if err := usable(test.cmd); err != nil {
+					t.Skipf("skipping decode: %v", err)
+				}
 			}
 			img, _, err := decoder.DecodeFile(ctx, pathName)
 			if err != nil {
@@ -109,6 +120,119 @@ func TestDecodeString(t *testing.T) {
 				t.Fatalf("expected no error, got: %v", err)
 			}
 			assertImage(t, img)
+		})
+	}
+}
+
+// TestDecodeTagArt checks that the album art extracted from each audio
+// container is the cover that was embedded, pixel for pixel -- the decoder
+// hands the picture back to the pipeline rather than decoding it itself, so
+// this covers the round trip through mime detection as well.
+func TestDecodeTagArt(t *testing.T) {
+	want, err := loadImage(t, filepath.Join("..", "testdata", "png", "tux.png"))
+	if err != nil {
+		t.Skipf("no cover art: %v", err)
+	}
+	for _, name := range []string{
+		"silent.mp3",
+		"silent.flac",
+		"silent.m4a",
+		"silent.ogg",
+		"silent.aac",
+	} {
+		t.Run(name, func(t *testing.T) {
+			pathName := filepath.Join("..", "testdata", "tag", name)
+			if _, err := os.Stat(pathName); err != nil {
+				t.Skipf("no test data: %v", err)
+			}
+			got, mime, err := decoder.DecodeFile(testContext(t), pathName)
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			// the pipeline reports the mime of the picture, not the container
+			if mime != "image/png" {
+				t.Errorf("expected mime %q, got %q", "image/png", mime)
+			}
+			if err := sameImage(got, want); err != nil {
+				t.Error(err)
+			}
+		})
+	}
+}
+
+// loadImage decodes an image from a file.
+func loadImage(t *testing.T, pathName string) (image.Image, error) {
+	t.Helper()
+	f, err := os.Open(pathName)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	img, _, err := image.Decode(f)
+	return img, err
+}
+
+// sameImage reports whether two images have the same bounds and pixels.
+func sameImage(got, want image.Image) error {
+	gb, wb := got.Bounds(), want.Bounds()
+	if gb.Size() != wb.Size() {
+		return fmt.Errorf("expected size %v, got %v", wb.Size(), gb.Size())
+	}
+	for y := range wb.Dy() {
+		for x := range wb.Dx() {
+			g, w := got.At(gb.Min.X+x, gb.Min.Y+y), want.At(wb.Min.X+x, wb.Min.Y+y)
+			gr, gg, gbl, ga := g.RGBA()
+			wr, wg, wbl, wa := w.RGBA()
+			if gr != wr || gg != wg || gbl != wbl || ga != wa {
+				return fmt.Errorf("pixel (%d,%d): expected %v, got %v", x, y, w, g)
+			}
+		}
+	}
+	return nil
+}
+
+// TestLibreOfficeRouting checks that every office document in the test data
+// is detected and routed to the libreoffice decoder. Routing is the part iv
+// owns; the conversion itself is soffice's job, so this needs no soffice.
+func TestLibreOfficeRouting(t *testing.T) {
+	for _, test := range []struct {
+		file string
+		mime string
+	}{
+		{"file-sample_100kB.doc", "application/x-ole-storage"},
+		{"file-sample_100kB.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
+		{"file-sample_100kB.odt", "application/vnd.oasis.opendocument.text"},
+		{"file-sample_100kB.rtf", "text/rtf"},
+		{"file_example_XLS_50.xls", "application/x-ole-storage"},
+		{"file_example_XLSX_50.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
+		{"spreadsheet.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
+		{"file_example_ODS_100.ods", "application/vnd.oasis.opendocument.spreadsheet"},
+		{"file_example_ODP_200kB.odp", "application/vnd.oasis.opendocument.presentation"},
+		{"file_example_PPT_250kB.ppt", "application/x-ole-storage"},
+	} {
+		t.Run(test.file, func(t *testing.T) {
+			pathName := filepath.Join("..", "testdata", "libreoffice", test.file)
+			f, err := os.Open(pathName)
+			if err != nil {
+				t.Skipf("no test data: %v", err)
+			}
+			defer f.Close()
+			ctx := ivctx.WithPathName(testContext(t), pathName)
+			mime, err := decoder.Detect(ctx, f)
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			if mime != test.mime {
+				t.Errorf("expected mime %q, got %q", test.mime, mime)
+			}
+			matched := decoder.Match(ctx, mime, ivctx.FileExt(pathName))
+			if len(matched) == 0 || matched[0].Name != "libreoffice" {
+				var names []string
+				for _, d := range matched {
+					names = append(names, d.Name)
+				}
+				t.Errorf("expected the libreoffice decoder, got %v", names)
+			}
 		})
 	}
 }
@@ -230,6 +354,47 @@ func TestRoundTrip(t *testing.T) {
 		})
 	}
 }
+
+// usable reports whether an external command the decoders shell out to can
+// actually be used.
+func usable(name string) error {
+	if name == "soffice" {
+		return sofficeUsable()
+	}
+	if _, err := exec.LookPath(name); err != nil {
+		return fmt.Errorf("%s not in path", name)
+	}
+	return nil
+}
+
+// sofficeUsable reports whether soffice can convert a document. Being in
+// $PATH is not enough: LibreOffice also needs a writable user profile and
+// somewhere to put its named pipe, neither of which every sandbox and CI
+// image provides. Probed once, with a document small enough that the cost is
+// one process start.
+var sofficeUsable = sync.OnceValue(func() error {
+	if _, err := exec.LookPath("soffice"); err != nil {
+		return fmt.Errorf("soffice not in path")
+	}
+	dir, err := os.MkdirTemp("", "iv-soffice-probe.")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+	src := filepath.Join(dir, "probe.csv")
+	if err := os.WriteFile(src, []byte("a,b\n1,2\n"), 0o644); err != nil {
+		return err
+	}
+	cmd := exec.Command("soffice", "--headless", "--convert-to", "pdf", "--outdir", dir, src)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("soffice cannot run here: %v: %s", err, bytes.TrimSpace(out))
+	}
+	if _, err := os.Stat(filepath.Join(dir, "probe.pdf")); err != nil {
+		return fmt.Errorf("soffice produced no pdf: %s", bytes.TrimSpace(out))
+	}
+	return nil
+})
 
 // testContext returns a context wired to the test log.
 func testContext(t *testing.T) context.Context {

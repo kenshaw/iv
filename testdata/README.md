@@ -16,20 +16,40 @@ output.
 | `icns`     | `icns`        | Apple icon image, eight resolutions from 32 to 1024         |
 | `ico`      | `ico`         | Single and multi image icons                                |
 | `jpeg`     | `jpeg`        |                                                             |
+| `libreoffice` | `libreoffice` | Office documents; needs `soffice` in `$PATH`             |
 | `markdown` | `markdown`    |                                                             |
 | `mermaid`  | `mermaid`     | Needs `mmdc` in `$PATH`                                     |
 | `netpbm`   | `netpbm`      | pbm/pgm/ppm/pam, raw and plain                              |
 | `png`      | `png`         |                                                             |
 | `resvg`    | `resvg`       | SVGs, from trivial to a large choropleth                    |
+| `tag`      | `tag`         | Silent audio carrying embedded cover art                    |
 | `tiff`     | `tiff`        | One file per compression the Go encoder supports            |
 | `vips`     | `vips`        | heic/heif/jxl, plus a plain and a password protected pdf    |
 | `webp`     | `webp`        | Lossy and lossless webp, each with its png reference decode |
 | `winres`   | `winres`      | Windows PE with embedded icons                              |
 
-No test data yet: `archives`, `data`, `http`, `libreoffice`, `qr`, `tag`. Of
-those, `archives` is covered by a cbz built on the fly in
-`TestDecodeComicArchive`, and `data`, `qr`, and `http` take strings rather than
-files.
+No test data yet: `archives`, `data`, `http`, `qr`. Of those, `archives` is
+covered by a cbz built on the fly in `TestDecodeComicArchive`, and `data`,
+`qr`, and `http` take strings rather than files.
+
+`libreoffice/` covers the three document families and both generations of the
+Microsoft formats, because they are detected differently:
+
+| File                         | Detected as                                             |
+|------------------------------|----------------------------------------------------------|
+| `file-sample_100kB.docx`     | `application/vnd.openxmlformats-officedocument.wordprocessingml.document` |
+| `file_example_XLSX_50.xlsx`, `spreadsheet.xlsx` | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` |
+| `file-sample_100kB.doc`, `file_example_XLS_50.xls`, `file_example_PPT_250kB.ppt` | `application/x-ole-storage` |
+| `file-sample_100kB.odt`      | `application/vnd.oasis.opendocument.text`                 |
+| `file_example_ODS_100.ods`   | `application/vnd.oasis.opendocument.spreadsheet`          |
+| `file_example_ODP_200kB.odp` | `application/vnd.oasis.opendocument.presentation`         |
+| `file-sample_100kB.rtf`      | `text/rtf`                                                |
+
+The pre-2007 binary formats are all OLE compound files, so content sniffing
+cannot tell a `.doc` from an `.xls` from a `.ppt` -- all three report
+`application/x-ole-storage`, and the `libreoffice` decoder claims that type
+outright rather than relying on the extension. `TestLibreOfficeRouting` checks
+every one of these without needing `soffice`.
 
 ## Provenance
 
@@ -73,6 +93,22 @@ so between them they cover both what these formats need to represent.
 - `tiff/` -- `tux-uncompressed.tiff`, `tux-deflate.tiff`, and
   `test-deflate-predictor.tiff`. There is no LZW file: `x/image/tiff` decodes
   LZW but refuses to encode it.
+- `tag/` -- five seconds of silence in five containers, each with
+  `png/tux.png` embedded as cover art. The `tag` decoder only ever reads the
+  metadata, so the audio itself is silent to keep the files small.
+
+  | File          | Detected as   | Metadata  |
+  |---------------|---------------|-----------|
+  | `silent.mp3`  | `audio/mpeg`  | ID3v2.3   |
+  | `silent.aac`  | `audio/mpeg`  | ID3v2.3   |
+  | `silent.flac` | `audio/flac`  | Vorbis    |
+  | `silent.ogg`  | `audio/ogg`   | Vorbis    |
+  | `silent.m4a`  | `audio/x-m4a` | MP4       |
+
+  The cover is embedded byte for byte, so `TestDecodeTagArt` can check the
+  extracted image against `png/tux.png` pixel for pixel. Note that `.aac`
+  reports `audio/mpeg` too: it is ID3 wrapped ADTS, indistinguishable from mp3
+  by its leading bytes.
 - `netpbm/` -- every format in the family, raw and plain (ASCII):
 
   | File               | Magic | Format                    |

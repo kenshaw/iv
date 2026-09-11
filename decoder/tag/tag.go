@@ -5,6 +5,7 @@
 package tag
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -35,7 +36,7 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	ivctx.Logf(ctx, "tag format: %s %s - %s", md.Format(), md.Artist(), md.Title())
+	ivctx.Logf(ctx, "tag format: %s file type: %s", md.Format(), md.FileType())
 	pic := md.Picture()
 	if pic == nil {
 		return nil, errors.New("no embedded picture")
@@ -44,5 +45,6 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 	if mime == "" {
 		mime = "application/octet-stream"
 	}
-	return decoder.NewBytes(mime, pic.Data), nil
+	ivctx.Logf(ctx, "tag picture: %s %s %d bytes", pic.Type, mime, len(pic.Data))
+	return decoder.NewImage(mime, bytes.NewReader(pic.Data)).WithExt(pic.Ext), nil
 }
