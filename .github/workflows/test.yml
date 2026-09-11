@@ -35,7 +35,10 @@ jobs:
             libpango1.0-dev \
             libopenjp2-7-dev \
             liblcms2-dev \
-            libimagequant-dev
+            libimagequant-dev \
+            libbz2-dev \
+            liblzma-dev \
+            libzstd-dev
       - name: Install Go
         uses: actions/setup-go@v6
         with:
@@ -45,3 +48,9 @@ jobs:
       - name: Build
         run: |
           go build ./...
+      - name: Vet
+        run: |
+          go vet ./...
+      - name: Test
+        run: |
+          go test -v ./...

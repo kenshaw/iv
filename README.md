@@ -111,6 +111,21 @@ $ go install github.com/kenshaw/iv@latest
 ```sh
 $ iv /path/to/image_or_directory
 
+# a data: URL or WIFI: code
+$ iv 'WIFI:S:mynetwork;T:WPA;P:secret;;'
+
+# a remote image
+$ iv https://example.com/image.png
+
+# a specific page of a pdf, epub, or comic archive
+$ iv -p 4 /path/to/document.pdf
+
+# convert instead of displaying -- the encoder follows the output extension
+$ iv --out out.webp /path/to/image.heic
+
+# the registered decoders, encoders, and file extensions
+$ iv --list
+
 # all command line options
 $ iv --help
 ```

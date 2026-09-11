@@ -1,0 +1,30 @@
+// Package all registers every iv decoder.
+package all
+
+import (
+	_ "github.com/kenshaw/iv/decoder/archives"
+	_ "github.com/kenshaw/iv/decoder/binwalk"
+	_ "github.com/kenshaw/iv/decoder/bmp"
+	_ "github.com/kenshaw/iv/decoder/data"
+	_ "github.com/kenshaw/iv/decoder/ffmpeg"
+	_ "github.com/kenshaw/iv/decoder/fitz"
+	_ "github.com/kenshaw/iv/decoder/fontimg"
+	_ "github.com/kenshaw/iv/decoder/gif"
+	_ "github.com/kenshaw/iv/decoder/graphviz"
+	_ "github.com/kenshaw/iv/decoder/http"
+	_ "github.com/kenshaw/iv/decoder/icns"
+	_ "github.com/kenshaw/iv/decoder/ico"
+	_ "github.com/kenshaw/iv/decoder/jpeg"
+	_ "github.com/kenshaw/iv/decoder/libreoffice"
+	_ "github.com/kenshaw/iv/decoder/markdown"
+	_ "github.com/kenshaw/iv/decoder/mermaid"
+	_ "github.com/kenshaw/iv/decoder/netpbm"
+	_ "github.com/kenshaw/iv/decoder/png"
+	_ "github.com/kenshaw/iv/decoder/qr"
+	_ "github.com/kenshaw/iv/decoder/resvg"
+	_ "github.com/kenshaw/iv/decoder/tag"
+	_ "github.com/kenshaw/iv/decoder/tiff"
+	_ "github.com/kenshaw/iv/decoder/vips"
+	_ "github.com/kenshaw/iv/decoder/webp"
+	_ "github.com/kenshaw/iv/decoder/winres"
+)
