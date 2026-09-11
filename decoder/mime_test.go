@@ -59,7 +59,7 @@ func TestDetectForceMime(t *testing.T) {
 
 func TestDetectSniffs(t *testing.T) {
 	// a 1x1 png
-	buf, err := os.ReadFile("../testdata/rose/1.png")
+	buf, err := os.ReadFile("../testdata/png/rose.png")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -146,7 +146,7 @@ func TestRegisterMimeType(t *testing.T) {
 }
 
 func TestDescribe(t *testing.T) {
-	buf, err := os.ReadFile("../testdata/rose/1.png")
+	buf, err := os.ReadFile("../testdata/png/rose.png")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -160,7 +160,7 @@ func TestDescribe(t *testing.T) {
 }
 
 func TestDetectFallsBackToLibmagic(t *testing.T) {
-	buf, err := os.ReadFile("../testdata/ttf/Ubuntu-R.ttf")
+	buf, err := os.ReadFile("../testdata/fontimg/Ubuntu-R.ttf")
 	if err != nil {
 		t.Skipf("no font test data: %v", err)
 	}
@@ -206,7 +206,7 @@ func TestDetectSkipsLibmagicForText(t *testing.T) {
 	for _, name := range []string{
 		"../testdata/mermaid/aws.mmd",
 		"../testdata/graphviz/booktest_sqlite3.dot",
-		"../testdata/precision/README.md",
+		"../testdata/markdown/sample.md",
 	} {
 		t.Run(name, func(t *testing.T) {
 			buf, err := os.ReadFile(name)

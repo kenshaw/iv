@@ -219,7 +219,7 @@ func TestExecWritesOutputFile(t *testing.T) {
 	out := filepath.Join(dir, "out.png")
 	var stdout, stderr bytes.Buffer
 	args := &Args{Out: out, Quiet: true}
-	if err := args.Exec(context.Background(), &stdout, &stderr, []string{"../testdata/rose/1.png"}); err != nil {
+	if err := args.Exec(context.Background(), &stdout, &stderr, []string{"../testdata/png/rose.png"}); err != nil {
 		t.Fatalf("expected no error, got: %v (%s)", err, stderr.String())
 	}
 	fi, err := os.Stat(out)

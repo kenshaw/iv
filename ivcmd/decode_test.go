@@ -26,21 +26,23 @@ func TestDecodeFile(t *testing.T) {
 		mime string
 		cmd  string // external command the decoder needs
 	}{
-		{"png", "rose/1.png", "image/png", ""},
-		{"bmp", "rose/1.bmp", "image/bmp", ""},
-		{"webp", "rose/1_webp_ll.webp", "image/webp", ""},
-		{"jpeg", "precision/precision-machinery-shapes-golden-substance-with-robotic-exactitude.jpg", "image/jpeg", ""},
-		{"svg", "svg/rect.svg", "image/svg+xml", ""},
-		{"svg choropleth", "svg/choropleth.svg", "image/svg+xml", ""},
-		{"ico", "icon/1.ico", "image/x-icon", ""},
+		{"png", "png/rose.png", "image/png", ""},
+		{"bmp", "bmp/rose.bmp", "image/bmp", ""},
+		{"webp lossless", "webp/rose-lossless.webp", "image/webp", ""},
+		{"webp lossy", "webp/rose-lossy.webp", "image/webp", ""},
+		{"jpeg", "jpeg/precision.jpg", "image/jpeg", ""},
+		{"svg", "resvg/rect.svg", "image/svg+xml", ""},
+		{"svg choropleth", "resvg/choropleth.svg", "image/svg+xml", ""},
+		{"ico", "ico/1.ico", "image/x-icon", ""},
+		{"ico multi", "ico/Mathijssen-Tuxlets-Test-Dummy-Tux.ico", "image/x-icon", ""},
 		{"dot", "graphviz/booktest_sqlite3.dot", "text/vnd.graphviz", ""},
-		{"ttf", "ttf/Ubuntu-R.ttf", "font/ttf", ""},
-		{"jxl", "precision/precision-machinery-shapes-golden-substance-with-robotic-exactitude.jxl", "image/jxl", ""},
+		{"ttf", "fontimg/Ubuntu-R.ttf", "font/ttf", ""},
+		{"jxl", "vips/precision.jxl", "image/jxl", ""},
 		{"heic", "vips/cyberpunk.heic", "image/heic", ""},
 		{"pdf", "vips/file-sample_150kB.pdf", "application/pdf", ""},
-		{"xps", "xps/example.xps", "application/zip", ""},
-		{"windows pe", "exe/go-winres.exe", "application/vnd.microsoft.portable-executable", ""},
-		{"markdown", "precision/README.md", "text/plain", ""},
+		{"xps", "fitz/example.xps", "application/zip", ""},
+		{"windows pe", "winres/go-winres.exe", "application/vnd.microsoft.portable-executable", ""},
+		{"markdown", "markdown/sample.md", "text/plain", ""},
 		{"mermaid", "mermaid/gantt.mmd", "text/plain", "mmdc"},
 		{"video", "ffmpeg/sample_960x540.mp4", "video/mp4", "ffmpeg"},
 		{"binwalk", "binwalk/icon.afdesign", "application/octet-stream", "binwalk"},
@@ -100,7 +102,7 @@ func TestDecodeString(t *testing.T) {
 // TestDecodeComicArchive builds a cbz from the test images and decodes each of
 // its pages.
 func TestDecodeComicArchive(t *testing.T) {
-	names := []string{"rose/1.png", "logo/4.png", "card/5.png"}
+	names := []string{"png/rose.png", "png/logo.png", "png/card.png"}
 	cbz := filepath.Join(t.TempDir(), "test.cbz")
 	f, err := os.Create(cbz)
 	if err != nil {
@@ -147,7 +149,7 @@ func TestDecodeComicArchive(t *testing.T) {
 // back, that it decodes to the same size.
 func TestRoundTrip(t *testing.T) {
 	ctx := testContext(t)
-	img, _, err := decoder.DecodeFile(ctx, filepath.Join("..", "testdata", "rose", "1.png"))
+	img, _, err := decoder.DecodeFile(ctx, filepath.Join("..", "testdata", "png", "rose.png"))
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
