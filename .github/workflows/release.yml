@@ -4,6 +4,8 @@ env:
   APP: iv
   VER: ${{ github.ref_name }}
   GO_VERSION: stable
+  # libvips' pkg-config cflags include -Xpreprocessor on macOS
+  CGO_CFLAGS_ALLOW: '-Xpreprocessor'
 
 jobs:
   build_for_linux:
@@ -55,7 +57,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Build ${{ matrix.arch }}
@@ -71,14 +73,134 @@ jobs:
           path: build/linux/**/*
           if-no-files-found: error
 
+  build_for_macos:
+    name: Build for macOS (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # each arch builds natively: cross compiling cgo against libvips would
+        # need a libvips for the other arch, which brew won't install
+        include:
+          - arch: amd64
+            os: macos-15-intel
+          - arch: arm64
+            os: macos-latest
+    steps:
+      # build.sh packs with gtar and reports with sha256sum, neither of which
+      # macos ships
+      - name: Install build dependencies
+        run: |
+          brew install --quiet coreutils gnu-tar vips
+          command -v pkg-config >/dev/null || brew install --quiet pkgconf
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Build ${{ matrix.arch }}
+        run: |
+          ./build.sh -v $VER -a ${{ matrix.arch }}
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-darwin-${{ matrix.arch }}
+          path: build/darwin/**/*
+          if-no-files-found: error
+
+  build_for_macos_universal:
+    name: Build for macOS (universal)
+    needs:
+      - build_for_macos
+    runs-on: macos-latest
+    steps:
+      - name: Install build dependencies
+        run: |
+          brew install --quiet coreutils gnu-tar
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+      - name: Build universal
+        run: |
+          export WORKDIR=$PWD/build/darwin/universal/${VER#v}
+          mkdir -p $WORKDIR
+
+          gtar -jxvf dist-darwin-amd64/*/*/*.tar.bz2 -C $WORKDIR $APP
+          gtar -jxvf dist-darwin-amd64/*/*/*.tar.bz2 -C $WORKDIR LICENSE
+          mv $WORKDIR/$APP $WORKDIR/$APP-amd64
+
+          gtar -jxvf dist-darwin-arm64/*/*/*.tar.bz2 -C $WORKDIR $APP
+          mv $WORKDIR/$APP $WORKDIR/$APP-arm64
+
+          file $WORKDIR/$APP-{amd64,arm64}
+
+          lipo -create -output $WORKDIR/$APP $WORKDIR/$APP-amd64 $WORKDIR/$APP-arm64
+          chmod +x $WORKDIR/$APP
+          file $WORKDIR/$APP
+
+          rm $WORKDIR/$APP-{amd64,arm64}
+
+          sudo /usr/sbin/purge
+
+          gtar -C $WORKDIR -cjf $WORKDIR/$APP-${VER#v}-darwin-universal.tar.bz2 $APP LICENSE
+          ls -alh $WORKDIR/*
+          sha256sum $WORKDIR/*
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-darwin-universal
+          path: build/darwin/**/*
+          if-no-files-found: error
+
+  build_for_windows:
+    name: Build for Windows
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: 'msys2 {0}'
+    steps:
+      # UCRT64 rather than MINGW64: go-fitz's libmupdf calls
+      # __intrinsic_setjmpex, which only ucrt has. build.sh packs with zip
+      - name: Install build dependencies
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          # keep the runner's PATH so the Go installed below stays visible
+          path-type: inherit
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-libvips
+            zip
+            unzip
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Build amd64
+        run: |
+          ./build.sh -v $VER
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-windows
+          path: build/windows/**/*
+          if-no-files-found: error
+
   release:
     name: Draft Release
     needs:
       - build_for_linux
+      - build_for_macos
+      - build_for_macos_universal
+      - build_for_windows
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
       - name: Release
         uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/v')
