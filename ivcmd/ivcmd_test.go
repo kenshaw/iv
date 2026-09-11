@@ -254,7 +254,7 @@ func TestExecReportsRenderErrors(t *testing.T) {
 
 func TestDecoderRegistryIsPopulated(t *testing.T) {
 	// importing ivcmd must register the full decoder and encoder sets
-	for _, name := range []string{"png", "jpeg", "vips", "resvg", "markdown", "qr", "data", "http"} {
+	for _, name := range []string{"png", "jpeg", "vips", "resvg", "blitz", "qr", "data", "blitz-url"} {
 		if _, ok := decoder.Get(name); !ok {
 			t.Errorf("expected the %q decoder to be registered", name)
 		}

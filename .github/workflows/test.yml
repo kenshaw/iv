@@ -36,7 +36,9 @@ jobs:
         uses: actions/checkout@v7
 
       # debian/ubuntu ship libheif without any codec, so heic/avif need the
-      # plugin packages on top -- brew's and msys2's libheif bundle theirs
+      # plugin packages on top -- brew's and msys2's libheif bundle theirs.
+      # blitz links fontconfig and freetype directly; libvips-dev happens to
+      # pull both in, but blitz is the one that needs them
       - name: Install build dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -45,6 +47,8 @@ jobs:
             build-essential \
             pkg-config \
             libvips-dev \
+            libfontconfig-dev \
+            libfreetype-dev \
             libheif-plugin-libde265 \
             libheif-plugin-x265 \
             libheif-plugin-aomdec \

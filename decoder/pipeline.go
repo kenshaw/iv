@@ -60,8 +60,13 @@ func DecodeString(ctx context.Context, s string) (image.Image, string, error) {
 	}
 	var errs []error
 	for _, d := range matched {
+		state, err := d.init(ctx)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("%s: init: %w", d.Name, err))
+			continue
+		}
 		start := time.Now()
-		res, err := d.decodeString(context.WithValue(ctx, stateKey{}, nil), s)
+		res, err := d.decodeString(context.WithValue(ctx, stateKey{}, state), s)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("%s: %w", d.Name, err))
 			continue

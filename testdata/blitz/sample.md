@@ -1,7 +1,7 @@
 # Sample Document
 
-A markdown file for the `markdown` decoder, which renders it to a pdf and
-hands that back to the decoding pipeline.
+A markdown file for the `blitz` decoder, which lays it out with a real css
+engine and hands back the rendered image.
 
 ## Emphasis
 
@@ -25,14 +25,14 @@ func main() {
 
 ## Quote
 
-> Rendering happens in two steps: goldmark converts the markdown to a pdf,
-> then libvips rasterizes a page of it.
+> Rendering happens in one step: blitz parses the markdown, styles it, and
+> paints the result headlessly -- no browser, no window.
 
 ## Table
 
 | Decoder  | Input       | Output            |
 |----------|-------------|-------------------|
-| markdown | `.md`       | `application/pdf` |
+| blitz    | `.md`       | image             |
 | graphviz | `.dot`      | `image/svg+xml`   |
 | mermaid  | `.mmd`      | `image/svg+xml`   |
 
