@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"image"
 	"os"
 	"os/exec"
@@ -156,7 +157,10 @@ func TestRoundTrip(t *testing.T) {
 		}
 		t.Run(e.Name, func(t *testing.T) {
 			var buf bytes.Buffer
-			if err := e.Encode(ctx, &buf, img); err != nil {
+			switch err := e.Encode(ctx, &buf, img); {
+			case errors.Is(err, encoder.ErrUnsupportedFormat):
+				t.Skipf("this build cannot encode %s: %v", e.Ext, err)
+			case err != nil:
 				t.Fatalf("expected no error, got: %v", err)
 			}
 			if buf.Len() == 0 {

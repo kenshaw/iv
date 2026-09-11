@@ -1,56 +1,89 @@
-on: [push, pull_request]
 name: Test
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: stable
+  CGO_ENABLED: '1'
+  # libvips' pkg-config cflags include -Xpreprocessor on macOS
+  CGO_CFLAGS_ALLOW: '-Xpreprocessor'
+
 jobs:
   test:
-    name: Build
-    runs-on: ubuntu-26.04
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            shell: bash
+          - os: macos-latest
+            shell: bash
+          - os: windows-latest
+            shell: 'msys2 {0}'
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     steps:
-      - name: Install build dependencies
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # libvips is the only dependency that has to come from the system:
+      # go-fitz, resvg, and xo/magic all vendor static libraries, and
+      # go-graphviz runs in wazero.
+      - name: Install build dependencies (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get -qq update
-          sudo apt-get install -y \
+          sudo apt-get install -y --no-install-recommends \
             build-essential \
-            libvips \
-            libvips-dev \
-            libgtk2.0-dev \
-            libfftw3-dev \
-            libopenexr-dev \
-            libgsf-1-dev \
-            libglib2.0-dev \
-            liborc-dev \
-            libopenslide-dev \
-            libmatio-dev \
-            libwebp-dev \
-            libjpeg-turbo8-dev \
-            libexpat1-dev \
-            libexif-dev \
-            libtiff5-dev \
-            libpng-dev \
-            libarchive-dev \
-            libcgif-dev \
-            libjxl-dev \
-            libcfitsio-dev \
-            libpoppler-glib-dev \
-            librsvg2-dev \
-            libpango1.0-dev \
-            libopenjp2-7-dev \
-            liblcms2-dev \
-            libimagequant-dev \
-            libbz2-dev \
-            liblzma-dev \
-            libzstd-dev
+            pkg-config \
+            libvips-dev
+
+      - name: Install build dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install --quiet vips
+          command -v pkg-config >/dev/null || brew install --quiet pkgconf
+
+      # MSYS2 supplies both the mingw-w64 toolchain that cgo needs and a
+      # libvips build with working pkg-config files. MINGW64 rather than
+      # UCRT64: the vendored static libraries are built against msvcrt.
+      - name: Install build dependencies (Windows)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          # keep the runner's PATH so the Go installed below stays visible
+          path-type: inherit
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-libvips
+
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: stable
-      - name: Checkout code
-        uses: actions/checkout@v7
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Versions
+        run: |
+          go version
+          go env CC CGO_ENABLED
+          pkg-config --modversion vips
+
       - name: Build
         run: |
           go build ./...
+
       - name: Vet
         run: |
           go vet ./...
+
       - name: Test
         run: |
-          go test -v ./...
+          go test -race -v ./...
