@@ -8,7 +8,9 @@ env:
 jobs:
   build_for_linux:
     name: Build for Linux
-    runs-on: ubuntu-latest
+    # 26.04 rather than 24.04 (ubuntu-latest): vipsgen's bindings are generated
+    # against libvips 8.18, and 24.04 only has 8.15
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:

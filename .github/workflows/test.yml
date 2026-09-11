@@ -18,7 +18,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          # 26.04 rather than 24.04 (ubuntu-latest): vipsgen's bindings are
+          # generated against libvips 8.18, and 24.04 only has 8.15
+          - os: ubuntu-26.04
             shell: bash
           - os: macos-latest
             shell: bash
