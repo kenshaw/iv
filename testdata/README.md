@@ -11,22 +11,25 @@ output.
 | `ffmpeg`   | `ffmpeg`      | Same clip as mkv and mp4                                    |
 | `fitz`     | `fitz`        | XPS documents                                               |
 | `fontimg`  | `fontimg`     | Static, variable, and monospace fonts                       |
+| `gif`      | `gif`         | Still and animated                                          |
 | `graphviz` | `graphviz`    | DOT graph, sniffed by content rather than extension         |
 | `icns`     | `icns`        | Apple icon image, eight resolutions from 32 to 1024         |
 | `ico`      | `ico`         | Single and multi image icons                                |
 | `jpeg`     | `jpeg`        |                                                             |
 | `markdown` | `markdown`    |                                                             |
 | `mermaid`  | `mermaid`     | Needs `mmdc` in `$PATH`                                     |
+| `netpbm`   | `netpbm`      | pbm/pgm/ppm/pam, raw and plain                              |
 | `png`      | `png`         |                                                             |
 | `resvg`    | `resvg`       | SVGs, from trivial to a large choropleth                    |
+| `tiff`     | `tiff`        | One file per compression the Go encoder supports            |
 | `vips`     | `vips`        | heic/heif/jxl, plus a plain and a password protected pdf    |
 | `webp`     | `webp`        | Lossy and lossless webp, each with its png reference decode |
 | `winres`   | `winres`      | Windows PE with embedded icons                              |
 
-No test data yet: `archives`, `data`, `gif`, `http`, `libreoffice`, `netpbm`,
-`qr`, `tag`, `tiff`. Of those, `archives` is covered by a cbz built on the fly
-in `TestDecodeComicArchive`, and `data`, `qr`, and `http` take strings rather
-than files.
+No test data yet: `archives`, `data`, `http`, `libreoffice`, `qr`, `tag`. Of
+those, `archives` is covered by a cbz built on the fly in
+`TestDecodeComicArchive`, and `data`, `qr`, and `http` take strings rather than
+files.
 
 ## Provenance
 
@@ -57,6 +60,35 @@ than files.
   why 512 and 256 each appear twice. `iv -p N` selects between them.
 - `winres/go-winres.exe` -- built from [go-winres][].
 - `fontimg/` -- Figtree, Noto Mono, and Ubuntu.
+
+### Derived files
+
+`gif/`, `netpbm/`, and `tiff/` are generated from `png/tux.png` and
+`resvg/test.svg`. Tux carries an alpha channel, the document icon is line art,
+so between them they cover both what these formats need to represent.
+
+- `gif/tux.gif`, `gif/test.gif` -- stills. `gif/animated.gif` is six frames
+  alternating the two sources over white; `image.Decode` returns its first
+  frame, which is what iv renders.
+- `tiff/` -- `tux-uncompressed.tiff`, `tux-deflate.tiff`, and
+  `test-deflate-predictor.tiff`. There is no LZW file: `x/image/tiff` decodes
+  LZW but refuses to encode it.
+- `netpbm/` -- every format in the family, raw and plain (ASCII):
+
+  | File               | Magic | Format                    |
+  |--------------------|-------|---------------------------|
+  | `test.pbm`         | `P4`  | bilevel, raw              |
+  | `test-plain.pbm`   | `P1`  | bilevel, plain            |
+  | `test.pgm`         | `P5`  | grayscale, raw            |
+  | `test-plain.pgm`   | `P2`  | grayscale, plain          |
+  | `tux.ppm`          | `P6`  | color, raw                |
+  | `tux-plain.ppm`    | `P3`  | color, plain              |
+  | `tux.pam`          | `P7`  | `RGB_ALPHA`, raw          |
+
+  PAM is the only one of these that keeps an alpha channel; the rest are
+  composited onto white first. Content sniffing only recognizes `P1`/`P2`/`P3`
+  and `P6`, so the `netpbm` decoder registers libmagic descriptions for the
+  others -- see `RegisterMimeType` in `decoder/netpbm`.
 
 [webp-gallery]: https://developers.google.com/speed/webp/gallery
 [jxl-test]: https://jpegxl.info/resources/jpeg-xl-test-page

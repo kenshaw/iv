@@ -9,6 +9,12 @@ import (
 )
 
 func init() {
+	// content sniffing only recognizes the plain (ASCII) variants and raw
+	// ppm, so let libmagic identify the rest by its description
+	decoder.RegisterMimeType("image/x-portable-arbitrarymap", `^Netpbm PAM image file`)
+	decoder.RegisterMimeType("image/x-portable-bitmap", `(?s)^Netpbm image data.*\bbitmap$`)
+	decoder.RegisterMimeType("image/x-portable-graymap", `(?s)^Netpbm image data.*\bgreymap$`)
+	decoder.RegisterMimeType("image/x-portable-pixmap", `(?s)^Netpbm image data.*\bpixmap$`)
 	decoder.RegisterBuiltin(
 		"netpbm",
 		decoder.Desc("Netpbm Portable Bitmap Formats"),

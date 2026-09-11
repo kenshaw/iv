@@ -37,3 +37,16 @@
 
 *.xml
 *.html
+
+/.bash_profile
+/.bashrc
+/.claude/
+/.gitconfig
+/.gitmodules
+/.idea
+/.mcp.json
+/.profile
+/.ripgreprc
+/.vscode
+/.zprofile
+/.zshrc
