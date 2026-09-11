@@ -28,14 +28,9 @@ jobs:
             shell: bash
           - os: windows-latest
             shell: 'msys2 {0}'
-            # xo/magic's libmagic needs shlwapi, which its cgo LDFLAGS miss.
-            # -extldflags is emitted last, where ld can still resolve it
-            goflags: '-ldflags=-extldflags=-lshlwapi'
     defaults:
       run:
         shell: ${{ matrix.shell }}
-    env:
-      GOFLAGS: ${{ matrix.goflags }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7

@@ -112,7 +112,10 @@ func TestDecodeFile(t *testing.T) {
 				}
 			}
 			img, _, err := decoder.DecodeFile(ctx, pathName)
-			if err != nil {
+			switch {
+			case errors.Is(err, decoder.ErrUnsupportedFormat):
+				t.Skipf("this build cannot decode %s: %v", test.name, err)
+			case err != nil:
 				t.Fatalf("expected no error, got: %v", err)
 			}
 			assertImage(t, img)

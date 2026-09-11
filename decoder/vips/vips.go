@@ -59,9 +59,36 @@ func match(_ context.Context, mime, _ string) bool {
 	return strings.HasPrefix(mime, "image/")
 }
 
+// loaders maps the mime types iv routes to libvips onto the load operation
+// that handles them, for the formats a libvips build can be compiled without.
+// Anything missing here is assumed to be supported.
+var loaders = map[string]string{
+	"image/avif":     "heifload_source",
+	"image/heic":     "heifload_source",
+	"image/heif":     "heifload_source",
+	"image/jp2":      "jp2kload_source",
+	"image/jpx":      "jp2kload_source",
+	"image/jxl":      "jxlload_source",
+	"image/x-exr":    "openexrload",
+	"image/fits":     "fitsload",
+	"image/x-matlab": "matload",
+}
+
+// supported reports whether this libvips build can load the mime type,
+// wrapping [decoder.ErrUnsupportedFormat] when it cannot.
+func supported(mime string) error {
+	if op, ok := loaders[mime]; ok && !vips.HasOperation(op) {
+		return fmt.Errorf("%s: %w", op, decoder.ErrUnsupportedFormat)
+	}
+	return nil
+}
+
 // decode decodes an image with libvips.
 func decode(ctx context.Context, r io.Reader) (any, error) {
 	ivvips.Init(ctx)
+	if err := supported(ivctx.Mime(ctx)); err != nil {
+		return nil, fmt.Errorf("vips load: %w", err)
+	}
 	var err error
 	// not every libvips loader accepts every load option -- the jxl loader
 	// rejects `unlimited`, the jp2k loader rejects `n` -- so fall back to
@@ -126,6 +153,9 @@ func isUnsupportedOption(err error) bool {
 // document is encrypted.
 func DecodePdf(ctx context.Context, r io.Reader) (any, error) {
 	ivvips.Init(ctx)
+	if !vips.HasOperation("pdfload_source") {
+		return nil, fmt.Errorf("vips load: pdfload_source: %w", decoder.ErrUnsupportedFormat)
+	}
 	var pass []byte
 	for i := range maxPasswordAttempts {
 		opts := &vips.PdfloadSourceOptions{

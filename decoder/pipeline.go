@@ -17,8 +17,14 @@ import (
 // pipeline, bounding decoder cycles.
 const maxDepth = 8
 
-// ErrNotSupported is returned when no registered decoder handles the input.
-var ErrNotSupported = errors.New("not supported")
+var (
+	// ErrNotSupported is returned when no registered decoder handles the
+	// input.
+	ErrNotSupported = errors.New("not supported")
+	// ErrUnsupportedFormat is returned when a decoder handles the input's
+	// format but the underlying library was not built with support for it.
+	ErrUnsupportedFormat = errors.New("format not supported by this build")
+)
 
 // stateKey is the context key for the running decoder's initialized state.
 type stateKey struct{}

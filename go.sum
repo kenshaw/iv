@@ -181,8 +181,8 @@ github.com/tetratelabs/wazero v1.12.0/go.mod h1:LvKtzl2RqO4gyF27BiXU+nKAjcV8f38U
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/ulikunitz/xz v0.5.16 h1:ld6NyySjx5lowVKwJvMRLnW5nxKX/xnpSiFYZ/Lxur0=
 github.com/ulikunitz/xz v0.5.16/go.mod h1:H9Rt/W6/Qj27PGauhQc6nfCDy7vHpzsOThBSaYDoEhw=
-github.com/xo/magic v0.1.0 h1:Bm7p36bmmuhWIuuL4U9ouLZ7wa9H8q3tXCmubMOBVTI=
-github.com/xo/magic v0.1.0/go.mod h1:jWb8h8uFvr5RuNcP8sCK4dtCv5ZnC4+YI4nQQVn90nc=
+github.com/xo/magic v0.2.0 h1:EOF1jiwKEEtPzNVaL5CgObFdrMnjFiq2PXNzBf4tJXE=
+github.com/xo/magic v0.2.0/go.mod h1:jWb8h8uFvr5RuNcP8sCK4dtCv5ZnC4+YI4nQQVn90nc=
 github.com/xo/ox v0.0.0-20260826020025-6fcd48b711a6 h1:rdtMHm0oZMxg5b8vtesFOrt0rGTv+vIK9D4DYgRFbUs=
 github.com/xo/ox v0.0.0-20260826020025-6fcd48b711a6/go.mod h1:MREUmRj7Fcm+0Gc/UImQNaZoq1nexrj0jkNBdo/ljnY=
 github.com/xo/resvg v0.8.0 h1:5thEPT6WpMHIjlI5FrHVgpIuHR62evJ3JuPJckQ0VOs=

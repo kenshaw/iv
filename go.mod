@@ -21,7 +21,7 @@ require (
 	github.com/stephenafamo/goldmark-pdf v0.4.2
 	github.com/tc-hib/winres v0.3.1
 	github.com/tdewolff/canvas v0.0.0-20260901160717-dae8cd8e19a7
-	github.com/xo/magic v0.1.0
+	github.com/xo/magic v0.2.0
 	github.com/xo/ox v0.0.0-20260826020025-6fcd48b711a6
 	github.com/xo/resvg v0.8.0
 	github.com/yuin/goldmark v1.8.6
