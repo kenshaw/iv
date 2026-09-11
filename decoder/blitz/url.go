@@ -2,6 +2,7 @@ package blitz
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +13,11 @@ import (
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/ivctx"
 )
+
+// ErrFetch is returned when the url could not be retrieved at all, which
+// separates a network or site problem from a failure to render what came
+// back.
+var ErrFetch = errors.New("fetch failed")
 
 // decodeURL fetches the url and either renders it as a page or hands it back
 // to the pipeline. A url naming an image or a pdf is still that image or pdf,
@@ -50,15 +56,15 @@ func fetch(ctx context.Context, urlstr string) ([]byte, string, error) {
 	req.Header.Set("User-Agent", UserAgent)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("%w: %s: %w", ErrFetch, urlstr, err)
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return nil, "", fmt.Errorf("%s: %s", urlstr, res.Status)
+		return nil, "", fmt.Errorf("%w: %s: %s", ErrFetch, urlstr, res.Status)
 	}
 	buf, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("%w: %s: %w", ErrFetch, urlstr, err)
 	}
 	mime, _, _ := strings.Cut(res.Header.Get("Content-Type"), ";")
 	if mime = strings.TrimSpace(mime); mime == "" || mime == "application/octet-stream" {

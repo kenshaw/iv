@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/kenshaw/iv/decoder"
+	"github.com/kenshaw/iv/decoder/blitz"
 	"github.com/kenshaw/iv/encoder"
 	"github.com/kenshaw/iv/ivctx"
 )
@@ -134,6 +135,9 @@ const StringExt = ".iv_test_string"
 // are keyed by file name and checked for completeness, so a string added
 // without being described here fails rather than going quietly untested.
 func TestDecodeString(t *testing.T) {
+	// A zero in size means the dimension is not checked: a rendered web page
+	// is only as tall as whatever the site served that minute, and the width
+	// is the one part of it iv decides.
 	exp := map[string]struct {
 		mime string
 		size image.Point
@@ -143,6 +147,10 @@ func TestDecodeString(t *testing.T) {
 		"data-svg-base64":     {"image/svg+xml", image.Pt(100, 100)},
 		"data-svg-urlencoded": {"image/svg+xml", image.Pt(64, 64)},
 		"data-png-base64":     {"image/png", image.Pt(1, 1)},
+		// a page blitz renders is handed back as an image, so like the QR
+		// code it arrives without a mime type
+		"yahoo":       {"", image.Pt(pageWidth, 0)},
+		"ifconfig-me": {"", image.Pt(pageWidth, 0)},
 	}
 	dir := filepath.Join("..", "testdata", "strings")
 	names, err := filepath.Glob(filepath.Join(dir, "*"+StringExt))
@@ -166,14 +174,25 @@ func TestDecodeString(t *testing.T) {
 				t.Fatalf("expected no error, got: %v", err)
 			}
 			img, mime, err := decoder.DecodeString(testContext(t), s)
-			if err != nil {
+			switch {
+			case errors.Is(err, blitz.ErrFetch):
+				// the network, or the site, rather than iv
+				t.Skipf("skipping decode: %v", err)
+			case err != nil:
 				t.Fatalf("expected no error, got: %v", err)
 			}
 			if mime != want.mime {
 				t.Errorf("expected mime %q, got %q", want.mime, mime)
 			}
-			if got := img.Bounds().Size(); got != want.size {
-				t.Errorf("expected size %v, got %v", want.size, got)
+			got := img.Bounds().Size()
+			if want.size.X != 0 && got.X != want.size.X {
+				t.Errorf("expected width %d, got %d", want.size.X, got.X)
+			}
+			switch {
+			case want.size.Y != 0 && got.Y != want.size.Y:
+				t.Errorf("expected height %d, got %d", want.size.Y, got.Y)
+			case want.size.Y == 0 && got.Y <= 0:
+				t.Errorf("expected a positive height, got %d", got.Y)
 			}
 		})
 	}
@@ -214,6 +233,9 @@ func readString(pathName string) (string, error) {
 const (
 	cardWidth  = 1000
 	cardHeight = 448
+	// pageWidth is the width blitz renders a document at: its viewport width
+	// times its scale.
+	pageWidth = 2400
 )
 
 func TestDecodeTagCard(t *testing.T) {
