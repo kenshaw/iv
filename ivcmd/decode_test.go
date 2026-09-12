@@ -155,8 +155,13 @@ func TestDecodeString(t *testing.T) {
 		"data-png-base64":     {"image/png", image.Pt(1, 1)},
 		// a page blitz renders is handed back as an image, so like the QR
 		// code it arrives without a mime type
-		"yahoo":       {"", image.Pt(pageWidth, 0)},
-		"ifconfig-me": {"", image.Pt(pageWidth, 0)},
+		"yahoo":          {"", image.Pt(pageWidth, 0)},
+		"ifconfig-me":    {"", image.Pt(pageWidth, 0)},
+		"finance-google": {"", image.Pt(pageWidth, 0)},
+		// a url naming an image is still that image: this one is not
+		// rendered as a page but handed back to the pipeline, and the mime is
+		// what says so -- a rendered page arrives without one
+		"microsoft-favicon": {"image/vnd.microsoft.icon", image.Pt(0, 0)},
 	}
 	dir := filepath.Join("..", "testdata", "strings")
 	names, err := filepath.Glob(filepath.Join(dir, "*"+StringExt))

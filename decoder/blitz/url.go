@@ -43,53 +43,65 @@ func decodeURL(ctx context.Context, urlstr string) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	buf, mime, err := fetch(ctx, urlstr)
+	buf, mime, final, err := fetch(ctx, urlstr)
 	if err != nil {
 		return nil, err
 	}
 	switch {
 	case strings.Contains(mime, "html"):
-		return render(ctx, c, string(buf), urlstr, true)
+		return render(ctx, c, string(buf), final, true)
 	case strings.Contains(mime, "markdown"):
-		return render(ctx, c, string(buf), urlstr, false)
+		return render(ctx, c, string(buf), final, false)
 	}
 	var name string
-	if u, err := url.Parse(urlstr); err == nil {
+	if u, err := url.Parse(final); err == nil {
 		name = path.Base(u.Path)
 	}
 	return decoder.NewBytes(mime, buf).WithExt(ivctx.FileExt(name)), nil
 }
 
-// fetch retrieves the url, returning the body and the mime type the server
-// reported. A server that reports nothing usable is overruled by sniffing the
-// body, which is what lets an extensionless url still route.
-func fetch(ctx context.Context, urlstr string) ([]byte, string, error) {
+// fetch retrieves the url, returning the body, the mime type the server
+// reported, and the url the body actually came from. A server that reports
+// nothing usable is overruled by sniffing the body, which is what lets an
+// extensionless url still route.
+//
+// The url followed matters: relative links and sub-resources in a page have
+// to resolve against where it was served from, not where the request was
+// pointed, and the two differ the moment anything redirects.
+func fetch(ctx context.Context, urlstr string) ([]byte, string, string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlstr, nil)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 	req.Header.Set("User-Agent", UserAgent)
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, "", fmt.Errorf("%w: %s: %w", ErrFetch, urlstr, err)
+		return nil, "", "", fmt.Errorf("%w: %s: %w", ErrFetch, urlstr, err)
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return nil, "", fmt.Errorf("%w: %s: %s", ErrFetch, urlstr, res.Status)
+		return nil, "", "", fmt.Errorf("%w: %s: %s", ErrFetch, urlstr, res.Status)
 	}
 	// one byte past the limit is read so that hitting it can be told from a
 	// body that merely ends there
 	buf, err := io.ReadAll(io.LimitReader(res.Body, maxFetch+1))
 	switch {
 	case err != nil:
-		return nil, "", fmt.Errorf("%w: %s: %w", ErrFetch, urlstr, err)
+		return nil, "", "", fmt.Errorf("%w: %s: %w", ErrFetch, urlstr, err)
 	case len(buf) > maxFetch:
-		return nil, "", fmt.Errorf("%w: %s: larger than the %d byte limit", ErrFetch, urlstr, maxFetch)
+		return nil, "", "", fmt.Errorf("%w: %s: larger than the %d byte limit", ErrFetch, urlstr, maxFetch)
 	}
 	mime, _, _ := strings.Cut(res.Header.Get("Content-Type"), ";")
 	if mime = strings.TrimSpace(mime); mime == "" || mime == "application/octet-stream" {
 		mime, _, _ = strings.Cut(http.DetectContentType(buf), ";")
 	}
-	ivctx.Logf(ctx, "blitz url: %s %s %d bytes %s", urlstr, res.Status, len(buf), mime)
-	return buf, mime, nil
+	final := urlstr
+	if res.Request != nil && res.Request.URL != nil {
+		final = res.Request.URL.String()
+	}
+	if final != urlstr {
+		ivctx.Logf(ctx, "blitz url: %s redirected to %s", urlstr, final)
+	}
+	ivctx.Logf(ctx, "blitz url: %s %s %d bytes %s", final, res.Status, len(buf), mime)
+	return buf, mime, final, nil
 }

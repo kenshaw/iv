@@ -20,7 +20,7 @@ require (
 	github.com/spakin/netpbm v1.3.2
 	github.com/tc-hib/winres v0.3.1
 	github.com/tdewolff/canvas v0.0.0-20260901160717-dae8cd8e19a7
-	github.com/xo/blitz v0.2.2
+	github.com/xo/blitz v0.3.0
 	github.com/xo/magic v0.2.0
 	github.com/xo/ox v0.0.0-20260826020025-6fcd48b711a6
 	github.com/xo/resvg v0.8.0

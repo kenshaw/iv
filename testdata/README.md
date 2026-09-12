@@ -50,17 +50,32 @@ files are never mistaken for something to render.
 | `data-png-base64.iv_test_string`     | `data`      | 1x1 png              |
 | `yahoo.iv_test_string`               | `blitz-url` | the page, 2400 wide  |
 | `ifconfig-me.iv_test_string`         | `blitz-url` | the page, 2400 wide  |
+| `finance-google.iv_test_string`      | `blitz-url` | the page, 2400 wide  |
+| `microsoft-favicon.iv_test_string`   | `ico`       | 128x128 icon         |
 
 `TestDecodeString` reads the directory and checks each one against a table
 keyed by file name; a string added without an entry in that table fails, so
 they cannot go quietly untested. `test.sh` passes the contents of each file as
 an argument and skips them when walking for files to open.
 
-The two URLs are the only test data that reaches the network. Only their width
-is checked -- a rendered page is as tall as whatever the site served that
-minute, and the width is the one part of it `iv` decides. A fetch that fails
-is reported as `blitz.ErrFetch`, which the test skips on, so an unreachable
-site does not fail the suite while a blitz regression still does.
+The four URLs are the only test data that reaches the network. A fetch that
+fails is reported as `blitz.ErrFetch`, which the test skips on, so an
+unreachable site does not fail the suite while a blitz regression still does.
+
+Only the width of a rendered page is checked: a page is as tall as whatever
+the site served that minute, and the width is the one part of it `iv` decides.
+The three pages are picked to differ -- `ifconfig.me` is a small static page,
+`yahoo.com` a megabyte of markup, and `finance.google.com` a 302 to
+`www.google.com/finance/` laid out in cards and tables. The redirect is the
+point of that last one: the page has to be rendered against the url it was
+served from rather than the one asked for, or everything relative in it
+resolves against the wrong host.
+
+`www.microsoft.com/favicon.ico` is the other half of what `blitz-url` does. A
+url naming an image is still that image, so it is never rendered as a page --
+`blitz-url` hands the bytes back to the pipeline and the `ico` decoder takes
+them. The mime type is what the test asserts, because a page comes back
+without one; the size is left alone, since it is Microsoft's icon to change.
 
 `vips/file-sample_150kB.enc.pdf` is the plain pdf encrypted with the password
 `password`, kept in step with `encPassword` in `ivcmd/decode_test.go` and

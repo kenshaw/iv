@@ -156,8 +156,8 @@ github.com/tetratelabs/wazero v1.12.0/go.mod h1:LvKtzl2RqO4gyF27BiXU+nKAjcV8f38U
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/ulikunitz/xz v0.5.16 h1:ld6NyySjx5lowVKwJvMRLnW5nxKX/xnpSiFYZ/Lxur0=
 github.com/ulikunitz/xz v0.5.16/go.mod h1:H9Rt/W6/Qj27PGauhQc6nfCDy7vHpzsOThBSaYDoEhw=
-github.com/xo/blitz v0.2.2 h1:0vz+AB/ZL8ZWphvgCwFWjxVQPklGhis8oUyG5egYQIQ=
-github.com/xo/blitz v0.2.2/go.mod h1:/9oyN3qCq94z3tQf4xtJ4RGAFfjhCjIAwOEEPVorhek=
+github.com/xo/blitz v0.3.0 h1:7WpfmX2D4i0qByXgY/pCnX5Ko1/5Dxe25SZ9LIgZcX0=
+github.com/xo/blitz v0.3.0/go.mod h1:/9oyN3qCq94z3tQf4xtJ4RGAFfjhCjIAwOEEPVorhek=
 github.com/xo/blitz/libblitz/linux-amd64 v0.1.0 h1:vl46Z9SgnWlFwWsiMzQswcDzJwxCTjv1ehY7vvqAJ5Q=
 github.com/xo/blitz/libblitz/linux-amd64 v0.1.0/go.mod h1:hOzAnwKTyLslQX8tA7ngUJvqTbBKMZ4B3jNJSkz6Rg8=
 github.com/xo/blitz/libblitz/linux-arm64 v0.1.0 h1:YHOXe5DzPyGJjsR6LY+w9nuMUGuvfntg9MsfzlO0BEs=
