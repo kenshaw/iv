@@ -28,15 +28,7 @@ func TestRoundTrip(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			want := loadNRGBA(t, name)
-			v, err := Import(ctx, want)
-			if err != nil {
-				t.Fatalf("expected no error, got: %v", err)
-			}
-			got, err := Export(ctx, v)
-			if err != nil {
-				t.Fatalf("expected no error, got: %v", err)
-			}
-			assertSame(t, want, got, 0)
+			assertSame(t, want, roundTrip(t, ctx, want), 0)
 		})
 	}
 }
@@ -55,14 +47,7 @@ func TestImportConverts(t *testing.T) {
 			rgba.Set(x, y, src.At(x, y))
 		}
 	}
-	v, err := Import(ctx, rgba)
-	if err != nil {
-		t.Fatalf("expected no error, got: %v", err)
-	}
-	got, err := Export(ctx, v)
-	if err != nil {
-		t.Fatalf("expected no error, got: %v", err)
-	}
+	got := roundTrip(t, ctx, rgba)
 	// an [image.RGBA] stores its colors premultiplied, which is lossy in
 	// itself, so the trip out through unpremultiplied samples and back cannot
 	// land exactly. What is being checked is that the conversion happened at
@@ -78,14 +63,7 @@ func TestImportSubImage(t *testing.T) {
 	full := loadNRGBA(t, "png/tux.png")
 	b := full.Bounds()
 	sub := full.SubImage(image.Rect(b.Min.X+10, b.Min.Y+10, b.Min.X+40, b.Min.Y+40))
-	v, err := Import(ctx, sub)
-	if err != nil {
-		t.Fatalf("expected no error, got: %v", err)
-	}
-	got, err := Export(ctx, v)
-	if err != nil {
-		t.Fatalf("expected no error, got: %v", err)
-	}
+	got := roundTrip(t, ctx, sub)
 	if size := got.Bounds().Size(); size != (image.Point{X: 30, Y: 30}) {
 		t.Fatalf("expected 30x30, got %v", size)
 	}
@@ -126,6 +104,31 @@ func TestExportNoAlpha(t *testing.T) {
 			}
 		}
 	}
+}
+
+// roundTrip sends a Go image through libvips and back, as a lossless png so
+// that any difference in the result is the conversion's and not the format's.
+//
+// Going out through [Save] is the point: the pixels of an NRGBA reach libvips
+// by reference, and it is the encode inside Save that reads them. A round trip
+// that stopped at the image would never touch the memory that matters.
+func roundTrip(t *testing.T, ctx context.Context, img image.Image) image.Image {
+	t.Helper()
+	buf, err := Save(ctx, img, func(v *vips.Image) ([]byte, error) {
+		return v.PngsaveBuffer(nil)
+	})
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	v, err := vips.NewImageFromBuffer(buf, nil)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	got, err := Export(ctx, v)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	return got
 }
 
 // assertSame checks two images hold the same pixels, comparing the

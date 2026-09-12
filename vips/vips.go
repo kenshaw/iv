@@ -9,6 +9,7 @@ import (
 	"image"
 	"image/draw"
 	"image/png"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -149,49 +150,69 @@ func export(v *vips.Image) (image.Image, error) {
 	return &image.NRGBA64{Pix: pix, Stride: w * 8, Rect: rect}, nil
 }
 
-// Import converts a Go image to a vips image.
+// SaveFunc encodes a vips image in a specific format.
+type SaveFunc func(*vips.Image) ([]byte, error)
+
+// Save encodes a Go image with libvips.
 //
-// An [image.NRGBA] is handed over as memory with nothing copied, which is what
-// [Export] produces and what the scaler and the compositor leave behind, so
-// the common path costs nothing at all. Anything else is converted to one
-// first, in a single pass.
+// An [image.NRGBA] is handed to libvips as memory with nothing copied, which
+// is what [Export] produces and what the scaler and the compositor leave
+// behind, so the common path converts nothing at all. Anything else is
+// converted to one first, in a single pass. A 16 bit image is the exception:
+// libvips only takes 8 bit pixels from memory, so that one goes through a
+// lossless png rather than lose half its depth on the way in.
 //
-// A 16 bit image is the exception: libvips only takes 8 bit pixels from
-// memory, so that one goes through a lossless png rather than lose half its
-// depth on the way in.
-func Import(ctx context.Context, img image.Image) (*vips.Image, error) {
+// The save happens here rather than in the caller because libvips is reading
+// pixels it does not own: [vips.Image.Copy] hands back an image holding no
+// reference to the Go buffer behind it, so nothing but the call below keeps
+// that buffer from being collected while libvips is still reading it.
+func Save(ctx context.Context, img image.Image, save SaveFunc) ([]byte, error) {
 	if img == nil {
-		return nil, fmt.Errorf("vips import: invalid image")
+		return nil, fmt.Errorf("vips save: invalid image")
 	}
 	Init(ctx)
 	start := time.Now()
-	v, how, err := importImage(img)
+	v, keep, how, err := importImage(img)
 	if err != nil {
 		return nil, fmt.Errorf("vips import: %w", err)
 	}
+	// the deferred call is what spans the save: libvips reads the pixels for
+	// as long as it is encoding them
+	defer runtime.KeepAlive(keep)
 	ivctx.Logf(ctx, "vips import: %T via %s: %v", img, how, time.Since(start))
-	return v, nil
+	buf, err := save(v)
+	if err != nil {
+		return nil, fmt.Errorf("vips save: %w", err)
+	}
+	return buf, nil
 }
 
-// importImage converts the Go image to a vips image, reporting the route it
-// took.
-func importImage(img image.Image) (*vips.Image, string, error) {
+// importImage converts the Go image to a vips image, returning the value that
+// has to stay alive for as long as libvips is reading it, and the route the
+// conversion took.
+func importImage(img image.Image) (*vips.Image, any, string, error) {
 	if deepImage(img) {
+		// a png carries its own pixels across, so nothing of ours outlives
+		// this call
 		buf := new(bytes.Buffer)
 		if err := png.Encode(buf, img); err != nil {
-			return nil, "", err
+			return nil, nil, "", err
 		}
 		v, err := vips.NewImageFromBuffer(buf.Bytes(), nil)
-		return v, "png", err
+		return v, nil, "png", err
 	}
 	n := nrgba(img)
 	b := n.Bounds()
 	v, err := vips.NewImageFromMemory(n.Pix, b.Dx(), b.Dy(), 4)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, "", err
 	}
 	defer v.Close()
-	return tag(v)
+	out, err := tag(v)
+	if err != nil {
+		return nil, nil, "", err
+	}
+	return out, n, "memory", nil
 }
 
 // tag returns the image with its bands named as sRGB.
@@ -201,7 +222,7 @@ func importImage(img image.Image) (*vips.Image, string, error) {
 // the jxl one refuses outright with a JxlEncoderSetBasicInfo error, and none
 // of them should have to guess. A copy is what sets the interpretation, and it
 // moves no pixels: every other field is carried across as it was.
-func tag(v *vips.Image) (*vips.Image, string, error) {
+func tag(v *vips.Image) (*vips.Image, error) {
 	out, err := v.Copy(&vips.CopyOptions{
 		Width:          v.Width(),
 		Height:         v.Height(),
@@ -215,16 +236,19 @@ func tag(v *vips.Image) (*vips.Image, string, error) {
 		Yoffset:        v.OffsetY(),
 	})
 	if err != nil {
-		return nil, "", fmt.Errorf("copy: %w", err)
+		return nil, fmt.Errorf("copy: %w", err)
 	}
-	return out, "memory", nil
+	return out, nil
 }
 
 // deepImage reports whether the image holds more than 8 bits a sample, and so
 // has something to lose by being handed over as memory.
+//
+// [image.CMYK] is not one of these: its samples are 8 bits, and converting it
+// to rgba costs a pass rather than a depth.
 func deepImage(img image.Image) bool {
 	switch img.(type) {
-	case *image.NRGBA64, *image.RGBA64, *image.Gray16, *image.CMYK:
+	case *image.NRGBA64, *image.RGBA64, *image.Gray16:
 		return true
 	}
 	return false

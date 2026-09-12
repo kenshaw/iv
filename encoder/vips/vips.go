@@ -19,7 +19,7 @@ import (
 //
 // The buffer variants are used rather than the target ones: several libvips
 // savers seek within their output, which an arbitrary [io.Writer] cannot do.
-type saveFunc func(*vips.Image) ([]byte, error)
+type saveFunc = ivvips.SaveFunc
 
 // format describes a libvips backed encoder.
 type format struct {
@@ -75,13 +75,9 @@ func encodeFunc(op string, save saveFunc) encoder.EncodeFunc {
 		if !vips.HasOperation(op) {
 			return fmt.Errorf("vips encode: %s: %w", op, encoder.ErrUnsupportedFormat)
 		}
-		v, err := ivvips.Import(ctx, img)
+		out, err := ivvips.Save(ctx, img, save)
 		if err != nil {
 			return fmt.Errorf("vips encode: %w", err)
-		}
-		out, err := save(v)
-		if err != nil {
-			return fmt.Errorf("vips encode: save: %w", err)
 		}
 		_, err = w.Write(out)
 		return err
