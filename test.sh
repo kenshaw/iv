@@ -6,9 +6,16 @@
 
 set -eu
 
-IVBIN=$(which iv)
+# a binary built in the source directory wins, and $PATH is the fallback.
+# `command -v` cannot fail the script here: under `set -e` it would take the
+# whole run down before the ./iv check below ever ran
+IVBIN=$(command -v iv || true)
 if [ -e ./iv ]; then
   IVBIN=./iv
+fi
+if [ -z "$IVBIN" ]; then
+  echo "error: no ./iv, and no iv in \$PATH (try: go build -o ./iv .)"
+  exit 1
 fi
 IVBIN=$(realpath $IVBIN)
 

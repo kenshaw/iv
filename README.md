@@ -171,24 +171,29 @@ $ go test ./...
 $ go build -o ./iv . && ./test.sh
 
 # a release build: versioned, stripped, and packed
-$ ./build.sh -v v0.0.0
+$ ./build.sh -v v0.1.0
 ```
 
-`build.sh` writes to `build/<os>/<arch>/<version>/`. `-i` installs instead of
-packing, `-b` builds without packing, `-a` cross compiles to another arch, and
-`-s` makes a fully static linux binary.
+`build.sh` writes to `build/<os>/<arch>/<version>/`. `-r` takes the version
+from the latest tag instead of `-v`, `-i` installs rather than packing, `-b`
+builds without packing, `-a` cross compiles to another arch, and `-s` makes a
+fully static linux binary.
 
 ### Optional tools
 
-Four decoders shell out, and report the file as unsupported when the command
-is not on `$PATH`:
+Four decoders shell out. Without the command, the file fails to render with
+`<command> not in path` rather than being quietly skipped:
 
-| Command   | Used for                                             |
-| --------- | ---------------------------------------------------- |
-| `soffice` | Word, Excel, PowerPoint, and OpenDocument documents   |
-| `mmdc`    | Mermaid diagrams                                      |
-| `ffmpeg`  | video snapshots, and the waveform on an audio card   |
-| `binwalk` | images embedded in otherwise unrecognized files      |
+| Command   | Used for                                           |
+| --------- | -------------------------------------------------- |
+| `soffice` | Word, Excel, PowerPoint, and OpenDocument documents |
+| `mmdc`    | Mermaid diagrams                                    |
+| `ffmpeg`  | video snapshots, and the waveform on an audio card  |
+| `binwalk` | images embedded in otherwise unrecognized files     |
+
+A mermaid diagram is the exception: without `mmdc` it falls through to
+`blitz`, which renders the source as a document. An audio card is another --
+it is drawn without a waveform rather than not at all.
 
 ### 32-bit targets
 
