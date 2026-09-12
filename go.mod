@@ -26,6 +26,7 @@ require (
 	github.com/xo/ox v0.0.0-20260826020025-6fcd48b711a6
 	github.com/xo/resvg v0.8.0
 	golang.org/x/image v0.46.0
+	golang.org/x/sys v0.48.0
 	golang.org/x/term v0.46.0
 )
 
@@ -80,7 +81,6 @@ require (
 	github.com/yuin/goldmark v1.8.6 // indirect
 	go4.org v0.0.0-20260112195520-a5071408f32f // indirect
 	golang.org/x/net v0.59.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 	modernc.org/knuth v0.6.0 // indirect
 	modernc.org/token v1.1.0 // indirect

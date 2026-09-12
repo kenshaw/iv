@@ -141,35 +141,20 @@ func TestDecodePage(t *testing.T) {
 	}
 }
 
-// TestFit checks the render size follows the configured display size, keeping
-// the animation's aspect ratio. A zero leaves the renderer on the
-// composition's own size.
-func TestFit(t *testing.T) {
-	for _, test := range []struct {
-		name   string
-		w, h   uint
-		nw, nh int
-		expW   int
-		expH   int
-	}{
-		{"unset", 0, 0, 1024, 1024, 0, 0},
-		{"both", 200, 200, 1024, 1024, 200, 200},
-		{"wide composition", 400, 400, 800, 400, 400, 200},
-		{"tall composition", 400, 400, 400, 800, 200, 400},
-		// the other axis is left on its minimum, which then bounds the fit --
-		// the same as iv sizes an svg
-		{"width only", 200, 0, 1024, 1024, 64, 64},
-		{"no composition size", 200, 200, 0, 0, 0, 0},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			c := ivctx.New()
-			c.Width, c.Height = test.w, test.h
-			ctx := ivctx.WithConfig(context.Background(), c)
-			w, h := fit(ctx, test.nw, test.nh)
-			if w != test.expW || h != test.expH {
-				t.Errorf("expected %dx%d, got %dx%d", test.expW, test.expH, w, h)
-			}
-		})
+// TestDecodeDisplaySize checks an animation is rasterized at the size the
+// config displays it at, rather than at its own and resampled afterwards.
+func TestDecodeDisplaySize(t *testing.T) {
+	ctx := testContext(t)
+	c := ivctx.Get(ctx)
+	c.Width, c.Height = 200, 200
+	if got := render(t, ctx, "rocket.json").Bounds().Size(); got != (image.Point{X: 200, Y: 200}) {
+		t.Errorf("expected 200x200, got %v", got)
+	}
+	// a mode that scales nothing leaves the composition at its own size
+	none := ivctx.ModeNone
+	c.Mode = &none
+	if got := render(t, ctx, "rocket.json").Bounds().Size(); got != (image.Point{X: 1024, Y: 1024}) {
+		t.Errorf("expected 1024x1024, got %v", got)
 	}
 }
 

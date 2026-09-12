@@ -32,10 +32,11 @@ const DefaultEncoder = "rasterm"
 type Args struct {
 	Verbose         bool               `ox:"enable verbose,short:v"`
 	Quiet           bool               `ox:"enable quiet,short:q"`
-	Width           uint               `ox:"display width,short:W"`
-	Height          uint               `ox:"display height,short:H"`
-	MinWidth        uint               `ox:"minimum width,short:w,default:64"`
-	MinHeight       uint               `ox:"minimum height,short:h,default:64"`
+	Mode            *ivctx.Mode        `ox:"scaling mode,short:m,default:best-fit"`
+	Width           uint               `ox:"display width in pixels - 0 takes it from the terminal,short:W"`
+	Height          uint               `ox:"display height in pixels - 0 takes it from the terminal,short:H"`
+	MinWidth        uint               `ox:"minimum width in pixels,short:w,default:64"`
+	MinHeight       uint               `ox:"minimum height in pixels,short:h,default:64"`
 	DPI             uint               `ox:"image dpi,default:300,name:dpi"`
 	Page            uint               `ox:"page to display,short:p"`
 	Fg              *colors.Color      `ox:"foreground color,default:dimgray"`
@@ -70,6 +71,7 @@ func (args *Args) Config(stderr io.Writer) *ivctx.Config {
 	c := &ivctx.Config{
 		Verbose:         args.Verbose,
 		Quiet:           args.Quiet,
+		Mode:            args.Mode,
 		Width:           args.Width,
 		Height:          args.Height,
 		MinWidth:        args.MinWidth,
@@ -125,7 +127,8 @@ func (args *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []
 	if err != nil {
 		return err
 	}
-	ctx = ivctx.WithConfig(ctx, args.Config(stderr))
+	c := args.Config(stderr)
+	ctx = ivctx.WithConfig(ctx, c)
 	// a decoder holding an engine -- graphviz, lottie, blitz -- releases it
 	// here, and a failure to is worth saying rather than dropping
 	defer func() {
@@ -133,7 +136,8 @@ func (args *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []
 			fmt.Fprintf(stderr, "error: %v\n", err)
 		}
 	}()
-	args.configureResvg()
+	args.resolveDisplay(ctx, c, stdout)
+	args.configureResvg(c)
 	targets, errs := Targets(cliargs...)
 	for _, err := range errs {
 		fmt.Fprintf(stderr, "error: %v\n", err)
@@ -185,15 +189,63 @@ func (args *Args) encoder() (*encoder.Entry, error) {
 	return e, nil
 }
 
+// resolveDisplay fills in the display size from the terminal when none was
+// configured, so that the rest of the pipeline works against a size in pixels
+// however it was arrived at.
+//
+// Only terminal output gets a size this way. Writing a file with --out has no
+// terminal to fit, and a conversion that silently downscaled to whatever
+// terminal happened to be attached would be a surprising thing for a
+// conversion to do -- there, an unset display size stays unset, and only an
+// explicit --width/--height bounds the result.
+func (args *Args) resolveDisplay(ctx context.Context, c *ivctx.Config, stdout io.Writer) {
+	if c.Mode.Get() == ivctx.ModeNone || c.Width != 0 || c.Height != 0 || args.Out != "" {
+		return
+	}
+	f, ok := stdout.(*os.File)
+	if !ok {
+		return
+	}
+	t, ok := ivctx.TermSize(f)
+	if !ok {
+		return
+	}
+	// the name printed above the image and the prompt that follows it both
+	// want a line, and an image sized to the last pixel of the screen scrolls
+	// the top of itself away
+	_, cellHeight := t.CellSize()
+	c.Width, c.Height = uint(t.Width), uint(max(t.Height-2*cellHeight, cellHeight))
+	how := "estimated"
+	if t.Exact {
+		how = "reported"
+	}
+	ivctx.Logf(ctx, "terminal: %dx%d cells, %dx%d pixels (%s), display: %dx%d",
+		t.Cols, t.Rows, t.Width, t.Height, how, c.Width, c.Height)
+}
+
 // configureResvg applies the background and scaling settings to the svg
 // renderer.
-func (args *Args) configureResvg() {
-	resvg.WithBackground(args.Bg)(resvg.Default)
-	if args.Width != 0 || args.Height != 0 {
-		resvg.WithScaleMode(resvg.ScaleBestFit)(resvg.Default)
-		resvg.WithWidth(max(int(args.Width), int(args.MinWidth)))(resvg.Default)
-		resvg.WithHeight(max(int(args.Height), int(args.MinHeight)))(resvg.Default)
+//
+// A vector has no size of its own to preserve, so it is rasterized to fill the
+// display size rather than resampled to it afterwards -- the same thing the
+// lottie and pdf renderers do, and the reason an svg comes out sharp at any
+// size.
+func (args *Args) configureResvg(c *ivctx.Config) {
+	resvg.WithBackground(c.Bg)(resvg.Default)
+	if c.Mode.Get() == ivctx.ModeNone {
+		return
 	}
+	w, h := max(int(c.Width), int(c.MinWidth)), max(int(c.Height), int(c.MinHeight))
+	if w == 0 && h == 0 {
+		return
+	}
+	mode := resvg.ScaleBestFit
+	if c.Mode.Get() == ivctx.ModeStretch && c.Width != 0 && c.Height != 0 {
+		mode = resvg.ScaleNone
+	}
+	resvg.WithScaleMode(mode)(resvg.Default)
+	resvg.WithWidth(w)(resvg.Default)
+	resvg.WithHeight(h)(resvg.Default)
 }
 
 // render decodes the target and writes it with the encoder.
@@ -213,7 +265,9 @@ func (args *Args) render(ctx context.Context, stdout io.Writer, enc *encoder.Ent
 	if err != nil {
 		return err
 	}
-	img = ivctx.AddBackground(ctx, mime, img)
+	// scaled before the background is composited, so the compositing runs
+	// over the pixels that are actually displayed rather than all of them
+	img = ivctx.AddBackground(ctx, mime, ivctx.Fit(ctx, img))
 	w := stdout
 	if args.Out != "" {
 		f, err := os.Create(args.Out)

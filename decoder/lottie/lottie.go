@@ -111,7 +111,12 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 	// point named .lot or .lottie was routed by that name rather than by the
 	// sniffer, and thorvg has the final say on what it can parse
 	nw, nh, _ := header(buf)
-	w, h := fit(ctx, nw, nh)
+	w, h := ivctx.Scale(ctx, nw, nh)
+	// thorvg draws to whatever size it is handed, so the animation is
+	// rasterized at the displayed size rather than resampled to it after: a
+	// composition has no pixels of its own to preserve. A zero size, from a
+	// document whose own size could not be read, leaves it on thorvg's.
+	//
 	// the errors this package returns already name themselves, and the
 	// pipeline prefixes the decoder on top, so nothing is added here
 	a, err := rend.Load(ctx, buf, lottie.Options{Width: w, Height: h})
@@ -141,23 +146,6 @@ func frameIndex(ctx context.Context, total int) int {
 		return page
 	}
 	return total / 2
-}
-
-// fit returns the size to rasterize an animation whose own composition is
-// nw x nh, scaled to fit the configured display size while keeping its
-// aspect ratio -- thorvg draws to whatever size it is handed, stretching the
-// artwork when that does not match.
-//
-// A zero size leaves the renderer on the composition's own, which is what iv
-// does with every other format when no size was asked for.
-func fit(ctx context.Context, nw, nh int) (int, int) {
-	c := ivctx.Get(ctx)
-	if nw <= 0 || nh <= 0 || (c.Width == 0 && c.Height == 0) {
-		return 0, 0
-	}
-	w, h := float64(max(c.Width, c.MinWidth)), float64(max(c.Height, c.MinHeight))
-	s := min(w/float64(nw), h/float64(nh))
-	return max(int(float64(nw)*s+0.5), 1), max(int(float64(nh)*s+0.5), 1)
 }
 
 // dotLottie lists the animations in a dotLottie archive, handing them back to

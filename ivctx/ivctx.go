@@ -14,13 +14,20 @@ import (
 
 	"github.com/kenshaw/colors"
 	"github.com/tdewolff/canvas"
+	"github.com/xo/ox"
 )
+
+func init() {
+	ox.RegisterTypeName(ox.Type("mode"), "*ivctx.Mode")
+	ox.RegisterTextType(NewMode)
+}
 
 // Config is the iv pipeline configuration. A nil or absent config behaves as
 // [New], so that decoders can always be exercised without a command line.
 type Config struct {
 	Verbose         bool
 	Quiet           bool
+	Mode            *Mode
 	Width           uint
 	Height          uint
 	MinWidth        uint
@@ -55,7 +62,9 @@ type Config struct {
 
 // New creates a config with the same defaults as the iv command.
 func New() *Config {
+	mode := ModeBestFit
 	c := &Config{
+		Mode:       &mode,
 		MinWidth:   64,
 		MinHeight:  64,
 		DPI:        300,
@@ -79,8 +88,13 @@ func named(n colors.NamedColor) *colors.Color {
 	return &c
 }
 
-// Init normalizes the config, ensuring the loggers are non-nil.
+// Init normalizes the config, ensuring the scaling mode is set and the
+// loggers are non-nil.
 func (c *Config) Init() {
+	if !c.Mode.Valid() {
+		mode := ModeBestFit
+		c.Mode = &mode
+	}
 	if c.Logger == nil {
 		c.Logger = func(string, ...any) {}
 	}

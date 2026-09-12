@@ -7,6 +7,7 @@ Kitty).
   <a href="#installing" title="Installing">Installing</a> |
   <a href="#building" title="Building">Building</a> |
   <a href="#using" title="Using">Using</a> |
+  <a href="#sizing" title="Sizing">Sizing</a> |
   <a href="#formats" title="Formats">Formats</a> |
   <a href="https://github.com/kenshaw/iv/releases" title="Releases">Releases</a>
 </p>
@@ -224,6 +225,49 @@ $ iv --list
 # all command line options
 $ iv --help
 ```
+
+## Sizing
+
+Drawing to a terminal, `iv` fits an image to it. Every measure is in pixels.
+
+The display size (`-W`/`-H`) is a ceiling and the minimum size (`-w`/`-h`, 64
+by default) a floor, and **between the two an image is shown at its own size**
+-- so an ordinary image is never resampled, and only one too big to fit or too
+small to make out is touched at all. An image above the ceiling is shrunk to
+it; one below the floor is grown up to it, and no further.
+
+Leave `-W`/`-H` at 0 and the ceiling comes from the terminal itself, which is
+the usual case. `iv` asks the kernel for the window size and uses the pixel
+geometry the terminal reports there; a terminal that reports only a character
+grid has its pixel size estimated from it instead. Two rows are kept back for
+the file name and the prompt that follow the image.
+
+A file written with `--out` gets no ceiling from the terminal -- there is no
+terminal to fit, and a conversion that quietly downscaled to whatever window
+happened to be open would be a surprising thing for a conversion to do. An
+explicit `-W`/`-H` still applies.
+
+`-m`/`--mode` changes how the two are used:
+
+| Mode       | What it does                                                     |
+| ---------- | ---------------------------------------------------------------- |
+| `best-fit` | the default, described above                                     |
+| `none`     | no scaling at all; every image is shown at its own size          |
+| `width`    | `best-fit` against the width alone, however tall the result runs |
+| `height`   | `best-fit` against the height alone                              |
+| `shrink`   | `best-fit` without the floor: a small image is left small        |
+| `stretch`  | fill `-W` x `-H` exactly, disregarding the aspect ratio          |
+
+Where the floor and the ceiling disagree -- a minimum larger than the room
+there is to show it in -- the ceiling wins. An image that clears the floor in
+one dimension is not grown to clear it in the other, so a 1000x2 banner stays
+1000x2 rather than becoming 32000 wide.
+
+An image small enough to be icon art is magnified by a whole number of pixels
+and not resampled, so a 24x24 favicon is its own pixels drawn three times
+larger rather than blurred up to 72. A vector -- svg, lottie, pdf -- has no
+pixels of its own to preserve, so it is rasterized at the size it is displayed
+at instead of being resampled to it, and comes out sharp at any size.
 
 ## Formats
 
