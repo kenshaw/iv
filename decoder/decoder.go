@@ -301,6 +301,10 @@ func (d *Entry) init(ctx context.Context) (any, error) {
 
 // Close closes every decoder that was initialized, returning the joined
 // errors.
+//
+// A close func is handed its decoder's state the same way a decode func is,
+// through [State] -- it is what there is to close, and the close runs long
+// after the decode that built it.
 func Close(ctx context.Context) error {
 	var errs []error
 	for _, d := range All() {
@@ -308,7 +312,7 @@ func Close(ctx context.Context) error {
 			continue
 		}
 		d.closed = true
-		if err := d.closeFunc(ctx); err != nil {
+		if err := d.closeFunc(context.WithValue(ctx, stateKey{}, d.state)); err != nil {
 			errs = append(errs, fmt.Errorf("%s: %w", d.Name, err))
 		}
 	}

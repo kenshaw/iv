@@ -76,6 +76,9 @@ func TestDecodeFile(t *testing.T) {
 		{"cbz", "archives/science-preview.cbz", "application/zip", "archives", ""},
 		{"cbr", "archives/science-preview.cbr", "application/vnd.rar", "archives", ""},
 		{"cbt", "archives/science-preview.cbt", "application/x-tar", "archives", ""},
+		{"lottie", "lottie/rocket.json", "video/lottie+json", "lottie", ""},
+		{"lottie lot", "lottie/star.lot", "video/lottie+json", "lottie", ""},
+		{"dotlottie", "lottie/fire.lottie", "application/zip", "lottie", ""},
 		{"binwalk", "binwalk/icon.afdesign", "application/octet-stream", "binwalk", "binwalk"},
 	} {
 		t.Run(test.name, func(t *testing.T) {

@@ -2,6 +2,7 @@ package decoder
 
 import (
 	"context"
+	"errors"
 	"image"
 	"io"
 	"slices"
@@ -205,8 +206,15 @@ func TestInitClose(t *testing.T) {
 				inits++
 				return "state", nil
 			},
-			func(context.Context) error {
+			func(ctx context.Context) error {
 				closes++
+				// what the init func built is what there is to close, so a
+				// close func reaches it the same way a decode func does --
+				// the decoders holding an engine (graphviz, lottie) have
+				// nothing else to release
+				if s, _ := State(ctx).(string); s != "state" {
+					t.Errorf("expected the init state on the close context, got %q", s)
+				}
 				return nil
 			},
 		),
@@ -235,6 +243,67 @@ func TestInitClose(t *testing.T) {
 	}
 	if closes != 1 {
 		t.Errorf("expected the close func to run once, ran %d times", closes)
+	}
+}
+
+// TestCloseAfterInitError checks a decoder whose init failed is still closed,
+// with nothing on the context to close -- the init func returned no state, so
+// there is none to hand over.
+func TestCloseAfterInitError(t *testing.T) {
+	defer cleanup(t, "ice")
+	var closes int
+	Register("ice",
+		MimeType("image/ice"),
+		Init(
+			func(context.Context) (any, error) {
+				return nil, errors.New("no engine here")
+			},
+			func(ctx context.Context) error {
+				closes++
+				if s := State(ctx); s != nil {
+					t.Errorf("expected no state on the close context, got %v", s)
+				}
+				return nil
+			},
+		),
+		Decoder(func(context.Context, io.Reader) (any, error) {
+			t.Error("the decode func must not run when the init func failed")
+			return nil, nil
+		}),
+	)
+	ctx := context.Background()
+	if _, _, err := Decode(ctx, "image/ice", "", strings.NewReader("x")); err == nil {
+		t.Fatal("expected an error")
+	}
+	if err := Close(ctx); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if closes != 1 {
+		t.Errorf("expected the close func to run once, ran %d times", closes)
+	}
+}
+
+// TestCloseSkipsUninitialized checks a decoder that was never reached is not
+// closed: there is nothing to release, and closing would run an engine's
+// teardown against an engine that was never started.
+func TestCloseSkipsUninitialized(t *testing.T) {
+	defer cleanup(t, "icu")
+	var closes int
+	Register("icu",
+		MimeType("image/icu"),
+		Init(
+			func(context.Context) (any, error) { return "state", nil },
+			func(context.Context) error {
+				closes++
+				return nil
+			},
+		),
+	)
+	if err := Close(context.Background()); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if closes != 0 {
+		t.Errorf("expected the close func not to run, ran %d times", closes)
 	}
 }
 

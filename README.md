@@ -7,6 +7,7 @@ Kitty).
   <a href="#installing" title="Installing">Installing</a> |
   <a href="#building" title="Building">Building</a> |
   <a href="#using" title="Using">Using</a> |
+  <a href="#formats" title="Formats">Formats</a> |
   <a href="https://github.com/kenshaw/iv/releases" title="Releases">Releases</a>
 </p>
 
@@ -106,6 +107,95 @@ Install `iv` in the usual Go fashion:
 $ go install github.com/kenshaw/iv@latest
 ```
 
+Note that this builds from source, and so needs what [Building](#building)
+does.
+
+## Building
+
+`iv` is cgo code. It links libvips for the image formats and pdfs the Go
+decoders do not cover, and fontconfig and freetype for the document renderer,
+so a Go toolchain on its own is not enough. Go 1.27 or later, plus the
+following per platform.
+
+### Linux
+
+```sh
+$ sudo apt-get install -y build-essential pkg-config libvips-dev \
+    libfontconfig-dev libfreetype-dev
+```
+
+libvips must be 8.18 or later -- the bindings `iv` uses are generated against
+it, and Ubuntu 24.04 and earlier ship 8.15.
+
+Debian and Ubuntu build libheif without any codec, so HEIC and AVIF need the
+plugins on top of that:
+
+```sh
+$ sudo apt-get install -y libheif-plugin-libde265 libheif-plugin-x265 \
+    libheif-plugin-aomdec libheif-plugin-aomenc
+```
+
+### macOS
+
+```sh
+$ brew install vips pkgconf
+```
+
+Some libvips builds put `-Xpreprocessor` in their pkg-config cflags, which cgo
+refuses to pass through. If the build stops on that, allow it:
+
+```sh
+$ export CGO_CFLAGS_ALLOW='-Xpreprocessor'
+```
+
+### Windows
+
+Build inside [MSYS2][], in the UCRT64 environment rather than MINGW64: the
+bundled mupdf calls `__intrinsic_setjmpex`, which only the UCRT runtime has.
+
+```sh
+$ pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-pkgconf \
+    mingw-w64-ucrt-x86_64-libvips
+```
+
+### Building and testing
+
+```sh
+# build, vet, and test
+$ go build ./...
+$ go vet ./...
+$ go test ./...
+
+# render everything in testdata/ through the pipeline, as a smoke test --
+# uses ./iv when it is there, and the iv on $PATH otherwise
+$ go build -o ./iv . && ./test.sh
+
+# a release build: versioned, stripped, and packed
+$ ./build.sh -v v0.0.0
+```
+
+`build.sh` writes to `build/<os>/<arch>/<version>/`. `-i` installs instead of
+packing, `-b` builds without packing, `-a` cross compiles to another arch, and
+`-s` makes a fully static linux binary.
+
+### Optional tools
+
+Four decoders shell out, and report the file as unsupported when the command
+is not on `$PATH`:
+
+| Command   | Used for                                             |
+| --------- | ---------------------------------------------------- |
+| `soffice` | Word, Excel, PowerPoint, and OpenDocument documents   |
+| `mmdc`    | Mermaid diagrams                                      |
+| `ffmpeg`  | video snapshots, and the waveform on an audio card   |
+| `binwalk` | images embedded in otherwise unrecognized files      |
+
+### 32-bit targets
+
+On `386` and `arm`, `epub`, `xps`, `mobi`, `fb2` and `psd` do not decode:
+go-fitz vendors its prebuilt mupdf for 64-bit targets only, and nothing
+registers for those formats there.
+
 ## Using
 
 ```sh
@@ -130,7 +220,114 @@ $ iv --list
 $ iv --help
 ```
 
+## Formats
+
+`iv --list` prints what the binary in front of you actually has. Everything
+below is in a default build; the decoders marked *needs* are only as good as
+the command they shell out to, and the libvips formats depend on how libvips
+itself was compiled.
+
+Anything holding more than one image is shown one at a time, and `-p N` picks
+which: a pdf or epub page, an icon size, a comic archive page, a lottie frame.
+An animated `gif` or `webp` is the exception, and always shows its first frame.
+
+### Images
+
+| Format                                    | Extensions                            | Decoder      |
+| ----------------------------------------- | ------------------------------------- | ------------ |
+| Portable Network Graphics, including APNG | `png`                                 | `png`        |
+| JPEG                                      | `jpg` `jpeg` `jpe` `jif` `jfif` `jfi` | `jpeg`       |
+| GIF, first frame of an animation          | `gif`                                 | `gif`        |
+| WebP, lossy and lossless                  | `webp`                                | `nativewebp` |
+| TIFF                                      | `tif` `tiff`                          | `tiff`       |
+| Windows Bitmap                            | `bmp` `dib`                           | `bmp`        |
+| Netpbm, raw and plain                     | `pbm` `pgm` `ppm` `pnm` `pam`         | `netpbm`     |
+| Windows icons and cursors                 | `ico` `cur`                           | `ico`        |
+| Apple Icon Image                          | `icns`                                | `icns`       |
+| HEIC/HEIF and AVIF                        | `heic` `heif` `avif`                  | `vips`       |
+| JPEG 2000 and JPEG XL                     | `jp2` `jpf` `j2k` `jxl` `jxs`         | `vips`       |
+| OpenEXR, Radiance HDR, PFM                | `exr` `hdr` `pfm` `rad`               | `vips`       |
+| FITS, MATLAB, NIfTI, native vips          | `fits` `mat` `nii` `v`                | `vips`       |
+
+### Vector graphics and diagrams
+
+| Format                            | Extensions            | Decoder    |
+| --------------------------------- | --------------------- | ---------- |
+| SVG, plain and gzipped            | `svg` `svgz`          | `resvg`    |
+| Lottie animations, and dotLottie  | `json` `lot` `lottie` | `lottie`   |
+| Graphviz graph description        | `gv` `dot`            | `graphviz` |
+| Mermaid diagrams *(needs `mmdc`)* | `mmd` `mermaid`       | `mermaid`  |
+
+A `.json` is only taken as a lottie when the document itself says so, so an
+ordinary json file is left alone.
+
+### Documents
+
+| Format                                                           | Extensions                                                                                 | Decoder       |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------- |
+| PDF, including password protected                                | `pdf`                                                                                      | `vips-pdf`    |
+| EPUB, XPS, MOBI, FictionBook, Photoshop                          | `epub` `xps` `oxps` `mobi` `fb2` `psd`                                                     | `fitz`        |
+| Markdown, HTML, and plain text                                   | `md` `markdown` `mkd` `mdown` `html` `htm` `xhtml` `txt`                                   | `blitz`       |
+| Comic book archives                                              | `cbz` `cbr` `cbt` `cb7`                                                                    | `archives`    |
+| Word, Excel, PowerPoint *(needs `soffice`)*                      | `doc` `docx` `dot` `dotx` `xls` `xlsx` `xlt` `xltx` `ppt` `pptx` `pot` `potx` `pps` `ppsx` | `libreoffice` |
+| OpenDocument *(needs `soffice`)*                                 | `odt` `ods` `odp` `odg` `odf` `odc` `ott` `ots` `otp` `otg`                                | `libreoffice` |
+| RTF, Publisher, Visio, WordPerfect, csv, tsv *(needs `soffice`)* | `rtf` `pub` `vsd` `wpd` `csv` `tsv`                                                        | `libreoffice` |
+
+### Video and audio
+
+| Format                                      | Extensions                                                                                                 | Decoder  |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------- |
+| Video, as a single frame *(needs `ffmpeg`)* | `mp4` `m4v` `mkv` `mov` `avi` `webm` `mpeg` `mpeg2` `mpg` `mpg2` `flv` `asf` `wmv` `3gp` `3g2` `mj2` `ogv` | `ffmpeg` |
+| Audio, as a card of its cover art and tags  | `mp3` `m4a` `m4b` `m4p` `flac` `ogg` `oga` `dsf` `aac`                                                     | `tag`    |
+
+The audio card draws a waveform when `ffmpeg` is there, and is drawn without
+one when it is not. `-t` picks the moment a video is snapshotted at.
+
+### Fonts and executables
+
+| Format                 | Extensions                                          | Decoder   |
+| ---------------------- | --------------------------------------------------- | --------- |
+| Font specimen previews | `ttf` `ttc` `otf` `woff` `woff2` `sfnt` `eot` `pfb` | `fontimg` |
+| Icons in a Windows PE  | `exe` `dll` `mui`                                   | `winres`  |
+
+### Arguments that are not files
+
+| Argument                    | Example                             | Decoder     |
+| --------------------------- | ----------------------------------- | ----------- |
+| `data:` URLs                | `data:image/png;base64,iVBOR...`    | `data`      |
+| `WIFI:` codes, as a QR code | `WIFI:S:mynetwork;T:WPA;P:secret;;` | `qr`        |
+| `http://` and `https://`    | a page, or the image it names       | `blitz-url` |
+
+### Anything else
+
+A file nothing above recognizes is handed to `binwalk`, which renders an image
+found inside it -- the Affinity formats (`afdesign`, `afphoto`, `afpub`) among
+them. *Needs `binwalk`.*
+
+### Output
+
+Without `--out`, `iv` draws to the terminal with Kitty, iTerm, or Sixel
+graphics. With it, the encoder follows the output extension, and `--encoder`
+overrides that:
+
+| Extension | Encoder      |
+| --------- | ------------ |
+| `png`     | `png`        |
+| `jpg`     | `jpeg`       |
+| `webp`    | `nativewebp` |
+| `avif`    | `vips-avif`  |
+| `gif`     | `vips-gif`   |
+| `heic`    | `vips-heif`  |
+| `jp2`     | `vips-jp2k`  |
+| `jxl`     | `vips-jxl`   |
+| `tiff`    | `vips-tiff`  |
+
+libvips writes several of these itself, which `--encoder` reaches:
+`vips-webp` instead of `nativewebp`, or `vips-tiff` for a file the Go encoder
+has no compression for.
+
 [homebrew]: https://brew.sh/
+[msys2]: https://www.msys2.org/
 [iv-tap]: https://github.com/kenshaw/homebrew-iv
 [aur]: https://aur.archlinux.org/packages/iv-cli
 [arch-makepkg]: https://wiki.archlinux.org/title/makepkg

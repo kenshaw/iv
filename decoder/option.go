@@ -119,7 +119,11 @@ func StringDecoder(f StringDecodeFunc) Option {
 }
 
 // Init is a decoder option to set the lazy initialization and close funcs. The
-// value returned by the init func is available to the decoder through [State].
+// value returned by the init func is available through [State] to both the
+// decode func and the close func, which is what the close func has to release.
+//
+// The init func runs at most once, on the first decode the decoder is tried
+// for, and the close func at most once, when [Close] is called.
 func Init(initFunc func(context.Context) (any, error), closeFunc func(context.Context) error) Option {
 	return func(d *Entry) {
 		d.initFunc, d.closeFunc = initFunc, closeFunc

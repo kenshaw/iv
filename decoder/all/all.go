@@ -16,6 +16,7 @@ import (
 	_ "github.com/kenshaw/iv/decoder/ico"
 	_ "github.com/kenshaw/iv/decoder/jpeg"
 	_ "github.com/kenshaw/iv/decoder/libreoffice"
+	_ "github.com/kenshaw/iv/decoder/lottie"
 	_ "github.com/kenshaw/iv/decoder/mermaid"
 	_ "github.com/kenshaw/iv/decoder/nativewebp"
 	_ "github.com/kenshaw/iv/decoder/netpbm"

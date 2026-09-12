@@ -19,6 +19,7 @@ output.
 | `ico`         | `ico`         | Single and multi image icons                                |
 | `jpeg`        | `jpeg`        |                                                             |
 | `libreoffice` | `libreoffice` | Office documents; needs `soffice` in `$PATH`                |
+| `lottie`      | `lottie`      | Noto animated emoji, as json, `.lot`, and a dotLottie       |
 | `mermaid`     | `mermaid`     | Needs `mmdc` in `$PATH`                                     |
 | `nativewebp`  | `nativewebp`  | Lossy and lossless webp, each with its png reference decode |
 | `netpbm`      | `netpbm`      | pbm/pgm/ppm/pam, raw and plain                              |
@@ -131,6 +132,10 @@ every one of these without needing `soffice`.
   `ic14`/`ic13`/`ic12`/`ic11` are the @2x variants of 256/128/32/16, which is
   why 512 and 256 each appear twice. `iv -p N` selects between them.
 
+- `lottie/` -- three of the [Noto animated emoji][noto-emoji], the set behind
+  <https://googlefonts.github.io/noto-emoji-animation/>, retrieved with
+  `scripts/fetch-noto-emoji.sh` in [xo/lottie][]. Copyright Google Inc.,
+  licensed [CC BY 4.0][cc-by-4].
 - `winres/go-winres.exe` -- built from [go-winres][].
 - `fontimg/` -- Figtree, Noto Mono, and Ubuntu.
 
@@ -154,6 +159,30 @@ only the extension separates a comic from any other archive, and the
 checks each page comes out the same whichever container it was read from, and
 checks the two pages actually differ so page selection cannot silently do
 nothing. There is no `.cb7` file, though the decoder handles that too.
+
+### Lottie animations
+
+`lottie/` covers the three ways an animation reaches the decoder, since each
+is identified differently:
+
+| File           | Detected as         | Identified by                       |
+| -------------- | ------------------- | ----------------------------------- |
+| `rocket.json`  | `video/lottie+json` | the document, read by the sniffer   |
+| `star.lot`     | `video/lottie+json` | the document, read by the sniffer   |
+| `fire.lottie`  | `application/zip`   | the extension                       |
+
+Nothing sniffs a lottie as anything but json, and `.json` is a name that says
+nothing at all -- so the decoder reads the document instead, claiming it only
+when the top level carries the frame rate, the in and out points, and the
+composition size. `star.lot` is there to show the same sniff works whatever
+the file is called, and to cover the `application/json` and `.lot` pairing
+that catches a document the sniffer cannot read far enough into.
+
+`fire.lottie` is a dotLottie: a zip holding `manifest.json` and
+`animations/fire.json`. A zip sniffs as `application/zip` whatever is in it,
+so only the extension separates this from any other archive. The decoder hands
+the entries back to the pipeline, which sniffs the one it picks and comes
+straight back here -- the same trip a comic archive's pages make.
 
 ### Derived files
 
@@ -212,3 +241,6 @@ so between them they cover both what these formats need to represent.
 [jxl-test]: https://jpegxl.info/resources/jpeg-xl-test-page
 [svg-repo]: https://www.svgrepo.com
 [go-winres]: https://github.com/tc-hib/go-winres
+[noto-emoji]: https://github.com/googlefonts/noto-emoji
+[xo/lottie]: https://github.com/xo/lottie
+[cc-by-4]: https://creativecommons.org/licenses/by/4.0/

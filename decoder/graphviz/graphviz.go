@@ -49,11 +49,12 @@ func init() {
 }
 
 // detect sniffs the reader for a dot graph.
+//
+// A short read is not an error here, only less to look at: a stream that could
+// not be read at all is simply not a dot graph, and saying so is what the
+// sniffer is for.
 func detect(_ context.Context, r io.Reader) (string, error) {
-	buf, err := bufio.NewReaderSize(r, peek).Peek(peek)
-	if err != nil && len(buf) == 0 {
-		return "", err
-	}
+	buf, _ := bufio.NewReaderSize(r, peek).Peek(peek)
 	if graphRE.Match(buf) {
 		return mime, nil
 	}

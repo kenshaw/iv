@@ -126,7 +126,13 @@ func (args *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []
 		return err
 	}
 	ctx = ivctx.WithConfig(ctx, args.Config(stderr))
-	defer decoder.Close(ctx)
+	// a decoder holding an engine -- graphviz, lottie, blitz -- releases it
+	// here, and a failure to is worth saying rather than dropping
+	defer func() {
+		if err := decoder.Close(ctx); err != nil {
+			fmt.Fprintf(stderr, "error: %v\n", err)
+		}
+	}()
 	args.configureResvg()
 	targets, errs := Targets(cliargs...)
 	for _, err := range errs {

@@ -29,7 +29,8 @@ var (
 // stateKey is the context key for the running decoder's initialized state.
 type stateKey struct{}
 
-// State returns the value produced by the running decoder's [Init] func.
+// State returns the value produced by the running decoder's [Init] func. It is
+// on the context of a decode func and of a close func alike.
 func State(ctx context.Context) any {
 	return ctx.Value(stateKey{})
 }

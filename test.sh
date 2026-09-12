@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Smoke test for iv: renders every string form and test data file through the
 # decoder/encoder pipeline. Pass -t to render to the terminal instead of
