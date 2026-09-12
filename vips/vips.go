@@ -4,8 +4,11 @@ package vips
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"fmt"
 	"image"
+	"image/draw"
+	"image/png"
 	"strings"
 	"sync"
 	"time"
@@ -49,7 +52,11 @@ func Shutdown() {
 	vips.Shutdown()
 }
 
-// Export exports the vips image as a png and decodes it as a Go image.
+// Export converts a vips image to a Go image.
+//
+// The pixels are copied straight out of libvips memory into a Go image with
+// the same layout. This used to go through a png, which cost a full encode
+// here and a full decode on the other side of it, both of them for nothing.
 func Export(ctx context.Context, v *vips.Image) (image.Image, error) {
 	if v == nil {
 		return nil, fmt.Errorf("vips export: invalid image")
@@ -67,20 +74,177 @@ func Export(ctx context.Context, v *vips.Image) (image.Image, error) {
 		}
 	}
 	start = time.Now()
-	// the buffer saver is used rather than the target one: several libvips
-	// savers seek within their output
-	buf, err := v.PngsaveBuffer(nil)
+	img, err := export(v)
 	if err != nil {
 		return nil, fmt.Errorf("vips export: %w", err)
 	}
-	ivctx.Logf(ctx, "vips export: %v", time.Since(start))
-	start = time.Now()
-	img, _, err := image.Decode(bytes.NewReader(buf))
-	if err != nil {
-		return nil, fmt.Errorf("vips decode: %w", err)
-	}
-	ivctx.Logf(ctx, "vips decode: %v", time.Since(start))
+	ivctx.Logf(ctx, "vips export: %T: %v", img, time.Since(start))
 	return img, nil
+}
+
+// export converts the vips image to the Go image with the same memory layout.
+//
+// libvips writes its pixels densely -- band order, no padding between rows --
+// which is exactly what [image.NRGBA] and [image.NRGBA64] hold, so the work is
+// normalizing the image to four bands at the right depth and then taking the
+// buffer. libvips keeps alpha unpremultiplied, which is what the N in those
+// two type names means.
+func export(v *vips.Image) (image.Image, error) {
+	// a 16 bit image keeps its depth. Everything else comes out 8 bit, the
+	// float formats included, where the colourspace conversion is what brings
+	// the values into range.
+	deep := v.BandFormat() == vips.BandFormatUshort
+	space, format := vips.InterpretationSrgb, vips.BandFormatUchar
+	if deep {
+		space, format = vips.InterpretationRgb16, vips.BandFormatUshort
+	}
+	// bring grayscale, cmyk and the rest to colour, which is also what maps a
+	// float image's values into range
+	if v.Interpretation() != space {
+		if err := v.Colourspace(space, nil); err != nil {
+			return nil, fmt.Errorf("colourspace: %w", err)
+		}
+	}
+	// the band count is what says whether there is an alpha band, not
+	// [vips.Image.HasAlpha], which answers from the interpretation and so gets
+	// it wrong for an image that has none
+	switch b := v.Bands(); {
+	case b == 3:
+		if err := v.Addalpha(); err != nil {
+			return nil, fmt.Errorf("addalpha: %w", err)
+		}
+	case b > 4:
+		// colour, alpha, and whatever else the source was carrying
+		if err := v.ExtractBand(0, &vips.ExtractBandOptions{N: 4}); err != nil {
+			return nil, fmt.Errorf("extract band: %w", err)
+		}
+	}
+	// the colourspace conversion can change the depth on its way through
+	if v.BandFormat() != format {
+		if err := v.Cast(format, nil); err != nil {
+			return nil, fmt.Errorf("cast: %w", err)
+		}
+	}
+	buf, err := v.WriteToMemory()
+	if err != nil {
+		return nil, err
+	}
+	w, h, depth := v.Width(), v.Height(), 4
+	if deep {
+		depth = 8
+	}
+	if n := w * h * depth; len(buf) != n {
+		return nil, fmt.Errorf("expected %d bytes for a %dx%d image, got %d", n, w, h, len(buf))
+	}
+	rect := image.Rect(0, 0, w, h)
+	if !deep {
+		return &image.NRGBA{Pix: buf, Stride: w * 4, Rect: rect}, nil
+	}
+	// an [image.NRGBA64] holds its samples big endian, where libvips holds
+	// them in the machine's own order
+	pix := make([]byte, len(buf))
+	for i := 0; i+1 < len(buf); i += 2 {
+		binary.BigEndian.PutUint16(pix[i:], binary.NativeEndian.Uint16(buf[i:]))
+	}
+	return &image.NRGBA64{Pix: pix, Stride: w * 8, Rect: rect}, nil
+}
+
+// Import converts a Go image to a vips image.
+//
+// An [image.NRGBA] is handed over as memory with nothing copied, which is what
+// [Export] produces and what the scaler and the compositor leave behind, so
+// the common path costs nothing at all. Anything else is converted to one
+// first, in a single pass.
+//
+// A 16 bit image is the exception: libvips only takes 8 bit pixels from
+// memory, so that one goes through a lossless png rather than lose half its
+// depth on the way in.
+func Import(ctx context.Context, img image.Image) (*vips.Image, error) {
+	if img == nil {
+		return nil, fmt.Errorf("vips import: invalid image")
+	}
+	Init(ctx)
+	start := time.Now()
+	v, how, err := importImage(img)
+	if err != nil {
+		return nil, fmt.Errorf("vips import: %w", err)
+	}
+	ivctx.Logf(ctx, "vips import: %T via %s: %v", img, how, time.Since(start))
+	return v, nil
+}
+
+// importImage converts the Go image to a vips image, reporting the route it
+// took.
+func importImage(img image.Image) (*vips.Image, string, error) {
+	if deepImage(img) {
+		buf := new(bytes.Buffer)
+		if err := png.Encode(buf, img); err != nil {
+			return nil, "", err
+		}
+		v, err := vips.NewImageFromBuffer(buf.Bytes(), nil)
+		return v, "png", err
+	}
+	n := nrgba(img)
+	b := n.Bounds()
+	v, err := vips.NewImageFromMemory(n.Pix, b.Dx(), b.Dy(), 4)
+	if err != nil {
+		return nil, "", err
+	}
+	defer v.Close()
+	return tag(v)
+}
+
+// tag returns the image with its bands named as sRGB.
+//
+// libvips takes raw memory as untagged bands -- multiband, in its terms -- and
+// leaves the savers to guess what the numbers mean. Most of them guess right;
+// the jxl one refuses outright with a JxlEncoderSetBasicInfo error, and none
+// of them should have to guess. A copy is what sets the interpretation, and it
+// moves no pixels: every other field is carried across as it was.
+func tag(v *vips.Image) (*vips.Image, string, error) {
+	out, err := v.Copy(&vips.CopyOptions{
+		Width:          v.Width(),
+		Height:         v.Height(),
+		Bands:          v.Bands(),
+		Format:         v.BandFormat(),
+		Coding:         v.Coding(),
+		Interpretation: vips.InterpretationSrgb,
+		Xres:           v.ResX(),
+		Yres:           v.ResY(),
+		Xoffset:        v.OffsetX(),
+		Yoffset:        v.OffsetY(),
+	})
+	if err != nil {
+		return nil, "", fmt.Errorf("copy: %w", err)
+	}
+	return out, "memory", nil
+}
+
+// deepImage reports whether the image holds more than 8 bits a sample, and so
+// has something to lose by being handed over as memory.
+func deepImage(img image.Image) bool {
+	switch img.(type) {
+	case *image.NRGBA64, *image.RGBA64, *image.Gray16, *image.CMYK:
+		return true
+	}
+	return false
+}
+
+// nrgba returns the image as a tightly packed [image.NRGBA], which is the one
+// Go layout libvips can read as it stands: four 8 bit bands in order, rows
+// flush against each other, and alpha unpremultiplied.
+//
+// An image that is already one is returned as it is. A sub image is not --
+// its rows are spaced by the parent's width, which libvips would read as
+// pixels.
+func nrgba(img image.Image) *image.NRGBA {
+	b := img.Bounds()
+	if n, ok := img.(*image.NRGBA); ok && n.Stride == b.Dx()*4 && b.Min == (image.Point{}) {
+		return n
+	}
+	dst := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
+	draw.Draw(dst, dst.Bounds(), img, b.Min, draw.Src)
+	return dst
 }
 
 // IsEncryptedErr reports whether the error is the vips "document is encrypted"

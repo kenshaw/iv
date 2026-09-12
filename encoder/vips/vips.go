@@ -5,11 +5,9 @@
 package vips
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"image"
-	"image/png"
 	"io"
 
 	"github.com/cshum/vipsgen/vips"
@@ -70,21 +68,16 @@ func init() {
 	}
 }
 
-// encodeFunc builds an encoder that round trips the Go image through libvips.
+// encodeFunc builds an encoder that saves the Go image through libvips.
 func encodeFunc(op string, save saveFunc) encoder.EncodeFunc {
 	return func(ctx context.Context, w io.Writer, img image.Image) error {
 		ivvips.Init(ctx)
 		if !vips.HasOperation(op) {
 			return fmt.Errorf("vips encode: %s: %w", op, encoder.ErrUnsupportedFormat)
 		}
-		// libvips reads from a source, so hand it a lossless png of the image
-		var buf bytes.Buffer
-		if err := png.Encode(&buf, img); err != nil {
-			return fmt.Errorf("vips encode: %w", err)
-		}
-		v, err := vips.NewImageFromBuffer(buf.Bytes(), nil)
+		v, err := ivvips.Import(ctx, img)
 		if err != nil {
-			return fmt.Errorf("vips encode: load: %w", err)
+			return fmt.Errorf("vips encode: %w", err)
 		}
 		out, err := save(v)
 		if err != nil {
