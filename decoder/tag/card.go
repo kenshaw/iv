@@ -103,14 +103,31 @@ func (c *card) href() string {
 	return "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(c.art)
 }
 
+// note is the glyph drawn in place of missing cover art, authored in a 100
+// unit box. Its bounding box is recorded alongside it: the box the glyph was
+// drawn in is not centered on the glyph, so centering the one would leave the
+// other visibly off.
+const (
+	note = "M 50.5 12 C 48.0 12, 46 14.0, 46 16.5 V 69.5 " +
+		"C 42.5 66.2, 37.2 64.5, 31.5 65.5 C 20.8 67.4, 14.0 77.2, 16.3 87.4 " +
+		"C 18.6 97.6, 29.1 104.2, 39.8 102.3 C 48.6 100.8, 54.8 94.0, 54.5 85.8 " +
+		"V 42.5 C 62.0 46.0, 69.5 52.8, 71.5 61.2 " +
+		"C 72.3 64.6, 76.5 64.2, 76.8 60.8 C 78.5 42.5, 68.8 28.0, 55.6 14.5 " +
+		"C 54.2 13.0, 52.4 12, 50.5 12 Z"
+	noteH  = 90.63 // glyph height
+	noteCX = 46.42 // glyph center
+	noteCY = 57.31
+	// how much of the art panel's height the glyph stands in
+	noteFill = 0.52
+)
+
 // placeholder draws a note glyph in place of missing cover art.
 func (c *card) placeholder(b *strings.Builder) {
-	fmt.Fprintf(b, `<rect x="%d" y="%d" width="%d" height="%d" rx="14" fill="%s" fill-opacity="0.14"/>`, pad, pad, artSize, artSize, c.accent.hex(1, 1))
-	fmt.Fprintf(b, `<g transform="translate(%d,%d)" fill="%s" fill-opacity="0.55">`, pad+artSize/2, pad+artSize/2, c.accent.hex(1, 1))
-	b.WriteString(`<ellipse cx="-26" cy="34" rx="30" ry="21" transform="rotate(-20 -26 34)"/>`)
-	b.WriteString(`<path d="M-2,34 L-2,-54 L10,-58 L10,34 Z"/>`)
-	b.WriteString(`<path d="M10,-58 C46,-46 56,-22 48,2 C52,-22 34,-34 10,-28 Z"/>`)
-	b.WriteString(`</g>`)
+	fill := c.accent.hex(1, 1)
+	fmt.Fprintf(b, `<rect x="%d" y="%d" width="%d" height="%d" rx="14" fill="%s" fill-opacity="0.14"/>`, pad, pad, artSize, artSize, fill)
+	s := artSize * noteFill / noteH
+	mid := float64(pad + artSize/2)
+	fmt.Fprintf(b, `<g transform="translate(%.2f,%.2f) scale(%.4f)" fill="%s" fill-opacity="0.55"><path d="%s"/></g>`, mid-s*noteCX, mid-s*noteCY, s, fill, note)
 }
 
 // line is one line of the card's type block.
