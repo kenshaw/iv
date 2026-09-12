@@ -25,7 +25,7 @@ const maxPasswordAttempts = 3
 func init() {
 	decoder.Register(
 		"vips",
-		decoder.Desc("libvips (raster images, pdf)"),
+		decoder.Desc("libvips (raster images)"),
 		// after the Go decoders, which handle the common formats without the
 		// cost of starting vips
 		decoder.After("png", "jpeg", "gif", "nativewebp", "tiff", "bmp", "ico", "icns", "netpbm", "resvg"),
@@ -42,7 +42,7 @@ func init() {
 		decoder.Before("vips"),
 		decoder.Extension("pdf"),
 		decoder.MimeType("application/pdf"),
-		decoder.Decoder(DecodePdf),
+		decoder.Decoder(decodePDF),
 	)
 }
 
@@ -149,9 +149,9 @@ func isUnsupportedOption(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "no property named")
 }
 
-// DecodePdf decodes a pdf with libvips, prompting for a password when the
+// decodePDF decodes a pdf with libvips, prompting for a password when the
 // document is encrypted.
-func DecodePdf(ctx context.Context, r io.Reader) (any, error) {
+func decodePDF(ctx context.Context, r io.Reader) (any, error) {
 	ivvips.Init(ctx)
 	if !vips.HasOperation("pdfload_source") {
 		return nil, fmt.Errorf("vips load: pdfload_source: %w", decoder.ErrUnsupportedFormat)
