@@ -52,6 +52,8 @@ type Args struct {
 	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
 	MermaidIcons    []string           `ox:"additional mermaid icon packages"`
 	MermaidBg       *colors.Color      `ox:"default mermaid background,default:white"`
+	BlitzDark       bool               `ox:"render documents and pages dark"`
+	Password        string             `ox:"password for encrypted documents"`
 	ForceMime       string             `ox:"force mime type"`
 	Out             string             `ox:"write to file instead of the terminal,short:o"`
 	Encoder         string             `ox:"output encoder"`
@@ -88,11 +90,19 @@ func (args *Args) Config(stderr io.Writer) *ivctx.Config {
 		VipsConcurrency: args.VipsConcurrency,
 		MermaidIcons:    args.MermaidIcons,
 		MermaidBg:       args.MermaidBg,
+		BlitzDark:       args.BlitzDark,
+		Password:        args.Password,
 		ForceMime:       args.ForceMime,
 	}
 	if args.Verbose {
 		c.Logger = func(s string, v ...any) {
 			fmt.Fprintf(stderr, s+"\n", v...)
+		}
+	}
+	if !args.Quiet && !args.Verbose {
+		// verbose already puts these on stderr, in sequence
+		c.Warner = func(s string, v ...any) {
+			fmt.Fprintf(stderr, "warning: "+s+"\n", v...)
 		}
 	}
 	c.Init()

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/ivctx"
@@ -18,6 +19,20 @@ import (
 // separates a network or site problem from a failure to render what came
 // back.
 var ErrFetch = errors.New("fetch failed")
+
+const (
+	// fetchTimeout bounds the whole retrieval. Without one a server that
+	// accepts the connection and then stalls leaves iv waiting forever with
+	// nothing on screen to say why.
+	fetchTimeout = 30 * time.Second
+	// maxFetch bounds what is read from a url. Generous for a page or an
+	// image, and the difference between a bad url and an out of memory.
+	maxFetch = 64 << 20
+)
+
+// client is the http client used for every fetch. The default one has no
+// timeout at all.
+var client = &http.Client{Timeout: fetchTimeout}
 
 // decodeURL fetches the url and either renders it as a page or hands it back
 // to the pipeline. A url naming an image or a pdf is still that image or pdf,
@@ -54,7 +69,7 @@ func fetch(ctx context.Context, urlstr string) ([]byte, string, error) {
 		return nil, "", err
 	}
 	req.Header.Set("User-Agent", UserAgent)
-	res, err := http.DefaultClient.Do(req)
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, "", fmt.Errorf("%w: %s: %w", ErrFetch, urlstr, err)
 	}
@@ -62,9 +77,14 @@ func fetch(ctx context.Context, urlstr string) ([]byte, string, error) {
 	if res.StatusCode != http.StatusOK {
 		return nil, "", fmt.Errorf("%w: %s: %s", ErrFetch, urlstr, res.Status)
 	}
-	buf, err := io.ReadAll(res.Body)
-	if err != nil {
+	// one byte past the limit is read so that hitting it can be told from a
+	// body that merely ends there
+	buf, err := io.ReadAll(io.LimitReader(res.Body, maxFetch+1))
+	switch {
+	case err != nil:
 		return nil, "", fmt.Errorf("%w: %s: %w", ErrFetch, urlstr, err)
+	case len(buf) > maxFetch:
+		return nil, "", fmt.Errorf("%w: %s: larger than the %d byte limit", ErrFetch, urlstr, maxFetch)
 	}
 	mime, _, _ := strings.Cut(res.Header.Get("Content-Type"), ";")
 	if mime = strings.TrimSpace(mime); mime == "" || mime == "application/octet-stream" {

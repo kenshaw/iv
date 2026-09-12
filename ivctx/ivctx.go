@@ -41,10 +41,16 @@ type Config struct {
 	VipsConcurrency uint
 	MermaidIcons    []string
 	MermaidBg       *colors.Color
+	BlitzDark       bool
+	Password        string
 	ForceMime       string
 
 	// Logger is the verbose logger. Always non-nil after [Config.Init].
 	Logger func(string, ...any)
+	// Warner reports something the user should see whether or not they asked
+	// for verbose output -- a page truncated, a format degraded. Always
+	// non-nil after [Config.Init].
+	Warner func(string, ...any)
 }
 
 // New creates a config with the same defaults as the iv command.
@@ -73,10 +79,13 @@ func named(n colors.NamedColor) *colors.Color {
 	return &c
 }
 
-// Init normalizes the config, ensuring the logger is non-nil.
+// Init normalizes the config, ensuring the loggers are non-nil.
 func (c *Config) Init() {
 	if c.Logger == nil {
 		c.Logger = func(string, ...any) {}
+	}
+	if c.Warner == nil {
+		c.Warner = func(string, ...any) {}
 	}
 }
 
@@ -131,6 +140,15 @@ func Mime(ctx context.Context) string {
 // Logf writes a verbose log message.
 func Logf(ctx context.Context, s string, v ...any) {
 	Get(ctx).Logger(s, v...)
+}
+
+// Warnf reports something the user should see whether or not they asked for
+// verbose output. The message is also logged, so a verbose run keeps it in
+// sequence with everything around it.
+func Warnf(ctx context.Context, s string, v ...any) {
+	c := Get(ctx)
+	c.Logger(s, v...)
+	c.Warner(s, v...)
 }
 
 // Page returns the zero-indexed page to display, clamped to [0, n). Returns 0

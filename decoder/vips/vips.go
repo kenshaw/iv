@@ -19,7 +19,9 @@ import (
 )
 
 // maxPasswordAttempts is how many times an encrypted pdf password is prompted
-// for before giving up.
+// for before giving up. The load that runs before the first prompt does not
+// count against it: it carries whatever password was configured, so an
+// unencrypted document never prompts at all.
 const maxPasswordAttempts = 3
 
 func init() {
@@ -156,44 +158,52 @@ func decodePDF(ctx context.Context, r io.Reader) (any, error) {
 	if !vips.HasOperation("pdfload_source") {
 		return nil, fmt.Errorf("vips load: pdfload_source: %w", decoder.ErrUnsupportedFormat)
 	}
-	var pass []byte
-	for i := range maxPasswordAttempts {
-		opts := &vips.PdfloadSourceOptions{
-			FailOn:   vips.FailOnError,
-			Memory:   true,
-			Password: string(pass),
-		}
-		if page := int(ivctx.Get(ctx).Page); page != 0 {
-			switch v, err := vips.NewPdfloadSource(vips.NewSource(io.NopCloser(r)), opts); {
-			case ivvips.IsEncryptedErr(err):
-			case err != nil:
-				return nil, fmt.Errorf("vips load: %w", err)
-			default:
-				if p := page - 1; 0 <= p && p < v.Pages() {
-					opts.Page = p
-				}
-			}
-			if err := rewind(r); err != nil {
-				return nil, err
-			}
-		}
-		v, err := vips.NewPdfloadSource(vips.NewSource(io.NopCloser(r)), opts)
+	pass := ivctx.Get(ctx).Password
+	for prompted := 0; ; prompted++ {
+		v, err := loadPDF(ctx, r, pass)
 		switch {
 		case err == nil:
 			return ivvips.Export(ctx, v)
 		case !ivvips.IsEncryptedErr(err):
 			return nil, fmt.Errorf("vips load: %w", err)
-		case i == maxPasswordAttempts-1:
+		case prompted == maxPasswordAttempts:
 			return nil, fmt.Errorf("vips load: invalid password")
 		}
-		if pass, err = readPassword(); err != nil {
+		buf, err := readPassword()
+		if err != nil {
 			return nil, fmt.Errorf("vips load: %w", err)
+		}
+		pass = string(buf)
+		if err := rewind(r); err != nil {
+			return nil, err
+		}
+	}
+}
+
+// loadPDF loads the pdf with the password, applying the configured page. The
+// page count is only known after a load, so a specific page costs two.
+func loadPDF(ctx context.Context, r io.Reader, pass string) (*vips.Image, error) {
+	opts := &vips.PdfloadSourceOptions{
+		FailOn:   vips.FailOnError,
+		Memory:   true,
+		Password: pass,
+	}
+	if page := int(ivctx.Get(ctx).Page); page != 0 {
+		switch v, err := vips.NewPdfloadSource(vips.NewSource(io.NopCloser(r)), opts); {
+		case ivvips.IsEncryptedErr(err):
+			return nil, err
+		case err != nil:
+			return nil, err
+		default:
+			if p := page - 1; 0 <= p && p < v.Pages() {
+				opts.Page = p
+			}
 		}
 		if err := rewind(r); err != nil {
 			return nil, err
 		}
 	}
-	return nil, fmt.Errorf("vips load: invalid password")
+	return vips.NewPdfloadSource(vips.NewSource(io.NopCloser(r)), opts)
 }
 
 // readPassword prompts for and reads a password from the terminal.

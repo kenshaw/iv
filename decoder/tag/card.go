@@ -20,16 +20,11 @@ const (
 	bars    = 152
 )
 
-// Type sizes, and the factor to estimate a string's rendered width by. Real
-// metrics would need the font loaded; these are deliberate overestimates of
-// a sans-serif's average advance, so a line is trimmed a little early rather
-// than running past the edge of the card.
+// Type sizes.
 const (
 	artistSize = 24
 	albumSize  = 18
 	metaSize   = 14
-	boldAdv    = 0.60
-	regAdv     = 0.55
 )
 
 // titleSizes are the sizes a title is set at, largest first. A long title
@@ -147,16 +142,16 @@ type line struct {
 // the cover art.
 func (c *card) text(b *strings.Builder) {
 	w := cardW - textX - pad
-	size, title := shrink(c.title, titleSizes, boldAdv, w)
+	size, title := shrink(c.title, titleSizes, true, w)
 	lines := []line{{title, size, 700, titleFg, "0", 1.5}}
 	if c.artist != "" {
-		lines = append(lines, line{fit(c.artist, artistSize, regAdv, w), artistSize, 600, c.accent.hex(0.8, 1), "0", 1.55})
+		lines = append(lines, line{fit(c.artist, artistSize, false, w), artistSize, 600, c.accent.hex(0.8, 1), "0", 1.55})
 	}
 	if c.album != "" {
-		lines = append(lines, line{fit(c.album, albumSize, regAdv, w), albumSize, 400, albumFg, "0", 1.9})
+		lines = append(lines, line{fit(c.album, albumSize, false, w), albumSize, 400, albumFg, "0", 1.9})
 	}
 	if c.meta != "" {
-		lines = append(lines, line{fit(c.meta, metaSize, regAdv, w), metaSize, 400, metaFg, "0.6", 1.4})
+		lines = append(lines, line{fit(c.meta, metaSize, false, w), metaSize, 400, metaFg, "0.6", 1.4})
 	}
 	var total float64
 	for _, l := range lines {
@@ -166,7 +161,7 @@ func (c *card) text(b *strings.Builder) {
 	// height below the top of the block
 	y := float64(pad+artSize/2) - total/2 + float64(lines[0].size)*0.78
 	for _, l := range lines {
-		fmt.Fprintf(b, `<text x="%d" y="%.1f" font-family="%s" font-size="%d" font-weight="%d" letter-spacing="%s" fill="%s">%s</text>`, textX, y, fontFamily, l.size, l.weight, l.spacing, l.fill, esc(l.text))
+		fmt.Fprintf(b, `<text x="%d" y="%.1f" font-family="%s" font-size="%d" font-weight="%d" letter-spacing="%s" fill="%s">%s</text>`, textX, y, fontFamily(), l.size, l.weight, l.spacing, l.fill, esc(l.text))
 		y += float64(l.size) * l.lead
 	}
 }
@@ -196,41 +191,10 @@ func (c *card) wave(b *strings.Builder) {
 		fmt.Fprintf(b, `<rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" rx="%.1f"/>`, x, float64(waveMid)-h/2, bw, h, bw/2)
 	}
 	b.WriteString(`</g>`)
-	fmt.Fprintf(b, `<text x="%d" y="428" font-family="%s" font-size="13" fill="%s">0:00</text>`, pad, fontFamily, metaFg)
+	fmt.Fprintf(b, `<text x="%d" y="428" font-family="%s" font-size="13" fill="%s">0:00</text>`, pad, fontFamily(), metaFg)
 	if c.duration > 0 {
-		fmt.Fprintf(b, `<text x="%d" y="428" text-anchor="end" font-family="%s" font-size="13" fill="%s">%s</text>`, cardW-pad, fontFamily, metaFg, clock(c.duration))
+		fmt.Fprintf(b, `<text x="%d" y="428" text-anchor="end" font-family="%s" font-size="13" fill="%s">%s</text>`, cardW-pad, fontFamily(), metaFg, clock(c.duration))
 	}
-}
-
-// fontFamily is the card's font stack. The generic stays last so a system
-// without any of the named families still gets something proportional.
-const fontFamily = "DejaVu Sans,Helvetica Neue,Helvetica,Arial,sans-serif"
-
-// shrink returns the largest of the sizes at which s fits in width, and s
-// fitted to it -- truncated only when it does not fit even at the smallest.
-func shrink(s string, sizes []int, adv float64, width int) (int, string) {
-	for _, size := range sizes {
-		if fit(s, size, adv, width) == s {
-			return size, s
-		}
-	}
-	size := sizes[len(sizes)-1]
-	return size, fit(s, size, adv, width)
-}
-
-// fit truncates s to what fits in width at the given size, appending an
-// ellipsis when it has to cut.
-func fit(s string, size int, adv float64, width int) string {
-	per := float64(size) * adv
-	n := int(float64(width) / per)
-	r := []rune(s)
-	if len(r) <= n {
-		return s
-	}
-	if n < 2 {
-		return ""
-	}
-	return strings.TrimRight(string(r[:n-1]), " ") + "…"
 }
 
 // clock formats a duration as m:ss, or h:mm:ss past an hour.

@@ -272,9 +272,15 @@ func MimeMatch(pattern, mime string) bool {
 
 // isGeneric reports whether the mime type is too generic to identify a
 // decoder on its own.
+//
+// text/csv and text/tab-separated-values are here because they are guesses
+// rather than readings: content sniffing reports them for any plain text
+// whose lines parse with a consistent field count, so they say little more
+// than text/plain does.
 func isGeneric(mime string) bool {
 	switch mime {
-	case "", "application/octet-stream", "text/plain", "application/zip", "text/xml", "application/xml":
+	case "", "application/octet-stream", "text/plain", "application/zip", "text/xml", "application/xml",
+		"text/csv", "text/tab-separated-values":
 		return true
 	}
 	return false

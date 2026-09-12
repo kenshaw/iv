@@ -8,6 +8,7 @@ output.
 | ------------- | ------------- | ----------------------------------------------------------- |
 | `archives`    | `archives`    | The same two page comic as cbz, cbr, and cbt                |
 | `binwalk`     | `binwalk`     | Affinity Designer file with an embedded png                 |
+| `blitz`       | `blitz`       | A markdown and an html document                             |
 | `bmp`         | `bmp`         |                                                             |
 | `ffmpeg`      | `ffmpeg`      | Same clip as mkv and mp4                                    |
 | `fitz`        | `fitz`        | XPS documents                                               |
@@ -18,40 +19,53 @@ output.
 | `ico`         | `ico`         | Single and multi image icons                                |
 | `jpeg`        | `jpeg`        |                                                             |
 | `libreoffice` | `libreoffice` | Office documents; needs `soffice` in `$PATH`                |
-| `markdown`    | `markdown`    |                                                             |
 | `mermaid`     | `mermaid`     | Needs `mmdc` in `$PATH`                                     |
 | `nativewebp`  | `nativewebp`  | Lossy and lossless webp, each with its png reference decode |
 | `netpbm`      | `netpbm`      | pbm/pgm/ppm/pam, raw and plain                              |
 | `png`         | `png`         |                                                             |
 | `resvg`       | `resvg`       | SVGs, plain and gzipped, trivial to a large choropleth      |
-| `strings`     | `data`, `qr`  | Command line arguments, not files -- see below              |
+| `strings`     | `data`, `qr`, | Command line arguments, not files -- see below              |
+|               | `blitz-url`   |                                                             |
 | `tag`         | `tag`         | Silent audio carrying embedded cover art                    |
 | `tiff`        | `tiff`        | One file per compression the Go encoder supports            |
 | `vips`        | `vips`        | heic/heif/jxl, plus a plain and a password protected pdf    |
 | `winres`      | `winres`      | Windows PE with embedded icons                              |
 
-No test data yet: `http`, left out because exercising it would need the
-network.
+Every decoder has test data. The two in `strings/` that reach the network are
+the only ones that need it, and they skip themselves when it is not there.
 
 ## Strings
 
-Some arguments to `iv` are not paths at all -- a `data:` URL, a `WIFI:` code --
-so `strings/` holds one such argument per file, with the extension
-`.iv_test_string` and a trailing newline that is not part of the argument.
-The extension is deliberately not one any decoder claims, so these files are
-never mistaken for something to render.
+Some arguments to `iv` are not paths at all -- a `data:` URL, a `WIFI:` code,
+a http URL -- so `strings/` holds one such argument per file, with the
+extension `.iv_test_string` and a trailing newline that is not part of the
+argument. The extension is deliberately not one any decoder claims, so these
+files are never mistaken for something to render.
 
-| File                                 | Decoder | Decodes to      |
-| ------------------------------------ | ------- | --------------- |
-| `wifi.iv_test_string`                | `qr`    | 350x350 QR code |
-| `data-svg-base64.iv_test_string`     | `data`  | 100x100 svg     |
-| `data-svg-urlencoded.iv_test_string` | `data`  | 64x64 svg       |
-| `data-png-base64.iv_test_string`     | `data`  | 1x1 png         |
+| File                                 | Decoder     | Decodes to           |
+| ------------------------------------ | ----------- | -------------------- |
+| `wifi.iv_test_string`                | `qr`        | 350x350 QR code      |
+| `data-svg-base64.iv_test_string`     | `data`      | 100x100 svg          |
+| `data-svg-urlencoded.iv_test_string` | `data`      | 64x64 svg            |
+| `data-png-base64.iv_test_string`     | `data`      | 1x1 png              |
+| `yahoo.iv_test_string`               | `blitz-url` | the page, 2400 wide  |
+| `ifconfig-me.iv_test_string`         | `blitz-url` | the page, 2400 wide  |
 
 `TestDecodeString` reads the directory and checks each one against a table
 keyed by file name; a string added without an entry in that table fails, so
 they cannot go quietly untested. `test.sh` passes the contents of each file as
 an argument and skips them when walking for files to open.
+
+The two URLs are the only test data that reaches the network. Only their width
+is checked -- a rendered page is as tall as whatever the site served that
+minute, and the width is the one part of it `iv` decides. A fetch that fails
+is reported as `blitz.ErrFetch`, which the test skips on, so an unreachable
+site does not fail the suite while a blitz regression still does.
+
+`vips/file-sample_150kB.enc.pdf` is the plain pdf encrypted with the password
+`password`, kept in step with `encPassword` in `ivcmd/decode_test.go` and
+`ENC_PASSWORD` in `test.sh`. Both pass it with `--password`, since the decoder
+prompts otherwise and neither harness has a terminal to prompt at.
 
 `libreoffice/` covers the three document families and both generations of the
 Microsoft formats, because they are detected differently:
@@ -105,6 +119,15 @@ every one of these without needing `soffice`.
 - `winres/go-winres.exe` -- built from [go-winres][].
 - `fontimg/` -- Figtree, Noto Mono, and Ubuntu.
 
+### Documents
+
+`blitz/sample.md` and `blitz/sample.html` are the same idea in the two
+languages the `blitz` decoder speaks. The markdown sniffs as `text/plain`,
+which the decoder claims last so mermaid, graphviz and libreoffice get first
+refusal; the html sniffs as `text/html`, which is its own. The html file is
+deliberately not plain -- a gradient header, a flex row, a bordered table --
+since what it is testing is a css engine rather than a markdown stylesheet.
+
 ### Comic archives
 
 `archives/` holds one comic in three containers -- `science-preview.cbz`
@@ -129,9 +152,8 @@ so between them they cover both what these formats need to represent.
 - `tiff/` -- `tux-uncompressed.tiff`, `tux-deflate.tiff`, and
   `test-deflate-predictor.tiff`. There is no LZW file: `x/image/tiff` decodes
   LZW but refuses to encode it.
-- `tag/` -- five seconds of silence in five containers, each with
-  `png/tux.png` embedded as cover art. The `tag` decoder only ever reads the
-  metadata, so the audio itself is silent to keep the files small.
+- `tag/` -- ten seconds of silence in five containers, each with
+  `png/tux.png` embedded as cover art.
 
   | File          | Detected as   | Metadata |
   | ------------- | ------------- | -------- |
@@ -141,10 +163,18 @@ so between them they cover both what these formats need to represent.
   | `silent.ogg`  | `audio/ogg`   | Vorbis   |
   | `silent.m4a`  | `audio/x-m4a` | MP4      |
 
-  The cover is embedded byte for byte, so `TestDecodeTagArt` can check the
-  extracted image against `png/tux.png` pixel for pixel. Note that `.aac`
-  reports `audio/mpeg` too: it is ID3 wrapped ADTS, indistinguishable from mp3
-  by its leading bytes.
+  The cover is embedded byte for byte, and the card the decoder draws embeds
+  those bytes untouched, so `TestDecodeCard` in `decoder/tag` reads the card's
+  svg before it is rasterized and checks the art against `png/tux.png` pixel
+  for pixel. `TestDecodeTagCard` in `ivcmd` covers the other end, that the card
+  comes out of the pipeline at the size it should. Note that `.aac` reports
+  `audio/mpeg` too: it is ID3 wrapped ADTS, indistinguishable from mp3 by its
+  leading bytes.
+
+  These files carry no tags and no sound, which exercises the card at its
+  emptiest: the title falls back to the file name, and the waveform is a flat
+  line. The waveform itself needs `ffmpeg`, and the card is drawn without one
+  when it is missing.
 
 - `netpbm/` -- every format in the family, raw and plain (ASCII):
 

@@ -27,6 +27,11 @@ import (
 const (
 	width = 1200
 	scale = 2
+	// maxHeight bounds the render, in css pixels. A document taller than this
+	// is cut off, which is worth saying out loud -- see [render]. Raising it
+	// costs memory: the render is width*scale by maxHeight*scale in rgba, so
+	// 4000 is already 76MB at the numbers above.
+	maxHeight = 4000
 )
 
 // UserAgent is the user agent sent with requests.
@@ -131,7 +136,13 @@ func render(ctx context.Context, c *blitz.Context, src, baseURL string, html boo
 	if err != nil {
 		return nil, fmt.Errorf("blitz %s: %w", kind, err)
 	}
-	ivctx.Logf(ctx, "blitz %s: %v", kind, img.Bounds().Size())
+	size := img.Bounds().Size()
+	ivctx.Logf(ctx, "blitz %s: %v", kind, size)
+	if size.Y >= int(float32(opts.MaxHeight)*opts.Scale) {
+		// the document ran past the cap, so what came back is the top of it
+		// rather than the whole thing
+		ivctx.Warnf(ctx, "blitz %s: document is taller than %d css pixels, truncated", kind, opts.MaxHeight)
+	}
 	return img, nil
 }
 
@@ -139,14 +150,25 @@ func render(ctx context.Context, c *blitz.Context, src, baseURL string, html boo
 // one was set -- a rendered document is opaque, so iv's own compositing would
 // otherwise never show through it.
 func options(ctx context.Context) blitz.Options {
+	c := ivctx.Get(ctx)
 	opts := blitz.DefaultOptions()
-	opts.Width, opts.Scale, opts.UserAgent = width, scale, UserAgent
-	if bg := ivctx.Get(ctx).Bg; bg != nil && bg.A != 0 {
-		c := bg.NRGBA()
-		opts.BackgroundRGBA = uint32(c.R)<<24 | uint32(c.G)<<16 | uint32(c.B)<<8 | uint32(c.A)
+	opts.Width, opts.Scale, opts.MaxHeight, opts.UserAgent = width, scale, maxHeight, UserAgent
+	if c.BlitzDark {
+		// a document is laid out light by default, so this is what makes a
+		// page's own dark styling apply
+		opts.ColorScheme = blitz.Dark
+		opts.BackgroundRGBA = darkBg
+	}
+	if bg := c.Bg; bg != nil && bg.A != 0 {
+		n := bg.NRGBA()
+		opts.BackgroundRGBA = uint32(n.R)<<24 | uint32(n.G)<<16 | uint32(n.B)<<8 | uint32(n.A)
 	}
 	return opts
 }
+
+// darkBg is the backdrop painted under a document rendered dark, for the
+// documents that style no background of their own.
+const darkBg = 0x16161aff
 
 // base returns the base url that relative links in a local document resolve
 // against: the directory holding it.

@@ -58,6 +58,7 @@ func TestDecodeFile(t *testing.T) {
 		{"jxl", "vips/precision.jxl", "image/jxl", "vips", ""},
 		{"heic", "vips/cyberpunk.heic", "image/heic", "vips", ""},
 		{"pdf", "vips/file-sample_150kB.pdf", "application/pdf", "vips-pdf", ""},
+		{"pdf encrypted", "vips/file-sample_150kB.enc.pdf", "application/pdf", "vips-pdf", ""},
 		{"xps", "fitz/example.xps", "application/zip", "fitz", ""},
 		{"windows pe", "winres/go-winres.exe", "application/vnd.microsoft.portable-executable", "winres", ""},
 		{"markdown", "blitz/sample.md", "text/plain", "blitz", ""},
@@ -83,6 +84,11 @@ func TestDecodeFile(t *testing.T) {
 				t.Skipf("no test data: %v", err)
 			}
 			ctx := testContext(t)
+			if strings.Contains(test.file, ".enc.") {
+				// without this the decoder prompts, and a test has no
+				// terminal to prompt at
+				ivctx.Get(ctx).Password = encPassword
+			}
 			// the mime type must be detected before any decoder runs
 			f, err := os.Open(pathName)
 			if err != nil {
@@ -230,6 +236,9 @@ func readString(pathName string) (string, error) {
 // resvg rasterizes, so this covers the round trip through mime detection as
 // well. That the card carries the right cover art is checked in the tag
 // package, which can read the svg before it is rasterized.
+// encPassword opens testdata/vips/file-sample_150kB.enc.pdf.
+const encPassword = "password"
+
 const (
 	cardWidth  = 1000
 	cardHeight = 448

@@ -18,6 +18,10 @@ SRC=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 # ivcmd/decode_test.go
 STRING_EXT=.iv_test_string
 
+# opens testdata/vips/file-sample_150kB.enc.pdf, kept in step with encPassword
+# in ivcmd/decode_test.go
+ENC_PASSWORD=password
+
 # by default decode everything but throw the encoded output away; -t renders
 # to the terminal instead
 OUT=(--encoder png --out /dev/null)
@@ -32,7 +36,13 @@ fail=0
 
 run() {
   printf '%-72s ' "$(echo "$1" | cut -c1-70)"
-  if $IVBIN -q "${OUT[@]}" "$1" >"$LOG" 2>&1; then
+  # an encrypted pdf prompts for its password, and there is nobody here to
+  # type one
+  local pass=()
+  case "$1" in
+    *.enc.pdf) pass=(--password "$ENC_PASSWORD") ;;
+  esac
+  if $IVBIN -q "${OUT[@]}" "${pass[@]}" "$1" >"$LOG" 2>&1; then
     echo ok
   else
     echo "FAIL: $(head -1 "$LOG")"
@@ -51,7 +61,7 @@ echo
 echo '== files =='
 while read -r f; do
   run "$f"
-done < <(find "$SRC/testdata" -type f ! -name '*.enc.pdf' ! -name "*$STRING_EXT" | sort)
+done < <(find "$SRC/testdata" -type f ! -name "*$STRING_EXT" | sort)
 
 echo
 if [ $fail -ne 0 ]; then
