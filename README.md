@@ -182,19 +182,17 @@ fully static linux binary.
 
 ### Optional tools
 
-Four decoders shell out. Without the command, the file fails to render with
+Three decoders shell out. Without the command, the file fails to render with
 `<command> not in path` rather than being quietly skipped:
 
 | Command   | Used for                                           |
 | --------- | -------------------------------------------------- |
 | `soffice` | Word, Excel, PowerPoint, and OpenDocument documents |
-| `mmdc`    | Mermaid diagrams                                    |
 | `ffmpeg`  | video snapshots, and the waveform on an audio card  |
 | `binwalk` | images embedded in otherwise unrecognized files     |
 
-A mermaid diagram is the exception: without `mmdc` it falls through to
-`blitz`, which renders the source as a document. An audio card is another --
-it is drawn without a waveform rather than not at all.
+An audio card is the exception: it is drawn without a waveform rather than not
+at all.
 
 ### 32-bit targets
 
@@ -300,15 +298,30 @@ An animated `gif` or `webp` is the exception, and always shows its first frame.
 
 ### Vector graphics and diagrams
 
-| Format                            | Extensions            | Decoder    |
-| --------------------------------- | --------------------- | ---------- |
-| SVG, plain and gzipped            | `svg` `svgz`          | `resvg`    |
-| Lottie animations, and dotLottie  | `json` `lot` `lottie` | `lottie`   |
-| Graphviz graph description        | `gv` `dot`            | `graphviz` |
-| Mermaid diagrams *(needs `mmdc`)* | `mmd` `mermaid`       | `mermaid`  |
+| Format                           | Extensions            | Decoder    |
+| -------------------------------- | --------------------- | ---------- |
+| SVG, plain and gzipped           | `svg` `svgz`          | `resvg`    |
+| Lottie animations, and dotLottie | `json` `lot` `lottie` | `lottie`   |
+| Graphviz graph description       | `gv` `dot`            | `graphviz` |
+| Mermaid diagrams                 | `mmd` `mermaid`       | `mermaid`  |
 
 A `.json` is only taken as a lottie when the document itself says so, so an
 ordinary json file is left alone.
+
+Mermaid diagrams are rendered in process, with no browser and no Node -- the
+renderer is WebAssembly, run on wazero. `--mermaid-theme` picks one of
+`default`, `dark`, `forest`, `neutral` or `modern`. Compiling the module takes
+over a second, so the compiled code is cached under the user cache directory
+(`iv/wazero`) and every run after the first starts in tens of milliseconds.
+
+It is a reimplementation of Mermaid rather than a port, so a diagram comes out
+*Mermaid-like* rather than identical to what `mermaid.js` draws, and the
+iconify icon packs the mermaid cli takes are not supported -- an `fa:fa-globe`
+in a label renders as that text.
+
+A `.mmd` the renderer cannot parse is not an error: it is plain text, so it
+falls through to `blitz`, which renders the source as a document. Run with
+`-v` to see what the renderer made of it.
 
 ### Documents
 

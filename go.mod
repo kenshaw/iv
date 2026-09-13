@@ -1,6 +1,6 @@
 module github.com/kenshaw/iv
 
-go 1.27
+go 1.27.1
 
 require (
 	github.com/HugoSmits86/nativewebp v1.3.0
@@ -19,9 +19,11 @@ require (
 	github.com/spakin/netpbm v1.3.2
 	github.com/tc-hib/winres v0.3.1
 	github.com/tdewolff/canvas v0.0.0-20260901160717-dae8cd8e19a7
+	github.com/tetratelabs/wazero v1.12.0
 	github.com/xo/blitz v0.3.0
 	github.com/xo/lottie v0.1.0
 	github.com/xo/magic v0.2.1
+	github.com/xo/mermaid v0.1.0
 	github.com/xo/ox v0.0.0-20260826020025-6fcd48b711a6
 	github.com/xo/resvg v0.8.0
 	golang.org/x/image v0.46.0
@@ -69,7 +71,6 @@ require (
 	github.com/tdewolff/font v0.0.0-20260822205238-d0d2f004b117 // indirect
 	github.com/tdewolff/minify/v2 v2.24.17 // indirect
 	github.com/tdewolff/parse/v2 v2.8.16 // indirect
-	github.com/tetratelabs/wazero v1.12.0 // indirect
 	github.com/ulikunitz/xz v0.5.16 // indirect
 	github.com/xo/blitz/libblitz/linux-amd64 v0.1.0 // indirect
 	github.com/xo/blitz/libblitz/linux-arm64 v0.1.0 // indirect

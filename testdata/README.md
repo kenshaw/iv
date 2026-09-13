@@ -27,7 +27,7 @@ the pagination itself, which needs no file to exercise.
 | `jpeg`        | `jpeg`        |                                                             |
 | `libreoffice` | `libreoffice` | Office documents; needs `soffice` in `$PATH`                |
 | `lottie`      | `lottie`      | Noto animated emoji, as json, `.lot`, and a dotLottie       |
-| `mermaid`     | `mermaid`     | Needs `mmdc` in `$PATH`                                     |
+| `mermaid`     | `mermaid`     | One diagram per type the renderer understands               |
 | `nativewebp`  | `nativewebp`  | Lossy and lossless webp, each with its png reference decode |
 | `netpbm`      | `netpbm`      | pbm/pgm/ppm/pam, raw and plain                              |
 | `png`         | `png`         |                                                             |
@@ -215,6 +215,46 @@ so only the extension separates this from any other archive. The decoder hands
 the entries back to the pipeline, which sniffs the one it picks and comes
 straight back here -- the same trip a comic archive's pages make.
 
+### Mermaid diagrams
+
+`mermaid/` holds one diagram per type, which is what the coverage is about:
+the renderer parses each grammar separately, so a type that breaks breaks on
+its own.
+
+| File                                       | Diagram type                    |
+| ------------------------------------------ | ------------------------------- |
+| `flowchart.mmd`                            | `flowchart`                     |
+| `sequence.mmd`                             | `sequenceDiagram`               |
+| `class.mmd`                                | `classDiagram`                  |
+| `state.mmd`                                | `stateDiagram-v2`               |
+| `er.mmd`                                   | `erDiagram`                     |
+| `pie.mmd`                                  | `pie`                           |
+| `gantt.mmd`                                | `gantt`                         |
+| `journey.mmd`                              | `journey`                       |
+| `mindmap.mmd`                              | `mindmap`                       |
+| `sankey.mmd`                               | `sankey-beta`                   |
+| `architecture.mmd`, `aws-architecture.mmd` | `architecture-beta`             |
+| `aws.mmd`                                  | `graph`, heavily subgraphed     |
+
+The nine from `flowchart.mmd` to `mindmap.mmd` are the corpus [xo/mermaid][]
+renders in its own tests, kept in step with it so a renderer upgrade can be
+checked against the same diagrams from both sides.
+
+`sankey.mmd` and `aws-architecture.mmd` open with yaml frontmatter rather than
+a diagram header -- a `config:` block in the first, a `title:` and a `theme:`
+in the second -- which is the other thing they cover.
+
+`aws.mmd` and `aws-architecture.mmd` were written for the mermaid cli and its
+`--iconPacks`, and they still say `fa:fa-globe` in their labels. The renderer
+has no icon packs, so those render as the literal text -- they are kept for the
+large subgraphed flowchart underneath, not for the icons. `architecture.mmd`
+needs no pack: `architecture-beta` carries its own icon set, and that one draws
+its cloud, database, disk and server properly.
+
+`TestDecode` in `decoder/mermaid` renders every one of these and checks the
+labels survive into the svg, so a diagram type that stops parsing fails there
+rather than quietly rendering an empty document.
+
 ### Derived files
 
 `gif/`, `netpbm/`, and `tiff/` are generated from `png/tux.png` and
@@ -273,6 +313,7 @@ so between them they cover both what these formats need to represent.
 [jxl-test]: https://jpegxl.info/resources/jpeg-xl-test-page
 [svg-repo]: https://www.svgrepo.com
 [go-winres]: https://github.com/tc-hib/go-winres
+[xo/mermaid]: https://github.com/xo/mermaid
 [noto-emoji]: https://github.com/googlefonts/noto-emoji
 [xo/lottie]: https://github.com/xo/lottie
 [cc-by-4]: https://creativecommons.org/licenses/by/4.0/

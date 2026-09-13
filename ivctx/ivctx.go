@@ -46,7 +46,7 @@ type Config struct {
 	FontMargin      uint
 	TimeCode        time.Duration
 	VipsConcurrency uint
-	MermaidIcons    []string
+	MermaidTheme    string
 	MermaidBg       *colors.Color
 	BlitzDark       bool
 	PDFPage         string

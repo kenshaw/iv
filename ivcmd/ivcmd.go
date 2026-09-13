@@ -51,7 +51,7 @@ type Args struct {
 	FontMargin      uint               `ox:"font preview margin,default:5"`
 	TimeCode        time.Duration      `ox:"video time code,short:t"`
 	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
-	MermaidIcons    []string           `ox:"additional mermaid icon packages"`
+	MermaidTheme    string             `ox:"mermaid theme - default/dark/forest/neutral/modern"`
 	MermaidBg       *colors.Color      `ox:"default mermaid background,default:white"`
 	BlitzDark       bool               `ox:"render documents and pages dark"`
 	PDFPage         string             `ox:"pdf page size - fit/a4/letter,default:fit,name:pdf-page"`
@@ -92,7 +92,7 @@ func (args *Args) Config(stderr io.Writer) *ivctx.Config {
 		FontMargin:      args.FontMargin,
 		TimeCode:        args.TimeCode,
 		VipsConcurrency: args.VipsConcurrency,
-		MermaidIcons:    args.MermaidIcons,
+		MermaidTheme:    args.MermaidTheme,
 		MermaidBg:       args.MermaidBg,
 		BlitzDark:       args.BlitzDark,
 		PDFPage:         args.PDFPage,
