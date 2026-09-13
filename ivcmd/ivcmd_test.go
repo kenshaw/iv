@@ -67,8 +67,14 @@ func TestTargets(t *testing.T) {
 			exp:  []Target{{Name: "https://example.com/a.png", IsString: true}},
 		},
 		{
+			name: "uri",
+			args: []string{"mailto:someone@example.com"},
+			exp:  []Target{{Name: "mailto:someone@example.com", IsString: true}},
+		},
+		{
+			// a scheme with no authority, and not one the qr decoder knows
 			name:    "unsupported",
-			args:    []string{"ftp://example.com/a.png"},
+			args:    []string{"nope:whatever"},
 			wantErr: true,
 		},
 		{
@@ -101,7 +107,7 @@ func TestTargetsCollectsErrorsAndTargets(t *testing.T) {
 	if err := os.WriteFile(good, []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	targets, errs := Targets(good, "ftp://nope", good)
+	targets, errs := Targets(good, "nope:whatever", good)
 	if len(targets) != 2 {
 		t.Errorf("expected 2 targets, got %d", len(targets))
 	}
@@ -259,7 +265,7 @@ func TestDecoderRegistryIsPopulated(t *testing.T) {
 			t.Errorf("expected the %q decoder to be registered", name)
 		}
 	}
-	if !errors.Is(func() error { _, _, err := decoder.DecodeString(context.Background(), "nope://x"); return err }(), decoder.ErrNotSupported) {
+	if !errors.Is(func() error { _, _, err := decoder.DecodeString(context.Background(), "nope:whatever"); return err }(), decoder.ErrNotSupported) {
 		t.Error("expected an unsupported string to be reported as such")
 	}
 }

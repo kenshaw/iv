@@ -22,6 +22,8 @@ func init() {
 		decoder.MimeType(
 			"image/x-portable-bitmap",
 			"image/x-portable-graymap",
+			// libmagic's spelling
+			"image/x-portable-greymap",
 			"image/x-portable-pixmap",
 			"image/x-portable-anymap",
 			"image/x-portable-arbitrarymap",

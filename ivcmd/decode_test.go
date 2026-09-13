@@ -41,8 +41,10 @@ func TestDecodeFile(t *testing.T) {
 		{"tiff uncompressed", "tiff/tux-uncompressed.tiff", "image/tiff", "tiff", ""},
 		{"tiff deflate", "tiff/tux-deflate.tiff", "image/tiff", "tiff", ""},
 		{"tiff deflate predictor", "tiff/test-deflate-predictor.tiff", "image/tiff", "tiff", ""},
+		// libmagic spells it greymap, and reports an ico under the name iana
+		// registered rather than the one browsers use
 		{"netpbm pbm", "netpbm/test.pbm", "image/x-portable-bitmap", "netpbm", ""},
-		{"netpbm pgm", "netpbm/test.pgm", "image/x-portable-graymap", "netpbm", ""},
+		{"netpbm pgm", "netpbm/test.pgm", "image/x-portable-greymap", "netpbm", ""},
 		{"netpbm ppm", "netpbm/tux.ppm", "image/x-portable-pixmap", "netpbm", ""},
 		{"netpbm pam", "netpbm/tux.pam", "image/x-portable-arbitrarymap", "netpbm", ""},
 		{"netpbm pbm plain", "netpbm/test-plain.pbm", "image/x-portable-bitmap", "netpbm", ""},
@@ -51,8 +53,8 @@ func TestDecodeFile(t *testing.T) {
 		{"svg", "resvg/rect.svg", "image/svg+xml", "resvg", ""},
 		{"svg choropleth", "resvg/choropleth.svg", "image/svg+xml", "resvg", ""},
 		{"svgz", "resvg/rect.svgz", "application/gzip", "resvg", ""},
-		{"ico", "ico/1.ico", "image/x-icon", "ico", ""},
-		{"ico multi", "ico/Mathijssen-Tuxlets-Test-Dummy-Tux.ico", "image/x-icon", "ico", ""},
+		{"ico", "ico/1.ico", "image/vnd.microsoft.icon", "ico", ""},
+		{"ico multi", "ico/Mathijssen-Tuxlets-Test-Dummy-Tux.ico", "image/vnd.microsoft.icon", "ico", ""},
 		{"icns", "icns/test.icns", "image/x-icns", "icns", ""},
 		{"dot", "graphviz/booktest_sqlite3.dot", "text/vnd.graphviz", "graphviz", ""},
 		{"ttf", "fontimg/Ubuntu-R.ttf", "font/ttf", "fontimg", ""},
@@ -60,15 +62,21 @@ func TestDecodeFile(t *testing.T) {
 		{"heic", "vips/cyberpunk.heic", "image/heic", "vips", ""},
 		{"pdf", "vips/file-sample_150kB.pdf", "application/pdf", "vips-pdf", ""},
 		{"pdf encrypted", "vips/file-sample_150kB.enc.pdf", "application/pdf", "vips-pdf", ""},
-		{"xps", "fitz/example.xps", "application/zip", "fitz", ""},
+		// libmagic does not recognize this one at all, so it routes on its
+		// extension -- which is what generic types are for
+		{"xps", "fitz/example.xps", "application/octet-stream", "fitz", ""},
 		{"windows pe", "winres/go-winres.exe", "application/vnd.microsoft.portable-executable", "winres", ""},
-		{"markdown", "blitz/sample.md", "text/plain", "blitz", ""},
+		// libmagic types plain text by what it looks like, and this document
+		// looks like c to it. text/x- is generic, so the extension decides
+		{"markdown", "blitz/sample.md", "text/x-c", "blitz", ""},
 		{"html", "blitz/sample.html", "text/html", "blitz", ""},
 		{"tag mp3", "tag/silent.mp3", "audio/mpeg", "tag", ""},
 		{"tag flac", "tag/silent.flac", "audio/flac", "tag", ""},
 		{"tag m4a", "tag/silent.m4a", "audio/x-m4a", "tag", ""},
 		{"tag ogg", "tag/silent.ogg", "audio/ogg", "tag", ""},
-		{"tag aac", "tag/silent.aac", "audio/mpeg", "tag", ""},
+		{"tag aac", "tag/silent.aac", "audio/x-hx-aac-adts", "tag", ""},
+		{"vcard", "vcard/john-doe.vcf", "text/vcard", "vcard", ""},
+		{"vcard folded", "vcard/folded.vcf", "text/vcard", "vcard", ""},
 		{"docx", "libreoffice/file-sample_100kB.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "libreoffice", "soffice"},
 		{"doc", "libreoffice/file-sample_100kB.doc", "application/x-ole-storage", "libreoffice", "soffice"},
 		{"odt", "libreoffice/file-sample_100kB.odt", "application/vnd.oasis.opendocument.text", "libreoffice", "soffice"},
@@ -152,8 +160,26 @@ func TestDecodeString(t *testing.T) {
 		mime string
 		size image.Point
 	}{
-		// a QR code is built outright, so it has no mime type of its own
-		"wifi":                {"", image.Pt(350, 350)},
+		// a QR code is built outright, so it has no mime type of its own. The
+		// size follows from how much the uri encodes to, so each of these is
+		// its own number rather than a shared one
+		"wifi":      {"", image.Pt(370, 370)},
+		"mailto":    {"", image.Pt(410, 410)},
+		"tel":       {"", image.Pt(290, 290)},
+		"sms":       {"", image.Pt(370, 370)},
+		"geo":       {"", image.Pt(370, 370)},
+		"xmpp":      {"", image.Pt(410, 410)},
+		"sip":       {"", image.Pt(370, 370)},
+		"matrix":    {"", image.Pt(410, 410)},
+		"magnet":    {"", image.Pt(450, 450)},
+		"ftp":       {"", image.Pt(370, 370)},
+		"bitcoin":   {"", image.Pt(450, 450)},
+		"ethereum":  {"", image.Pt(450, 450)},
+		"lightning": {"", image.Pt(650, 650)},
+		"otpauth":   {"", image.Pt(530, 530)},
+		"dpp":       {"", image.Pt(570, 570)},
+		// any scheme with an authority, not just the ones named above
+		"ssh":                 {"", image.Pt(370, 370)},
 		"data-svg-base64":     {"image/svg+xml", image.Pt(100, 100)},
 		"data-svg-urlencoded": {"image/svg+xml", image.Pt(64, 64)},
 		"data-png-base64":     {"image/png", image.Pt(1, 1)},
@@ -220,8 +246,11 @@ func TestDecodeString(t *testing.T) {
 
 func TestDecodeStringUnsupported(t *testing.T) {
 	for _, s := range []string{
-		"ftp://example.com/a.png",
 		"not a url at all",
+		// a scheme with nothing to say it was meant as a uri: no authority,
+		// and not one of the schemes the qr decoder knows by name
+		"nope:whatever",
+		"C:\\Users\\someone\\photo.png",
 		"",
 	} {
 		if _, _, err := decoder.DecodeString(testContext(t), s); !errors.Is(err, decoder.ErrNotSupported) {
@@ -315,7 +344,9 @@ func TestLibreOfficeRouting(t *testing.T) {
 		{"file-sample_100kB.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
 		{"file-sample_100kB.odt", "application/vnd.oasis.opendocument.text"},
 		{"file-sample_100kB.rtf", "text/rtf"},
-		{"file_example_XLS_50.xls", "application/x-ole-storage"},
+		// libmagic reads the ole directory, so this one is not merely a
+		// compound file to it
+		{"file_example_XLS_50.xls", "application/vnd.ms-excel"},
 		{"file_example_XLSX_50.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
 		{"spreadsheet.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
 		{"file_example_ODS_100.ods", "application/vnd.oasis.opendocument.spreadsheet"},

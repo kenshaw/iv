@@ -1,0 +1,13 @@
+BEGIN:VCARD
+VERSION:4.0
+N:van der Berg;María;Elena;Dr.;PhD
+ORG:Ácme Widgets\, Inc.;Research Division
+TITLE:Principal Research Engineer and Head of
+  Advanced Materials
+TEL;TYPE="voice,work":+31 20 555 0100
+TEL;TYPE=cell:+31 6 5555 0199
+EMAIL;TYPE=work:maria.vandenberg@example.nl
+URL:https://research.example.nl/~maria
+ADR;TYPE=work:;;Keizersgracht 123;Amsterdam;NH;1015 CJ;Netherlands
+NOTE:Ask about the <new> alloy & the "quiet" furnace
+END:VCARD

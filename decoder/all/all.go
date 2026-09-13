@@ -25,6 +25,7 @@ import (
 	_ "github.com/kenshaw/iv/decoder/resvg"
 	_ "github.com/kenshaw/iv/decoder/tag"
 	_ "github.com/kenshaw/iv/decoder/tiff"
+	_ "github.com/kenshaw/iv/decoder/vcard"
 	_ "github.com/kenshaw/iv/decoder/vips"
 	_ "github.com/kenshaw/iv/decoder/winres"
 )

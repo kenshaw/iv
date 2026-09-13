@@ -7,7 +7,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gabriel-vasile/mimetype"
 	"github.com/kenshaw/iv/ivctx"
 	"github.com/xo/magic"
 )
@@ -18,8 +17,10 @@ const magicPeek = 64 * 1024
 // Detect determines the mime type of the reader.
 //
 // The forced mime type wins, then any decoder supplied [MimeDetector], then
-// content sniffing, and finally libmagic's description of the content matched
-// against the patterns registered with [RegisterMimeType].
+// libmagic's mime type, and finally libmagic's description of the content
+// matched against the patterns registered with [RegisterMimeType] -- which is
+// what identifies the formats libmagic describes but does not type, fonts
+// among them.
 //
 // The reader is rewound to its start before returning.
 func Detect(ctx context.Context, rs io.ReadSeeker) (string, error) {
@@ -44,24 +45,25 @@ func Detect(ctx context.Context, rs io.ReadSeeker) (string, error) {
 	if _, err := rs.Seek(0, io.SeekStart); err != nil {
 		return "", err
 	}
-	m, err := mimetype.DetectReader(rs)
-	if err != nil {
-		return "", err
-	}
-	mime := normalizeMime(m.String())
-	if !isUnidentified(mime) {
-		return mime, nil
-	}
-	// the sniffed type says nothing useful; ask libmagic
-	if _, err := rs.Seek(0, io.SeekStart); err != nil {
-		return mime, nil
-	}
 	buf := make([]byte, magicPeek)
 	n, err := io.ReadFull(rs, buf)
 	if n == 0 && err != nil {
+		return "", err
+	}
+	buf = buf[:n]
+	var mime string
+	if v, err := DescribeMime(buf); err != nil {
+		ivctx.Logf(ctx, "libmagic mime: %v", err)
+	} else {
+		mime = normalizeMime(v)
+	}
+	if !isUnidentified(mime) {
 		return mime, nil
 	}
-	if desc, err := Describe(buf[:n]); err == nil && desc != "" {
+	// libmagic has no mime type for this, but it may still recognize what it
+	// is: a font reports as application/octet-stream and describes itself as
+	// TrueType Font data
+	if desc, err := Describe(buf); err == nil && desc != "" {
 		ivctx.Logf(ctx, "libmagic: %s", desc)
 		if v, ok := lookupDescription(desc); ok {
 			return v, nil
@@ -70,14 +72,8 @@ func Detect(ctx context.Context, rs io.ReadSeeker) (string, error) {
 	return mime, nil
 }
 
-// isUnidentified reports whether content sniffing failed to identify the
-// content at all.
-//
-// Only such content is handed to libmagic. Text that sniffed as text/plain is
-// deliberately excluded: the registered [MimeDetector] funcs already cover the
-// text formats iv cares about, and libmagic's text analysis has been observed
-// to read out of bounds and crash the process on ordinary input (a mermaid
-// diagram and a graphviz dot file in testdata both trigger it).
+// isUnidentified reports whether libmagic failed to type the content at all.
+// Only such content is looked up by description.
 func isUnidentified(mime string) bool {
 	return mime == "" || mime == "application/octet-stream"
 }
@@ -97,6 +93,20 @@ var (
 
 // Describe returns libmagic's textual description of the buffer.
 func Describe(buf []byte) (string, error) {
+	return withMagic(func(m *magic.Magic) (string, error) {
+		return m.Buffer(buf)
+	})
+}
+
+// DescribeMime returns libmagic's mime type for the buffer.
+func DescribeMime(buf []byte) (string, error) {
+	return withMagic(func(m *magic.Magic) (string, error) {
+		return m.BufferWith(magic.MimeType, buf)
+	})
+}
+
+// withMagic runs fn against the shared libmagic handle.
+func withMagic(fn func(*magic.Magic) (string, error)) (string, error) {
 	magicOnce.Do(func() {
 		magicDB, magicErr = magic.New(magic.None)
 	})
@@ -106,7 +116,7 @@ func Describe(buf []byte) (string, error) {
 	// a magic_t cookie is not safe for concurrent use
 	magicMu.Lock()
 	defer magicMu.Unlock()
-	return magicDB.Buffer(buf)
+	return fn(magicDB)
 }
 
 // descriptions maps libmagic description patterns to mime types.

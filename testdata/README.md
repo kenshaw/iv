@@ -36,6 +36,7 @@ the pagination itself, which needs no file to exercise.
 |               | `blitz-url`   |                                                             |
 | `tag`         | `tag`         | Silent audio carrying embedded cover art                    |
 | `tiff`        | `tiff`        | One file per compression the Go encoder supports            |
+| `vcard`       | `vcard`       | Contacts, drawn as a business card with a scannable code    |
 | `vips`        | `vips`        | heic/heif/jxl, plus a plain and a password protected pdf    |
 | `winres`      | `winres`      | Windows PE with embedded icons                              |
 
@@ -60,6 +61,17 @@ files are never mistaken for something to render.
 | `ifconfig-me.iv_test_string`         | `blitz-url` | the page, 2400 wide  |
 | `finance-google.iv_test_string`      | `blitz-url` | the page, 2400 wide  |
 | `microsoft-favicon.iv_test_string`   | `ico`       | 128x128 icon         |
+
+The uri files cover what the `qr` decoder claims: the schemes it knows by
+name -- `mailto:`, `tel:`, `sms:`, `geo:`, `xmpp:`, `sip:`, `matrix:`,
+`magnet:`, `ftp:`, `bitcoin:`, `ethereum:`, `lightning:`, `otpauth:`, `DPP:`
+and `WIFI:` -- and, in `ssh.iv_test_string`, any other scheme with an
+authority. `http:` and `https:` are deliberately not among them: those name a
+document to fetch, and `blitz-url` renders it.
+
+Each one is a different length, so each encodes to its own qr version and
+comes out its own size. Every one of these round trips: `zbarimg --raw` reads
+back exactly the string that went in.
 
 `TestDecodeString` reads the directory and checks each one against a table
 keyed by file name; a string added without an entry in that table fails, so
@@ -103,11 +115,11 @@ Microsoft formats, because they are detected differently:
 | `file_example_ODP_200kB.odp`                                                     | `application/vnd.oasis.opendocument.presentation`                         |
 | `file-sample_100kB.rtf`                                                          | `text/rtf`                                                                |
 
-The pre-2007 binary formats are all OLE compound files, so content sniffing
-cannot tell a `.doc` from an `.xls` from a `.ppt` -- all three report
-`application/x-ole-storage`, and the `libreoffice` decoder claims that type
-outright rather than relying on the extension. `TestLibreOfficeRouting` checks
-every one of these without needing `soffice`.
+The pre-2007 binary formats are all OLE compound files. libmagic reads the
+directory inside one, so an `.xls` is reported as `application/vnd.ms-excel`,
+but a `.doc` and a `.ppt` are only `application/x-ole-storage` -- the
+`libreoffice` decoder claims both shapes rather than relying on the extension.
+`TestLibreOfficeRouting` checks every one of these without needing `soffice`.
 
 ## Provenance
 
@@ -149,11 +161,23 @@ every one of these without needing `soffice`.
 ### Documents
 
 `blitz/sample.md` and `blitz/sample.html` are the same idea in the two
-languages the `blitz` decoder speaks. The markdown sniffs as `text/plain`,
-which the decoder claims last so mermaid, graphviz and libreoffice get first
-refusal; the html sniffs as `text/html`, which is its own. The html file is
+languages the `blitz` decoder speaks. libmagic types plain text by what it
+looks like, so the markdown comes back as `text/x-c` -- a guess at a language,
+which `isGeneric` treats as saying nothing, leaving the extension to route it.
+The html is read as `text/html`, which is a format rather than a guess. The html file is
 deliberately not plain -- a gradient header, a flex row, a bordered table --
 since what it is testing is a css engine rather than a markdown stylesheet.
+
+### Contacts
+
+`vcard/john-doe.vcf` is a plain vCard 3.0. `vcard/folded.vcf` is the awkward
+one, and everything in it is there to be awkward: a `TITLE` folded across two
+lines, an `ORG` with an escaped comma, a `TYPE="voice,work"` parameter quoted
+around its own separator, a lower case `TYPE=cell`, a structured `N` carrying
+a prefix and a suffix, an `ADR`, and non-ascii throughout.
+
+The card the decoder draws carries the record as it was written in a qr code,
+so scanning it hands a phone the contact rather than a transcription of it.
 
 ### Comic archives
 
@@ -240,9 +264,10 @@ so between them they cover both what these formats need to represent.
   | `tux.pam`        | `P7`  | `RGB_ALPHA`, raw |
 
   PAM is the only one of these that keeps an alpha channel; the rest are
-  composited onto white first. Content sniffing only recognizes `P1`/`P2`/`P3`
-  and `P6`, so the `netpbm` decoder registers libmagic descriptions for the
-  others -- see `RegisterMimeType` in `decoder/netpbm`.
+  composited onto white first. libmagic types every one of them, though it
+  spells the grey one `image/x-portable-greymap`, so the decoder registers
+  both spellings. The description patterns in `decoder/netpbm` remain as a
+  fallback for a libmagic build that only describes them.
 
 [webp-gallery]: https://developers.google.com/speed/webp/gallery
 [jxl-test]: https://jpegxl.info/resources/jpeg-xl-test-page

@@ -37,6 +37,15 @@ func TestIsGeneric(t *testing.T) {
 		{"application/zip", true},
 		{"image/png", false},
 		{"font/ttf", false},
+		// libmagic's guesses over plain text
+		{"text/csv", true},
+		{"text/tab-separated-values", true},
+		{"text/x-c", true},
+		{"text/x-ruby", true},
+		{"text/x-shellscript", true},
+		// not a guess: a format it read
+		{"text/html", false},
+		{"text/rtf", false},
 	} {
 		if got := isGeneric(test.mime); got != test.exp {
 			t.Errorf("isGeneric(%q) = %v, want %v", test.mime, got, test.exp)
@@ -159,7 +168,10 @@ func TestDescribe(t *testing.T) {
 	}
 }
 
-func TestDetectFallsBackToLibmagic(t *testing.T) {
+// TestDetectFallsBackToDescription covers the second stage: libmagic has no
+// mime type for a font, reporting application/octet-stream, but it does
+// describe one -- which is what the registered patterns match against.
+func TestDetectFallsBackToDescription(t *testing.T) {
 	buf, err := os.ReadFile("../testdata/fontimg/Ubuntu-R.ttf")
 	if err != nil {
 		t.Skipf("no font test data: %v", err)
@@ -199,10 +211,12 @@ func TestIsUnidentified(t *testing.T) {
 	}
 }
 
-// TestDetectSkipsLibmagicForText guards the decision in isUnidentified:
-// libmagic's text analysis crashes the process on these inputs, so text that
-// content sniffing already identified must never reach it.
-func TestDetectSkipsLibmagicForText(t *testing.T) {
+// TestDetectText guards the decision in isGeneric: libmagic types plain text
+// by what it looks like, so markdown comes back as text/x-c and a mermaid
+// diagram as text/x-ruby. Whatever it decides, the result has to stay a text
+// type, and a guess at a language has to stay generic so the extension is
+// still what routes the file.
+func TestDetectText(t *testing.T) {
 	for _, name := range []string{
 		"../testdata/mermaid/aws.mmd",
 		"../testdata/graphviz/booktest_sqlite3.dot",
@@ -219,6 +233,9 @@ func TestDetectSkipsLibmagicForText(t *testing.T) {
 			}
 			if !strings.HasPrefix(got, "text/") {
 				t.Errorf("expected a text mime type, got %q", got)
+			}
+			if strings.HasPrefix(got, "text/x-") && !isGeneric(got) {
+				t.Errorf("expected the language guess %q to be generic", got)
 			}
 		})
 	}

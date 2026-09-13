@@ -6,7 +6,6 @@ require (
 	github.com/HugoSmits86/nativewebp v1.3.0
 	github.com/cshum/vipsgen v1.3.11
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
-	github.com/gabriel-vasile/mimetype v1.4.15
 	github.com/gen2brain/go-fitz v1.28.2
 	github.com/goccy/go-graphviz v0.2.10
 	github.com/jackmordaunt/icns/v3 v3.0.1

@@ -11,7 +11,6 @@ import (
 	"image"
 	"io"
 
-	"github.com/gabriel-vasile/mimetype"
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/ivctx"
 	"github.com/tc-hib/winres"
@@ -40,9 +39,11 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 	var icons []image.Image
 	var walkErr error
 	set.Walk(func(typid, id winres.Identifier, lang uint16, data []byte) bool {
-		mime := mimetype.Detect(data)
-		ivctx.Logf(ctx, "resource type: %v res: %v lang: %v len: %d mime: %v", typid, id, lang, len(data), mime)
-		if mime.String() != "image/x-icon" {
+		ivctx.Logf(ctx, "resource type: %v res: %v lang: %v len: %d", typid, id, lang, len(data))
+		// the resource type says what this is outright. Sniffing the bytes
+		// instead only ever worked by accident: an icon directory is a 62
+		// byte table of contents that no detector types as an image.
+		if typid != winres.RT_GROUP_ICON {
 			return true
 		}
 		icon, err := set.GetIconTranslation(id, lang)

@@ -283,7 +283,11 @@ func isGeneric(mime string) bool {
 		"text/csv", "text/tab-separated-values":
 		return true
 	}
-	return false
+	// libmagic types plain text by what the content looks like, so markdown
+	// comes back as text/x-c and a mermaid diagram as text/x-ruby. Those name
+	// a language it guessed at, not a format it read, and taking them at face
+	// value would route the file nowhere.
+	return strings.HasPrefix(mime, "text/x-")
 }
 
 // state returns the decoder's initialized state, running the init func exactly

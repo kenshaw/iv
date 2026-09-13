@@ -1,0 +1,10 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Doe;John;;;
+FN:John Doe
+ORG:Example Corp
+TITLE:Engineer
+TEL;TYPE=CELL:+14155552671
+EMAIL:john@example.com
+URL:https://example.com
+END:VCARD

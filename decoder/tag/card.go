@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/kenshaw/iv/internal/font"
 )
 
 // Card geometry. The card is a wide landscape panel: cover art on the left,
@@ -142,16 +144,16 @@ type line struct {
 // the cover art.
 func (c *card) text(b *strings.Builder) {
 	w := cardW - textX - pad
-	size, title := shrink(c.title, titleSizes, true, w)
+	size, title := font.Shrink(c.title, titleSizes, true, w)
 	lines := []line{{title, size, 700, titleFg, "0", 1.5}}
 	if c.artist != "" {
-		lines = append(lines, line{fit(c.artist, artistSize, false, w), artistSize, 600, c.accent.hex(0.8, 1), "0", 1.55})
+		lines = append(lines, line{font.Fit(c.artist, artistSize, false, w), artistSize, 600, c.accent.hex(0.8, 1), "0", 1.55})
 	}
 	if c.album != "" {
-		lines = append(lines, line{fit(c.album, albumSize, false, w), albumSize, 400, albumFg, "0", 1.9})
+		lines = append(lines, line{font.Fit(c.album, albumSize, false, w), albumSize, 400, albumFg, "0", 1.9})
 	}
 	if c.meta != "" {
-		lines = append(lines, line{fit(c.meta, metaSize, false, w), metaSize, 400, metaFg, "0.6", 1.4})
+		lines = append(lines, line{font.Fit(c.meta, metaSize, false, w), metaSize, 400, metaFg, "0.6", 1.4})
 	}
 	var total float64
 	for _, l := range lines {
@@ -161,7 +163,7 @@ func (c *card) text(b *strings.Builder) {
 	// height below the top of the block
 	y := float64(pad+artSize/2) - total/2 + float64(lines[0].size)*0.78
 	for _, l := range lines {
-		fmt.Fprintf(b, `<text x="%d" y="%.1f" font-family="%s" font-size="%d" font-weight="%d" letter-spacing="%s" fill="%s">%s</text>`, textX, y, fontFamily(), l.size, l.weight, l.spacing, l.fill, esc(l.text))
+		fmt.Fprintf(b, `<text x="%d" y="%.1f" font-family="%s" font-size="%d" font-weight="%d" letter-spacing="%s" fill="%s">%s</text>`, textX, y, font.Family(), l.size, l.weight, l.spacing, l.fill, esc(l.text))
 		y += float64(l.size) * l.lead
 	}
 }
@@ -191,9 +193,9 @@ func (c *card) wave(b *strings.Builder) {
 		fmt.Fprintf(b, `<rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" rx="%.1f"/>`, x, float64(waveMid)-h/2, bw, h, bw/2)
 	}
 	b.WriteString(`</g>`)
-	fmt.Fprintf(b, `<text x="%d" y="428" font-family="%s" font-size="13" fill="%s">0:00</text>`, pad, fontFamily(), metaFg)
+	fmt.Fprintf(b, `<text x="%d" y="428" font-family="%s" font-size="13" fill="%s">0:00</text>`, pad, font.Family(), metaFg)
 	if c.duration > 0 {
-		fmt.Fprintf(b, `<text x="%d" y="428" text-anchor="end" font-family="%s" font-size="13" fill="%s">%s</text>`, cardW-pad, fontFamily(), metaFg, clock(c.duration))
+		fmt.Fprintf(b, `<text x="%d" y="428" text-anchor="end" font-family="%s" font-size="13" fill="%s">%s</text>`, cardW-pad, font.Family(), metaFg, clock(c.duration))
 	}
 }
 

@@ -1,4 +1,10 @@
-package tag
+// Package font resolves the font iv's generated cards are set in, and
+// measures text in it.
+//
+// Measurement and rendering have to agree: the family named in an svg is the
+// one measured here, so fitting a line to a box is arithmetic rather than
+// guesswork.
+package font
 
 import (
 	"strings"
@@ -44,9 +50,9 @@ var resolve = sync.OnceValue(func() *face {
 	return nil
 })
 
-// fontFamily returns the font stack the svg names. The generic stays last so
+// Family returns the font stack the svg names. The generic stays last so
 // a system without any of the families still gets something proportional.
-func fontFamily() string {
+func Family() string {
 	if f := resolve(); f != nil {
 		return f.family + ",sans-serif"
 	}
@@ -64,12 +70,12 @@ const (
 	regAdv  = 0.55
 )
 
-// measure returns the width s renders to at the size, in the svg's units.
+// Measure returns the width s renders to at the size, in the svg's units.
 // Canvas sizes a face in points and answers in millimetres, and one svg user
 // unit is one point's worth of em at the same number, so the conversions
 // cancel and what comes back is directly comparable to a width in the card's
 // geometry.
-func measure(s string, size int, bold bool) float64 {
+func Measure(s string, size int, bold bool) float64 {
 	f := resolve()
 	if f == nil {
 		adv := regAdv
@@ -85,30 +91,30 @@ func measure(s string, size int, bold bool) float64 {
 	return font.Face(float64(size), canvas.Black).TextWidth(s) / mmPerPt
 }
 
-// fit truncates s to what fits in width at the given size, appending an
+// Fit truncates s to what fits in width at the given size, appending an
 // ellipsis when it has to cut.
-func fit(s string, size int, bold bool, width int) string {
+func Fit(s string, size int, bold bool, width int) string {
 	w := float64(width)
-	if measure(s, size, bold) <= w {
+	if Measure(s, size, bold) <= w {
 		return s
 	}
 	r := []rune(s)
 	for n := len(r) - 1; n > 0; n-- {
-		if t := strings.TrimRight(string(r[:n]), " ") + "…"; measure(t, size, bold) <= w {
+		if t := strings.TrimRight(string(r[:n]), " ") + "…"; Measure(t, size, bold) <= w {
 			return t
 		}
 	}
 	return ""
 }
 
-// shrink returns the largest of the sizes at which s fits in width, and s
+// Shrink returns the largest of the sizes at which s fits in width, and s
 // fitted to it -- truncated only when it does not fit even at the smallest.
-func shrink(s string, sizes []int, bold bool, width int) (int, string) {
+func Shrink(s string, sizes []int, bold bool, width int) (int, string) {
 	for _, size := range sizes {
-		if fit(s, size, bold, width) == s {
+		if Fit(s, size, bold, width) == s {
 			return size, s
 		}
 	}
 	size := sizes[len(sizes)-1]
-	return size, fit(s, size, bold, width)
+	return size, Fit(s, size, bold, width)
 }
