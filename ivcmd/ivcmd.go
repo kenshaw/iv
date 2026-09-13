@@ -54,6 +54,8 @@ type Args struct {
 	MermaidIcons    []string           `ox:"additional mermaid icon packages"`
 	MermaidBg       *colors.Color      `ox:"default mermaid background,default:white"`
 	BlitzDark       bool               `ox:"render documents and pages dark"`
+	PDFPage         string             `ox:"pdf page size - fit/a4/letter,default:fit,name:pdf-page"`
+	PDFMargin       uint               `ox:"pdf page margin in points,default:36,name:pdf-margin"`
 	Password        string             `ox:"password for encrypted documents"`
 	ForceMime       string             `ox:"force mime type"`
 	Out             string             `ox:"write to file instead of the terminal,short:o"`
@@ -93,6 +95,8 @@ func (args *Args) Config(stderr io.Writer) *ivctx.Config {
 		MermaidIcons:    args.MermaidIcons,
 		MermaidBg:       args.MermaidBg,
 		BlitzDark:       args.BlitzDark,
+		PDFPage:         args.PDFPage,
+		PDFMargin:       args.PDFMargin,
 		Password:        args.Password,
 		ForceMime:       args.ForceMime,
 	}
@@ -223,29 +227,16 @@ func (args *Args) resolveDisplay(ctx context.Context, c *ivctx.Config, stdout io
 		t.Cols, t.Rows, t.Width, t.Height, how, c.Width, c.Height)
 }
 
-// configureResvg applies the background and scaling settings to the svg
-// renderer.
+// configureResvg applies the background to the svg renderer.
 //
-// A vector has no size of its own to preserve, so it is rasterized to fill the
-// display size rather than resampled to it afterwards -- the same thing the
-// lottie and pdf renderers do, and the reason an svg comes out sharp at any
-// size.
+// The display size is deliberately not passed on. resvg's best fit grows an
+// svg to fill whatever box it is given, so handing it the terminal meant every
+// svg arrived at terminal width whatever size it declared -- a 1000 pixel card
+// blown up to 1900 and resampled back down again by whatever came next. An
+// svg is rasterized at the size it declares, and [ivctx.Fit] then applies the
+// same ceiling and floor to it as to any other image.
 func (args *Args) configureResvg(c *ivctx.Config) {
 	resvg.WithBackground(c.Bg)(resvg.Default)
-	if c.Mode.Get() == ivctx.ModeNone {
-		return
-	}
-	w, h := max(int(c.Width), int(c.MinWidth)), max(int(c.Height), int(c.MinHeight))
-	if w == 0 && h == 0 {
-		return
-	}
-	mode := resvg.ScaleBestFit
-	if c.Mode.Get() == ivctx.ModeStretch && c.Width != 0 && c.Height != 0 {
-		mode = resvg.ScaleNone
-	}
-	resvg.WithScaleMode(mode)(resvg.Default)
-	resvg.WithWidth(w)(resvg.Default)
-	resvg.WithHeight(h)(resvg.Default)
 }
 
 // render decodes the target and writes it with the encoder.

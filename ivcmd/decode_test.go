@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -486,11 +487,26 @@ func TestRoundTrip(t *testing.T) {
 			if err != nil {
 				t.Fatalf("expected the encoded image to decode, got: %v", err)
 			}
-			if got, exp := out.Bounds().Size(), img.Bounds().Size(); got != exp {
+			got, exp := out.Bounds().Size(), img.Bounds().Size()
+			if e.Ext == "pdf" {
+				// a pdf carries a page, not a raster: what comes back is
+				// whatever the reader rasterized it at, so the shape is what
+				// survives the trip rather than the pixel count
+				if a, b := aspect(got), aspect(exp); math.Abs(a-b) > 0.01*b {
+					t.Errorf("expected aspect %.4f, got %.4f (%v from %v)", b, a, got, exp)
+				}
+				return
+			}
+			if got != exp {
 				t.Errorf("expected size %v, got %v", exp, got)
 			}
 		})
 	}
+}
+
+// aspect returns the width over height of a size.
+func aspect(p image.Point) float64 {
+	return float64(p.X) / float64(p.Y)
 }
 
 // usable reports whether an external command the decoders shell out to can

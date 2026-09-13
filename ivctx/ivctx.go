@@ -49,6 +49,8 @@ type Config struct {
 	MermaidIcons    []string
 	MermaidBg       *colors.Color
 	BlitzDark       bool
+	PDFPage         string
+	PDFMargin       uint
 	Password        string
 	ForceMime       string
 
@@ -77,6 +79,8 @@ func New() *Config {
 		FontDPI:    100,
 		FontMargin: 5,
 		MermaidBg:  named(colors.White),
+		PDFPage:    "fit",
+		PDFMargin:  36,
 	}
 	c.Init()
 	return c

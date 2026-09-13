@@ -19,7 +19,9 @@ import (
 	"github.com/xo/resvg"
 )
 
-// maxPdfDimension is the longest edge a rendered pdf page is scaled to.
+// maxPdfDimension is the longest edge a rendered pdf page is capped at. A
+// page is rendered at the configured dpi, which at 300 puts an A4 sheet past
+// 2400 pixels before anything has asked for it that big.
 const maxPdfDimension = 2000
 
 var initOnce sync.Once
@@ -66,8 +68,11 @@ func Export(ctx context.Context, v *vips.Image) (image.Image, error) {
 	ext, w, h := strings.TrimPrefix(string(v.Format()), "."), v.Width(), v.Height()
 	ivctx.Logf(ctx, "vips format: %s dimensions: %dx%d pages: %d", ext, w, h, v.Pages())
 	if ext == "pdf" {
+		// a cap, not a target: best fit grows as readily as it shrinks, and
+		// a page already inside the cap has nothing to gain from being
+		// resampled up to it
 		_, _, scale, _ := resvg.ScaleBestFit.Scale(uint(w), uint(h), maxPdfDimension, maxPdfDimension)
-		if scale != 1.0 {
+		if scale = min(scale, 1.0); scale != 1.0 {
 			if err := v.Resize(float64(scale), nil); err != nil {
 				return nil, fmt.Errorf("vips unable to scale pdf: %w", err)
 			}

@@ -4,6 +4,13 @@ Test data for `iv`, one directory per decoder (`iv --list` names them all).
 Files here are inputs for `go test ./...` and `./test.sh`; nothing is a golden
 output.
 
+Encoders have no test data of their own: `TestRoundTrip` encodes
+`png/rose.png` with every one of them and decodes the result back. The `pdf`
+encoder is the exception to what that checks -- a pdf carries a page rather
+than a raster, so what comes back is whatever the reader rasterized it at, and
+the test compares the shape rather than the pixel count. `encoder/pdf` covers
+the pagination itself, which needs no file to exercise.
+
 | Directory     | Decoder       | Notes                                                       |
 | ------------- | ------------- | ----------------------------------------------------------- |
 | `archives`    | `archives`    | The same two page comic as cbz, cbr, and cbt                |
