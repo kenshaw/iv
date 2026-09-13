@@ -170,8 +170,8 @@ github.com/xo/blitz/libblitz/windows-amd64 v0.1.0 h1:JTHywRHIKrsB91iStgY1EtIJp/v
 github.com/xo/blitz/libblitz/windows-amd64 v0.1.0/go.mod h1:jQtl878B0bo0jPFl9VqqM0/7wmGhEVsGaSwNpVMai0w=
 github.com/xo/lottie v0.1.0 h1:UZc+4XYpIDhX/IUEYvYYEEFl2RnjAdsv0X8lqHhKcTc=
 github.com/xo/lottie v0.1.0/go.mod h1:tNCKgE1JXoySUhOq0fLTy5ZTVBhNKnqJXoAvM0Y/kis=
-github.com/xo/magic v0.2.0 h1:EOF1jiwKEEtPzNVaL5CgObFdrMnjFiq2PXNzBf4tJXE=
-github.com/xo/magic v0.2.0/go.mod h1:jWb8h8uFvr5RuNcP8sCK4dtCv5ZnC4+YI4nQQVn90nc=
+github.com/xo/magic v0.2.1 h1:5OIavhKmNBqyNVZLZH15crAYmwKh8VvYfKq+f2KRZqw=
+github.com/xo/magic v0.2.1/go.mod h1:jWb8h8uFvr5RuNcP8sCK4dtCv5ZnC4+YI4nQQVn90nc=
 github.com/xo/ox v0.0.0-20260826020025-6fcd48b711a6 h1:rdtMHm0oZMxg5b8vtesFOrt0rGTv+vIK9D4DYgRFbUs=
 github.com/xo/ox v0.0.0-20260826020025-6fcd48b711a6/go.mod h1:MREUmRj7Fcm+0Gc/UImQNaZoq1nexrj0jkNBdo/ljnY=
 github.com/xo/resvg v0.8.0 h1:5thEPT6WpMHIjlI5FrHVgpIuHR62evJ3JuPJckQ0VOs=
