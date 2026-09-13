@@ -37,6 +37,10 @@
 *.xml
 *.html
 
+# the patterns above are for stray output, not for fixtures: testdata holds
+# png, ico, ttf, xps, txt, xml and html files that are all meant to be tracked
+!/testdata/**
+
 /.bash_profile
 /.bashrc
 /.claude/

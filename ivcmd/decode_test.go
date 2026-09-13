@@ -484,7 +484,12 @@ func TestRoundTrip(t *testing.T) {
 				t.Fatal("expected non-empty output")
 			}
 			out, _, err := decoder.Decode(ctx, "", e.Ext, bytes.NewReader(buf.Bytes()))
-			if err != nil {
+			switch {
+			case errors.Is(err, decoder.ErrUnsupportedFormat):
+				// this build can write the format but not read it back --
+				// msys2's libvips has no pdf loader, for one
+				t.Skipf("this build cannot decode %s: %v", e.Ext, err)
+			case err != nil:
 				t.Fatalf("expected the encoded image to decode, got: %v", err)
 			}
 			got, exp := out.Bounds().Size(), img.Bounds().Size()

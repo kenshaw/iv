@@ -206,7 +206,7 @@ func TestDetectSkipsLibmagicForText(t *testing.T) {
 	for _, name := range []string{
 		"../testdata/mermaid/aws.mmd",
 		"../testdata/graphviz/booktest_sqlite3.dot",
-		"../testdata/markdown/sample.md",
+		"../testdata/blitz/sample.md",
 	} {
 		t.Run(name, func(t *testing.T) {
 			buf, err := os.ReadFile(name)

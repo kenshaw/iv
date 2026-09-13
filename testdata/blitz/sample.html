@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sample Page</title>
+<style>
+  :root { color-scheme: light }
+  body { margin: 0; font: 16px/1.6 system-ui, sans-serif; color: #1b1b1f }
+  header { padding: 48px 56px; background: linear-gradient(135deg, #4f46e5, #0ea5e9); color: #fff }
+  h1 { margin: 0 0 8px; font-size: 40px; letter-spacing: -0.02em }
+  header p { margin: 0; opacity: 0.85 }
+  main { padding: 40px 56px; max-width: 760px }
+  h2 { margin: 32px 0 12px; font-size: 22px }
+  code { background: #f1f1f4; padding: 2px 6px; border-radius: 4px; font-size: 0.9em }
+  table { border-collapse: collapse; margin-top: 8px }
+  th, td { border: 1px solid #dcdce4; padding: 8px 14px; text-align: left }
+  th { background: #f7f7fa }
+  .row { display: flex; gap: 16px; margin-top: 24px }
+  .card { flex: 1; border: 1px solid #e4e4ec; border-radius: 10px; padding: 18px }
+  .card b { display: block; margin-bottom: 4px }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sample Page</h1>
+  <p>An html file for the <code>blitz</code> decoder, which renders it with a real css engine.</p>
+</header>
+<main>
+  <h2>Layout</h2>
+  <p>Flexbox, gradients, borders and web typography all resolve, so this is a
+  fair test of the engine rather than of a markdown stylesheet.</p>
+  <div class="row">
+    <div class="card"><b>Flexbox</b>Two columns that share the row.</div>
+    <div class="card"><b>Gradients</b>The header above is a linear gradient.</div>
+  </div>
+  <h2>Table</h2>
+  <table>
+    <tr><th>Decoder</th><th>Input</th><th>Output</th></tr>
+    <tr><td>blitz</td><td><code>.md</code>, <code>.html</code></td><td>image</td></tr>
+    <tr><td>graphviz</td><td><code>.dot</code></td><td><code>image/svg+xml</code></td></tr>
+  </table>
+</main>
+</body>
+</html>
