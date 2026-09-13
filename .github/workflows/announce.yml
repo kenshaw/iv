@@ -6,18 +6,54 @@ env:
   APP: iv
   VER: ${{ github.ref_name }}
   REPO: ${{ github.repository }}
-  HOMEBREW_NAME: Kenneth Shaw
-  HOMEBREW_EMAIL: kenshaw@gmail.com
+  AUTHOR_NAME: Kenneth Shaw
+  AUTHOR_EMAIL: kenshaw@gmail.com
   HOMEBREW_REPO: https://kenshaw:${{ secrets.HOMEBREW_TOKEN }}@github.com/kenshaw/homebrew-iv.git
-  AUR_NAME: Kenneth Shaw
-  AUR_EMAIL: kenshaw@gmail.com
-  AUR_REPO: aur@aur.archlinux.org:iv-cli.git
 
+# cribbed from https://github.com/actions/runner/issues/691
 jobs:
-  bump-aur-package:
-    name: Bump AUR Package
+  configure:
+    name: Configure
     runs-on: ubuntu-latest
+    outputs:
+      username: ${{ steps.get-user.outputs.username }}
     steps:
+      - id: get-user
+        name: Get User
+        run: echo "username=$(id -n -u)" >> $GITHUB_OUTPUT
+
+  bump-aur-package:
+    name: Bump AUR Package (${{ matrix.package }})
+    runs-on: ubuntu-latest
+    needs: configure
+    # the packages are bumped from an arch container so that updpkgsums and
+    # makepkg can write the checksums and the .SRCINFO, rather than the
+    # workflow editing both by hand and having to agree with itself
+    container:
+      image: docker.io/library/archlinux:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # the source package, built from the release tarball
+          - package: iv-cli
+            repo: aur@aur.archlinux.org:iv-cli.git
+          # the binary package, which takes the release assets for each arch
+          - package: iv-cli-bin
+            repo: aur@aur.archlinux.org:iv-cli-bin.git
+
+    steps:
+      - name: Setup
+        run: |
+          export USERNAME=${{ needs.configure.outputs.username }}
+          pacman-key --init
+          pacman -Sy --noconfirm archlinux-keyring
+          pacman -Sy --noconfirm git base-devel sudo pacman-contrib devtools
+          # makepkg refuses to run as root, so everything below that needs it
+          # runs as this user instead
+          useradd -m $USERNAME
+          echo "${USERNAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
       - name: Add AUR SSH key
         uses: shimataro/ssh-key-action@v2
         with:
@@ -27,25 +63,39 @@ jobs:
             aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN
             aur.archlinux.org ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDKF9vAFWdgm9Bi8uc+tYRBmXASBb5cB5iZsB7LOWWFeBrLp3r14w0/9S2vozjgqY5sJLDPONWoTTaVTbhe3vwO8CBKZTEt1AcWxuXNlRnk9FliR1/eNB9uz/7y1R0+c1Md+P98AJJSJWKN12nqIDIhjl2S1vOUvm7FNY43fU2knIhEbHybhwWeg+0wxpKwcAd/JeL5i92Uv03MYftOToUijd1pqyVFdJvQFhqD4v3M157jxS5FTOBrccAEjT+zYmFyD8WvKUa9vUclRddNllmBJdy4NyLB8SvVZULUPrP3QOlmzemeKracTlVOUG1wsDbxknF1BwSCU7CmU6UFP90kpWIyz66bP0bl67QAvlIc52Yix7pKJPbw85+zykvnfl2mdROsaT8p8R9nwCdFsBc9IiD0NhPEHcyHRwB8fokXTajk2QnGhL+zP5KnkmXnyQYOCUYo3EKMXIlVOVbPDgRYYT/XqvBuzq5S9rrU70KoI/S5lDnFfx/+lPLdtcnnEPk=
             aur.archlinux.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLMiLrP8pVi5BFX2i3vepSUnpedeiewE5XptnUnau+ZoeUOPkpoCgZZuYfpaIQfhhJJI5qgnjJmr4hyJbe/zxow=
-      - name: Bump AUR Package
+
+      - name: Bump AUR Package (${{ matrix.package }})
         run: |
-          export WORKDIR=$(mktemp -d /tmp/aur.XXXXXX)
-          export REPO_PATH=$WORKDIR/aur
-          wget -O $WORKDIR/archive.tar.gz https://github.com/$REPO/archive/$VER.tar.gz
-          export SHA256SUM=$(sha256sum $WORKDIR/archive.tar.gz|awk '{print $1}')
-          export CHANGELOG=$(curl -H "Accept: application/vnd.github+json" https://api.github.com/repos/$REPO/releases/tags/$VER|jq .body|sed -e 's/\\r//g')
+          export USERNAME=${{ needs.configure.outputs.username }}
+          export PACKAGE=${{ matrix.package }}
+          export AUR_REPO=${{ matrix.repo }}
+          export WORKDIR=$(mktemp -d /tmp/${PACKAGE}.XXXXXX)
+          export REPO_PATH=$WORKDIR/${PACKAGE}
+          export CHANGELOG=$(
+            curl \
+              -s \
+              -H 'Accept: application/vnd.github+json' \
+              https://api.github.com/repos/$REPO/releases/tags/$VER \
+              |jq -r .body \
+              |sed -e 's/\r//g'
+          )
           git clone $AUR_REPO $REPO_PATH
-          git -C $REPO_PATH config user.name "$AUR_NAME"
-          git -C $REPO_PATH config user.email "$AUR_EMAIL"
+          git config --global --add safe.directory $REPO_PATH
+          git -C $REPO_PATH config user.name "$AUTHOR_NAME"
+          git -C $REPO_PATH config user.email "$AUTHOR_EMAIL"
           sed -i "s/pkgver=.*$/pkgver=${VER#v}/" $REPO_PATH/PKGBUILD
-          sed -i "s/sha256sums=.*$/sha256sums=('$SHA256SUM')/" $REPO_PATH/PKGBUILD
+          # the capture keeps the arch suffix, so sha256sums_x86_64 and
+          # sha256sums_aarch64 are cleared along with the plain one and
+          # updpkgsums fills in all three
+          sed -i "s/sha256sums\([^=]*\)=.*$/sha256sums\1=('SKIP')/" $REPO_PATH/PKGBUILD
           sed -i "s/pkgrel=.*$/pkgrel=1/" $REPO_PATH/PKGBUILD
-          sed -i "s/pkgver =.*$/pkgver = ${VER#v}/" $REPO_PATH/.SRCINFO
-          sed -i "s%source =.*$%source = $APP-${VER#v}.tar.gz::https://github.com/$REPO/archive/$VER.tar.gz%" $REPO_PATH/.SRCINFO
-          sed -i "s/sha256sums =.*$/sha256sums = $SHA256SUM/" $REPO_PATH/.SRCINFO
-          sed -i "s/pkgrel =.*$/pkgrel = 1/" $REPO_PATH/.SRCINFO
+          chown -R ${USERNAME}:${USERNAME} $WORKDIR
+          pushd $REPO_PATH &> /dev/null
+          sudo -u ${USERNAME} bash -c 'updpkgsums'
+          sudo -u ${USERNAME} bash -c 'makepkg --printsrcinfo > .SRCINFO'
+          popd &> /dev/null
           git -C $REPO_PATH add PKGBUILD .SRCINFO
-          git -C $REPO_PATH commit -m "$(printf %b "Update $APP version to $VER\n\n${CHANGELOG:1:-1}")"
+          git -C $REPO_PATH commit -m "$(printf %b "Update $APP version to ${VER}\n\n${CHANGELOG}")"
           git -C $REPO_PATH show -C
           git -C $REPO_PATH push origin master
 
@@ -59,14 +109,21 @@ jobs:
           export REPO_PATH=$WORKDIR/homebrew
           wget -O $WORKDIR/archive.tar.gz https://github.com/$REPO/archive/$VER.tar.gz
           export SHA256SUM=$(sha256sum $WORKDIR/archive.tar.gz|awk '{print $1}')
-          export CHANGELOG=$(curl -H "Accept: application/vnd.github+json" https://api.github.com/repos/$REPO/releases/tags/$VER|jq .body|sed -e 's/\\r//g')
+          export CHANGELOG=$(
+            curl \
+              -s \
+              -H 'Accept: application/vnd.github+json' \
+              https://api.github.com/repos/$REPO/releases/tags/$VER \
+              |jq -r .body \
+              |sed -e 's/\r//g'
+          )
           git clone $HOMEBREW_REPO $REPO_PATH
-          git -C $REPO_PATH config user.name "$HOMEBREW_NAME"
-          git -C $REPO_PATH config user.email "$HOMEBREW_EMAIL"
+          git -C $REPO_PATH config user.name "$AUTHOR_NAME"
+          git -C $REPO_PATH config user.email "$AUTHOR_EMAIL"
           sed -i "s%url \".*$%url \"https://github.com/$REPO/archive/$VER.tar.gz\"%" $REPO_PATH/Formula/$APP.rb
           sed -i "s/sha256 \".*$/sha256 \"$SHA256SUM\"/" $REPO_PATH/Formula/$APP.rb
           git -C $REPO_PATH add Formula/$APP.rb
-          git -C $REPO_PATH commit -m "$(printf %b "Update $APP version to $VER\n\n${CHANGELOG:1:-1}")"
+          git -C $REPO_PATH commit -m "$(printf %b "Update $APP version to ${VER}\n\n${CHANGELOG}")"
           git -C $REPO_PATH show -C
           git -C $REPO_PATH push origin master
 
