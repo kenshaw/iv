@@ -23,7 +23,7 @@ require (
 	github.com/xo/blitz v0.3.0
 	github.com/xo/lottie v0.1.0
 	github.com/xo/magic v0.2.1
-	github.com/xo/mermaid v0.1.0
+	github.com/xo/mermaid v0.1.1
 	github.com/xo/ox v0.0.0-20260826020025-6fcd48b711a6
 	github.com/xo/resvg v0.8.0
 	golang.org/x/image v0.46.0
