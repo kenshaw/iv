@@ -28,7 +28,8 @@ func animate(ctx context.Context, rend *lottie.Renderer, buf []byte, w, h int) (
 		return nil, errors.Join(errors.New("animation has no timeline"), a.Close(ctx))
 	}
 	w, h = a.Size()
-	delay := time.Duration(float32(time.Second) / fps)
+	// --fps, where it was passed, replaces the rate the composition declares
+	delay := ivctx.AnimateDelay(ctx, time.Duration(float32(time.Second)/fps))
 	ivctx.Logf(ctx, "lottie: %dx%d, %d frames at %g fps", w, h, total, fps)
 	return &decoder.Anim{
 		Frames: decoder.Produce(func(ctx context.Context, s *decoder.Sink) error {

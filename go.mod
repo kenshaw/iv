@@ -18,13 +18,13 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spakin/netpbm v1.3.2
 	github.com/tc-hib/winres v0.3.1
-	github.com/tdewolff/canvas v0.0.0-20260901160717-dae8cd8e19a7
+	github.com/tdewolff/canvas v0.0.0-20260913163248-dd4999d1c76a
 	github.com/tetratelabs/wazero v1.12.0
 	github.com/xo/blitz v0.3.0
 	github.com/xo/lottie v0.1.0
 	github.com/xo/magic v0.2.1
 	github.com/xo/mermaid v0.1.1
-	github.com/xo/ox v0.0.0-20260826020025-6fcd48b711a6
+	github.com/xo/ox v0.0.0-20260914011251-eae81b90ea84
 	github.com/xo/resvg v0.8.0
 	golang.org/x/image v0.46.0
 	golang.org/x/sys v0.48.0
@@ -61,23 +61,23 @@ require (
 	github.com/minio/minlz v1.2.0 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/nwaples/rardecode/v2 v2.4.1 // indirect
-	github.com/pierrec/lz4/v4 v4.1.29 // indirect
+	github.com/pierrec/lz4/v4 v4.1.30 // indirect
 	github.com/soniakeys/quant v1.0.0 // indirect
 	github.com/sorairolake/lzip-go v0.3.8 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
 	github.com/stangelandcl/ppmd v0.1.1 // indirect
-	github.com/tdewolff/font v0.0.0-20260822205238-d0d2f004b117 // indirect
+	github.com/tdewolff/font v0.0.0-20260913163313-54f98bb59ee6 // indirect
 	github.com/tdewolff/minify/v2 v2.24.17 // indirect
 	github.com/tdewolff/parse/v2 v2.8.16 // indirect
 	github.com/ulikunitz/xz v0.5.16 // indirect
-	github.com/xo/blitz/libblitz/linux-amd64 v0.1.0 // indirect
-	github.com/xo/blitz/libblitz/linux-arm64 v0.1.0 // indirect
-	github.com/xo/blitz/libblitz/linux-armv7 v0.1.0 // indirect
-	github.com/xo/blitz/libblitz/macos-amd64 v0.1.0 // indirect
-	github.com/xo/blitz/libblitz/macos-arm64 v0.1.0 // indirect
-	github.com/xo/blitz/libblitz/windows-amd64 v0.1.0 // indirect
+	github.com/xo/blitz/libblitz/linux-amd64 v0.1.1 // indirect
+	github.com/xo/blitz/libblitz/linux-arm64 v0.1.1 // indirect
+	github.com/xo/blitz/libblitz/linux-armv7 v0.1.1 // indirect
+	github.com/xo/blitz/libblitz/macos-amd64 v0.1.1 // indirect
+	github.com/xo/blitz/libblitz/macos-arm64 v0.1.1 // indirect
+	github.com/xo/blitz/libblitz/windows-amd64 v0.1.1 // indirect
 	github.com/yuin/goldmark v1.8.6 // indirect
 	go4.org v0.0.0-20260112195520-a5071408f32f // indirect
 	golang.org/x/net v0.59.0 // indirect

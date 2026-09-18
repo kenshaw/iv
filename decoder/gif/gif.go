@@ -57,6 +57,8 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 				d = v
 			}
 		}
+		// --fps, where it was passed, replaces the timing the file records
+		d = ivctx.AnimateDelay(ctx, d)
 		delays[i], total = d, total+d
 	}
 	return &decoder.Anim{

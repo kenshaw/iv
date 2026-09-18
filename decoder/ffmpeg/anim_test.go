@@ -7,27 +7,36 @@ import (
 	"github.com/kenshaw/iv/ivctx"
 )
 
+// sampleFrames is the most frames one pass of a video plays at the default
+// rate.
+const sampleFrames = int(ivctx.AnimateMax / sampleDelay)
+
 // TestFrameCount checks the sampling: a video shorter than a pass is sampled
 // at the playback rate so that it comes out at its own length, and a longer
 // one is sampled across the whole of its length into the frames a pass has
 // room for.
 func TestFrameCount(t *testing.T) {
 	for _, test := range []struct {
-		name string
-		dur  time.Duration
-		exp  int
+		name  string
+		dur   time.Duration
+		delay time.Duration
+		exp   int
 	}{
-		{"unknown", 0, 0},
-		{"negative", -time.Second, 0},
-		{"shorter than a frame", time.Millisecond, 1},
-		{"one second", time.Second, ivctx.AnimateFPS},
-		{"ten seconds", 10 * time.Second, 10 * ivctx.AnimateFPS},
-		{"a pass", ivctx.AnimateMax, ivctx.AnimateFrames},
-		{"an hour", time.Hour, ivctx.AnimateFrames},
+		{"unknown", 0, sampleDelay, 0},
+		{"negative", -time.Second, sampleDelay, 0},
+		{"no rate", time.Minute, 0, 0},
+		{"shorter than a frame", time.Millisecond, sampleDelay, 1},
+		{"one second", time.Second, sampleDelay, sampleFPS},
+		{"ten seconds", 10 * time.Second, sampleDelay, 10 * sampleFPS},
+		{"a pass", ivctx.AnimateMax, sampleDelay, sampleFrames},
+		{"an hour", time.Hour, sampleDelay, sampleFrames},
+		// --fps takes as many frames as the rate it forces asks for
+		{"forced to one a second", 10 * time.Second, time.Second, 10},
+		{"forced past a pass", time.Hour, time.Second, int(ivctx.AnimateMax / time.Second)},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			if n := frameCount(test.dur); n != test.exp {
-				t.Errorf("expected %d frames for %v, got %d", test.exp, test.dur, n)
+			if n := frameCount(test.dur, test.delay); n != test.exp {
+				t.Errorf("expected %d frames for %v at %v a frame, got %d", test.exp, test.dur, test.delay, n)
 			}
 		})
 	}
@@ -37,9 +46,9 @@ func TestFrameCount(t *testing.T) {
 // whole of it, and that a pass of it runs for the time a pass runs for.
 func TestSampling(t *testing.T) {
 	const dur = 2 * time.Hour
-	n := frameCount(dur)
+	n := frameCount(dur, sampleDelay)
 	step := dur / time.Duration(n)
-	switch play := time.Duration(n) * ivctx.AnimateDelay; {
+	switch play := time.Duration(n) * sampleDelay; {
 	case step < dense:
 		t.Errorf("expected a two hour video to be seeked rather than read, step %v", step)
 	case play > ivctx.AnimateMax:
@@ -56,7 +65,7 @@ func TestSeconds(t *testing.T) {
 	}{
 		{0, "0.000"},
 		{-time.Second, "0.000"},
-		{ivctx.AnimateDelay, "0.033"},
+		{sampleDelay, "0.083"},
 		{90 * time.Second, "90.000"},
 		{time.Hour + 90*time.Millisecond, "3600.090"},
 	} {

@@ -52,6 +52,7 @@ type Args struct {
 	TimeCode        time.Duration      `ox:"video time code,short:t"`
 	Animate         bool               `ox:"play the animation in an animated file,short:a"`
 	Loop            bool               `ox:"repeat the animation until interrupted - implies --animate,short:l"`
+	FPS             uint               `ox:"animation frames per second - 0 takes it from the animation,name:fps"`
 	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
 	MermaidTheme    string             `ox:"mermaid theme - default/dark/forest/neutral/modern"`
 	MermaidBg       *colors.Color      `ox:"default mermaid background,default:white"`
@@ -94,6 +95,7 @@ func (args *Args) Config(stderr io.Writer) *ivctx.Config {
 		FontMargin:      args.FontMargin,
 		TimeCode:        args.TimeCode,
 		Animate:         args.Animate,
+		AnimateFPS:      args.FPS,
 		VipsConcurrency: args.VipsConcurrency,
 		MermaidTheme:    args.MermaidTheme,
 		MermaidBg:       args.MermaidBg,
@@ -130,8 +132,8 @@ func (args *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []
 	if args.List {
 		return List(stdout)
 	}
-	// there is nothing to repeat but an animation
-	args.Animate = args.Animate || args.Loop
+	// there is nothing to repeat, or to set a frame rate for, but an animation
+	args.Animate = args.Animate || args.Loop || args.FPS != 0
 	enc, err := args.encoder()
 	if err != nil {
 		return err

@@ -18,6 +18,18 @@ import (
 	"github.com/kenshaw/iv/ivctx"
 )
 
+// The rate a video is sampled and played back at.
+//
+// What plays is a sampling rather than a playback -- see [animate] -- and
+// there is nothing in one that twelve frames a second does not carry as well
+// as thirty. What the terminal gets out of the difference is a steadier
+// picture: every frame is a clear and an encode of a whole image, and the
+// fewer of those there are the less the screen flickers under them.
+const (
+	sampleFPS   = 12
+	sampleDelay = time.Second / sampleFPS
+)
+
 // How the frames are exported.
 //
 // A video sampled closely enough that most of it is played is read through
@@ -25,11 +37,11 @@ import (
 // file, which is as little work as sampling it can be done in.
 //
 // Past dense, that stops being true: an hour of video played in a minute is
-// one frame in every two seconds, and reading the fifty-nine parts in sixty
-// that will never be seen costs far more than seeking to the one that will.
-// Those are seeked to instead, several at a time, each its own ffmpeg decoding
-// forward from the keyframe it lands on. More than a handful of those only has
-// them competing for the cores ffmpeg is already threading itself across.
+// one frame in every five seconds, and reading the four fifths of it that will
+// never be seen costs far more than seeking to the fifth that will. Those are
+// seeked to instead, several at a time, each its own ffmpeg decoding forward
+// from the keyframe it lands on. More than a handful of those only has them
+// competing for the cores ffmpeg is already threading itself across.
 const (
 	dense   = time.Second
 	workers = 4
@@ -37,11 +49,11 @@ const (
 
 // animate samples the video into the frames of an animation.
 //
-// The video is not played. A minute of it at [ivctx.AnimateFPS] is as much as
-// a pass shows, so a video longer than that is sampled at even intervals
-// across the whole of its length -- what plays is the shape of the thing from
-// beginning to end rather than its first minute at the right speed -- and a
-// shorter one is sampled densely enough to come out at its own length.
+// The video is not played. A minute of it at [sampleFPS] is as much as a pass
+// shows, so a video longer than that is sampled at even intervals across the
+// whole of its length -- what plays is the shape of the thing from beginning
+// to end rather than its first minute at the right speed -- and a shorter one
+// is sampled densely enough to come out at its own length.
 //
 // The frames are exported while the animation is being displayed rather than
 // ahead of it, so the first frame is on screen after one seek instead of after
@@ -56,7 +68,8 @@ func animate(ctx context.Context, r io.Reader) (any, error) {
 		cleanup()
 		return nil, err
 	}
-	n := frameCount(v.Duration)
+	delay := ivctx.AnimateDelay(ctx, sampleDelay)
+	n := frameCount(v.Duration, delay)
 	if n == 0 {
 		cleanup()
 		return nil, errors.New("cannot animate a video of unknown length")
@@ -65,19 +78,24 @@ func animate(ctx context.Context, r io.Reader) (any, error) {
 	// scales as part of an export that is already running and already
 	// parallel, where scaling them afterwards would be work on the way to the
 	// screen
-	scale := scaleArg(ctx, v.Width, v.Height)
-	step := v.Duration / time.Duration(n)
-	ivctx.Logf(ctx, "sampling %d frames every %v of %v (%s)", n, step, v.Duration, scale)
+	sample := sampling{
+		src:   src,
+		scale: scaleArg(ctx, v.Width, v.Height),
+		count: n,
+		step:  v.Duration / time.Duration(n),
+		delay: delay,
+	}
+	ivctx.Logf(ctx, "sampling %d frames every %v of %v at %v a frame (%s)", n, sample.step, v.Duration, delay, sample.scale)
 	export := seek
-	if step < dense {
+	if sample.step < dense {
 		export = read
 	}
 	return &decoder.Anim{
 		Frames: decoder.Produce(func(ctx context.Context, s *decoder.Sink) error {
-			return export(ctx, s, src, scale, n, step)
+			return export(ctx, s, sample)
 		}),
 		Count:    n,
-		Duration: time.Duration(n) * ivctx.AnimateDelay,
+		Duration: time.Duration(n) * delay,
 		Close: func() error {
 			cleanup()
 			return nil
@@ -85,15 +103,26 @@ func animate(ctx context.Context, r io.Reader) (any, error) {
 	}, nil
 }
 
+// sampling is the set of frames taken from a video: where they come from, how
+// many there are, how far apart in the video they sit, and how long each is
+// displayed for.
+type sampling struct {
+	src   string
+	scale string
+	count int
+	step  time.Duration
+	delay time.Duration
+}
+
 // frameCount returns how many frames are sampled from a video of the given
-// length: enough to fill its own running time at [ivctx.AnimateFPS], capped at
-// the [ivctx.AnimateFrames] a pass plays. Returns 0 for a video whose length
+// length: enough to fill its own running time at the frame delay, capped at
+// what [ivctx.AnimateMax] leaves room for. Returns 0 for a video whose length
 // could not be read, there being nothing to spread the sampling over.
-func frameCount(dur time.Duration) int {
-	if dur <= 0 {
+func frameCount(dur, delay time.Duration) int {
+	if dur <= 0 || delay <= 0 {
 		return 0
 	}
-	return max(1, min(int(dur/ivctx.AnimateDelay), ivctx.AnimateFrames))
+	return max(1, min(int(dur/delay), int(ivctx.AnimateMax/delay)))
 }
 
 // read exports the frames by reading the video through once, ffmpeg picking
@@ -103,10 +132,10 @@ func frameCount(dur time.Duration) int {
 // through it are on screen, and is left waiting on it whenever it gets far
 // enough ahead -- so a video that decodes faster than it plays, which most
 // do, is read no faster than it is watched.
-func read(ctx context.Context, s *decoder.Sink, src, scale string, n int, step time.Duration) error {
-	filter := fmt.Sprintf("fps=%f", float64(time.Second)/float64(step))
-	if scale != "" {
-		filter += "," + scale
+func read(ctx context.Context, s *decoder.Sink, v sampling) error {
+	filter := fmt.Sprintf("fps=%f", float64(time.Second)/float64(v.step))
+	if v.scale != "" {
+		filter += "," + v.scale
 	}
 	return ffmpeg.Stream(
 		ctx,
@@ -115,21 +144,21 @@ func read(ctx context.Context, s *decoder.Sink, src, scale string, n int, step t
 			// them, and a png decode stops at the end of the image it read,
 			// which leaves the reader at the start of the next one
 			br := bufio.NewReader(r)
-			for range n {
+			for range v.count {
 				img, err := png.Decode(br)
 				if err != nil {
 					return err
 				}
-				if !s.Send(img, ivctx.AnimateDelay) {
+				if !s.Send(img, v.delay) {
 					return nil
 				}
 			}
 			return nil
 		},
 		"-hide_banner",
-		"-i", src,
+		"-i", v.src,
 		"-vf", filter,
-		"-frames:v", strconv.Itoa(n),
+		"-frames:v", strconv.Itoa(v.count),
 		"-f", "image2pipe",
 		"-c:v", "png",
 		"-",
@@ -143,7 +172,7 @@ func read(ctx context.Context, s *decoder.Sink, src, scale string, n int, step t
 // to, and collected back in the order they are played: a frame that took
 // longer to reach than the ones after it holds them at the end of the queue
 // rather than arriving out of sequence.
-func seek(ctx context.Context, s *decoder.Sink, src, scale string, n int, step time.Duration) error {
+func seek(ctx context.Context, s *decoder.Sink, v sampling) error {
 	type result struct {
 		img image.Image
 		err error
@@ -154,7 +183,7 @@ func seek(ctx context.Context, s *decoder.Sink, src, scale string, n int, step t
 	queue := make(chan chan result, workers)
 	go func() {
 		defer close(queue)
-		for i := range n {
+		for i := range v.count {
 			ch := make(chan result, 1)
 			select {
 			case queue <- ch:
@@ -162,9 +191,9 @@ func seek(ctx context.Context, s *decoder.Sink, src, scale string, n int, step t
 				return
 			}
 			go func(at time.Duration) {
-				img, err := grab(ctx, src, scale, at)
+				img, err := grab(ctx, v.src, v.scale, at)
 				ch <- result{img, err}
-			}(time.Duration(i) * step)
+			}(time.Duration(i) * v.step)
 		}
 	}()
 	for ch := range queue {
@@ -177,7 +206,7 @@ func seek(ctx context.Context, s *decoder.Sink, src, scale string, n int, step t
 		if res.err != nil {
 			return res.err
 		}
-		if !s.Send(res.img, ivctx.AnimateDelay) {
+		if !s.Send(res.img, v.delay) {
 			return nil
 		}
 	}

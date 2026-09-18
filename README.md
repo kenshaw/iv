@@ -220,6 +220,9 @@ $ iv --animate /path/to/clip.webm
 # and again until control-c
 $ iv --loop /path/to/animation.gif
 
+# at a rate of your own, when the default flickers
+$ iv --fps 8 /path/to/clip.webm
+
 # convert instead of displaying -- the encoder follows the output extension
 $ iv --out out.webp /path/to/image.heic
 
@@ -284,14 +287,30 @@ draw to, so neither goes with `--out`.
 The screen is cleared, the file name is written at the top of it, and the
 frames follow underneath, each one clearing the one before it.
 
-Playback targets **30 frames a second** and runs for **a minute at most**, or
-for the animation's own length when that is shorter. A gif or a lottie plays at
-the speed it records, and a video is *sampled* rather than played: `iv` reads
-its length, works out how many frames a pass has room for, and takes them at
-even intervals across the whole of it -- so a two hour film comes out as the
-shape of the film in a minute, not its first minute at the right speed. The
-frames are exported while the ones before them are on screen rather than all
-up front, so the first frame is drawn straight away.
+A pass runs for **a minute at most**, or for the animation's own length when
+that is shorter, and what it plays at depends on what it is playing:
+
+| Format                      | What it plays                                               |
+| --------------------------- | ----------------------------------------------------------- |
+| Animated GIF                | every frame, at the delays the file records                  |
+| Lottie, including dotLottie | its timeline, at the frame rate the composition declares     |
+| Video *(needs `ffmpeg`)*    | **12 frames a second**, sampled across its length -- below   |
+
+A video is *sampled* rather than played: `iv` reads its length, works out how
+many frames a pass has room for, and takes them at even intervals across the
+whole of it -- so a two hour film comes out as the shape of the film in a
+minute, not its first minute at the right speed. What plays is a sampling
+either way, and there is nothing in one that twelve frames a second does not
+carry as well as thirty; what the terminal gets out of the difference is a
+steadier picture, every frame being a clear and an encode of a whole image.
+The frames are exported while the ones before them are on screen rather than
+all up front, so the first frame is drawn straight away.
+
+`--fps N` overrides all of that and shows every frame for `1/N` of a second. It
+is the rate the terminal is redrawn at, so lowering it is the thing to reach
+for when the picture flickers -- and because every frame is still shown, a rate
+below an animation's own plays it slower than it was drawn for. Passing it is
+enough to animate; `--animate` is implied.
 
 Drawing a frame is not free: encoding an image for a terminal costs real time,
 and how much varies with the protocol, the terminal, and the size of the image.
@@ -300,12 +319,6 @@ each frame has a moment it belongs at, and one whose moment has passed while
 the frame before it was still being drawn is dropped rather than played late.
 An animation keeps its own speed on a terminal that cannot draw it that fast;
 it just shows fewer of the frames.
-
-| Format                       | What it plays                                       |
-| ---------------------------- | --------------------------------------------------- |
-| Animated GIF                 | every frame, at the delays the file records          |
-| Video *(needs `ffmpeg`)*     | frames sampled across its length -- see above        |
-| Lottie, including dotLottie  | its timeline, rasterized frame by frame              |
 
 A file with nothing to play -- a jpeg, a single frame gif -- is not animated,
 and `--animate` says so rather than sitting on a still image.

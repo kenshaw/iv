@@ -30,9 +30,9 @@ type Frame struct {
 type Anim struct {
 	// Frames returns the animation's frames, in order. It is called once for
 	// each pass, so a looping playback produces the frames again rather than
-	// holding every one of them in memory: an animation is up to
-	// [ivctx.AnimateFrames] frames the size of the terminal, which is more
-	// than there is any need to keep.
+	// holding every one of them in memory: an animation is as many as
+	// [ivctx.AnimateMax] leaves room for, each the size of the terminal,
+	// which is more than there is any need to keep.
 	Frames func(context.Context) iter.Seq2[Frame, error]
 	// Count is how many frames a pass yields, 0 when that is not known ahead
 	// of time.
