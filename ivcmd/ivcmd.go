@@ -50,6 +50,8 @@ type Args struct {
 	FontDPI         uint               `ox:"font preview dpi,default:100,name:font-dpi"`
 	FontMargin      uint               `ox:"font preview margin,default:5"`
 	TimeCode        time.Duration      `ox:"video time code,short:t"`
+	Animate         bool               `ox:"play the animation in an animated file,short:a"`
+	Loop            bool               `ox:"repeat the animation until interrupted - implies --animate,short:l"`
 	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
 	MermaidTheme    string             `ox:"mermaid theme - default/dark/forest/neutral/modern"`
 	MermaidBg       *colors.Color      `ox:"default mermaid background,default:white"`
@@ -91,6 +93,7 @@ func (args *Args) Config(stderr io.Writer) *ivctx.Config {
 		FontDPI:         args.FontDPI,
 		FontMargin:      args.FontMargin,
 		TimeCode:        args.TimeCode,
+		Animate:         args.Animate,
 		VipsConcurrency: args.VipsConcurrency,
 		MermaidTheme:    args.MermaidTheme,
 		MermaidBg:       args.MermaidBg,
@@ -127,6 +130,8 @@ func (args *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []
 	if args.List {
 		return List(stdout)
 	}
+	// there is nothing to repeat but an animation
+	args.Animate = args.Animate || args.Loop
 	enc, err := args.encoder()
 	if err != nil {
 		return err
@@ -151,6 +156,20 @@ func (args *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []
 	}
 	if args.Out != "" && len(targets) != 1 {
 		return fmt.Errorf("--out requires exactly one target, got %d", len(targets))
+	}
+	if args.Animate {
+		// an animation is played where it is drawn, over the top of itself,
+		// and there is only one screen to play it on
+		switch {
+		case len(targets) != 1:
+			return fmt.Errorf("--animate requires exactly one target, got %d", len(targets))
+		case args.Out != "", !enc.Term:
+			return errors.New("--animate plays to the terminal, and cannot be written to a file")
+		}
+		if err := args.animate(ctx, stdout, enc, targets[0]); err != nil {
+			return fmt.Errorf("animate %q: %w", targets[0].Name, err)
+		}
+		return nil
 	}
 	var failed bool
 	for _, t := range targets {

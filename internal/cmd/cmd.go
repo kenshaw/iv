@@ -155,3 +155,47 @@ func TempDir(ctx context.Context) (string, func(), error) {
 		_ = os.RemoveAll(dir)
 	}, nil
 }
+
+// Stream runs the command, handing its standard output to f as it is written
+// rather than collecting it first, and returns when f does.
+//
+// The command is stopped once f returns, so a caller that has read as much as
+// it wants leaves nothing behind blocked on a pipe that nobody is reading --
+// and what the command made of being stopped, a kill or a broken pipe, is not
+// an error to report. A command that failed while f was reading shows up as
+// the short read f reports instead, and its standard error is put with it.
+func (c *Cmd) Stream(ctx context.Context, f func(io.Reader) error, params ...string) error {
+	path, err := c.Path()
+	if err != nil {
+		return err
+	}
+	ivctx.Logf(ctx, "streaming: %s %s", path, strings.Join(params, " "))
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	start := time.Now()
+	cmd := exec.CommandContext(ctx, path, params...)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	ferr := f(out)
+	cancel()
+	// the pipe is read to where f left it before this: Wait closes it, and
+	// closing it under a read still running is a race
+	werr := cmd.Wait()
+	for s := range strings.SplitSeq(strings.TrimSpace(stderr.String()), "\n") {
+		if s != "" {
+			ivctx.Logf(ctx, "%s: %s", c.name, s)
+		}
+	}
+	ivctx.Logf(ctx, "%s: %v (%v)", c.name, time.Since(start), werr)
+	if ferr != nil {
+		return fmt.Errorf("%s: %w: %s", c.name, ferr, elide(stderr.String()))
+	}
+	return nil
+}

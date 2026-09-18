@@ -93,7 +93,8 @@ func detect(_ context.Context, r io.Reader) (string, error) {
 	return mime, nil
 }
 
-// decode renders a single frame of the animation.
+// decode renders the animation: the whole timeline when one was asked for --
+// see [animate] -- and a single frame of it otherwise.
 func decode(ctx context.Context, r io.Reader) (any, error) {
 	buf, err := io.ReadAll(r)
 	if err != nil {
@@ -112,6 +113,9 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 	// sniffer, and thorvg has the final say on what it can parse
 	nw, nh, _ := header(buf)
 	w, h := ivctx.Scale(ctx, nw, nh)
+	if ivctx.Animate(ctx) {
+		return animate(ctx, rend, buf, w, h)
+	}
 	// thorvg draws to whatever size it is handed, so the animation is
 	// rasterized at the displayed size rather than resampled to it after: a
 	// composition has no pixels of its own to preserve. A zero size, from a

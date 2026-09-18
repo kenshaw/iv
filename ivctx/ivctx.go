@@ -45,6 +45,7 @@ type Config struct {
 	FontDPI         uint
 	FontMargin      uint
 	TimeCode        time.Duration
+	Animate         bool
 	VipsConcurrency uint
 	MermaidTheme    string
 	MermaidBg       *colors.Color

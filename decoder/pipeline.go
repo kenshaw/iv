@@ -24,6 +24,9 @@ var (
 	// ErrUnsupportedFormat is returned when a decoder handles the input's
 	// format but the underlying library was not built with support for it.
 	ErrUnsupportedFormat = errors.New("format not supported by this build")
+	// ErrNotAnimated is returned when an animation was asked for and the
+	// input decoded to a still image instead.
+	ErrNotAnimated = errors.New("no animation")
 )
 
 // stateKey is the context key for the running decoder's initialized state.
@@ -38,6 +41,22 @@ func State(ctx context.Context) any {
 // DecodeFile decodes the image from the file, returning the image and the
 // detected mime type.
 func DecodeFile(ctx context.Context, pathName string) (image.Image, string, error) {
+	return asImage(decodeFile(ctx, pathName))
+}
+
+// DecodeAnimFile decodes the animation in the file, returning it and the
+// detected mime type. Returns [ErrNotAnimated] when the file holds a still
+// image, or an animated format that the decoder handling it renders as one.
+//
+// The config's Animate must be set for this to find an animation at all: it is
+// what tells a decoder to produce the frames rather than pick one of them --
+// see [ivctx.Animate].
+func DecodeAnimFile(ctx context.Context, pathName string) (*Anim, string, error) {
+	return asAnim(decodeFile(ctx, pathName))
+}
+
+// decodeFile opens the file and runs it through the pipeline.
+func decodeFile(ctx context.Context, pathName string) (any, string, error) {
 	f, err := os.OpenFile(pathName, os.O_RDONLY, 0)
 	if err != nil {
 		return nil, "", err
@@ -49,12 +68,24 @@ func DecodeFile(ctx context.Context, pathName string) (image.Image, string, erro
 		return nil, "", fmt.Errorf("mime detect: %w", err)
 	}
 	ivctx.Logf(ctx, "mime: %s", mime)
-	return Decode(ctx, mime, ivctx.FileExt(pathName), f)
+	return decode(ctx, mime, ivctx.FileExt(pathName), "", f, 0)
 }
 
 // DecodeString decodes a bare string argument -- a data: URL, a WIFI: code, a
 // http URL -- returning the image and the mime type it was decoded as.
 func DecodeString(ctx context.Context, s string) (image.Image, string, error) {
+	return asImage(decodeString(ctx, s))
+}
+
+// DecodeAnimString decodes the animation named by a bare string argument,
+// returning it and the mime type it was decoded as. Returns [ErrNotAnimated]
+// when the string decoded to a still image.
+func DecodeAnimString(ctx context.Context, s string) (*Anim, string, error) {
+	return asAnim(decodeString(ctx, s))
+}
+
+// decodeString runs a bare string argument through the pipeline.
+func decodeString(ctx context.Context, s string) (any, string, error) {
 	matched := MatchString(ctx, s)
 	if len(matched) == 0 {
 		return nil, "", fmt.Errorf("%q: %w", elide(s), ErrNotSupported)
@@ -85,12 +116,38 @@ func DecodeString(ctx context.Context, s string) (image.Image, string, error) {
 // the mime type and file extension, returning the image and the mime type it
 // was decoded as.
 func Decode(ctx context.Context, mime, ext string, r io.Reader) (image.Image, string, error) {
-	return decode(ctx, mime, ext, "", r, 0)
+	return asImage(decode(ctx, mime, ext, "", r, 0))
+}
+
+// asImage takes the image out of a pipeline result.
+func asImage(res any, mime string, err error) (image.Image, string, error) {
+	switch img, ok := res.(image.Image); {
+	case err != nil:
+		return nil, mime, err
+	case !ok:
+		return nil, mime, fmt.Errorf("mime type %q: decoded no image", mime)
+	default:
+		return img, mime, nil
+	}
+}
+
+// asAnim takes the animation out of a pipeline result. A result that is an
+// image is a format with no animation in it, or one whose decoder was never
+// asked for the animation -- see [ivctx.Animate].
+func asAnim(res any, mime string, err error) (*Anim, string, error) {
+	switch anim, ok := res.(*Anim); {
+	case err != nil:
+		return nil, mime, err
+	case !ok:
+		return nil, mime, fmt.Errorf("mime type %q: %w", mime, ErrNotAnimated)
+	default:
+		return anim, mime, nil
+	}
 }
 
 // decode runs one pass of the decoding pipeline. When name is non-empty only
 // that decoder is tried.
-func decode(ctx context.Context, mime, ext, name string, r io.Reader, depth int) (image.Image, string, error) {
+func decode(ctx context.Context, mime, ext, name string, r io.Reader, depth int) (any, string, error) {
 	if depth >= maxDepth {
 		return nil, mime, fmt.Errorf("mime type %q: exceeded %d decode retries", mime, maxDepth)
 	}
@@ -129,12 +186,12 @@ func decode(ctx context.Context, mime, ext, name string, r io.Reader, depth int)
 			}
 			return decode(ctx, mime, ext, h.Name, rs, depth+1)
 		}
-		img, resMime, err := resolve(ctx, mime, res, depth)
+		v, resMime, err := resolve(ctx, mime, res, depth)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("%s: %w", d.Name, err))
 			continue
 		}
-		return img, resMime, nil
+		return v, resMime, nil
 	}
 	return nil, mime, fmt.Errorf("mime type %q: %w", mime, errors.Join(errs...))
 }
@@ -160,12 +217,15 @@ func candidates(ctx context.Context, mime, ext, name string) ([]*Entry, error) {
 	return matched, nil
 }
 
-// resolve turns a decoder result into a final image, recursing back into the
-// pipeline as needed.
-func resolve(ctx context.Context, mime string, res any, depth int) (image.Image, string, error) {
+// resolve turns a decoder result into a final image -- or, for a decode that
+// asked for one, an animation -- recursing back into the pipeline as needed.
+func resolve(ctx context.Context, mime string, res any, depth int) (any, string, error) {
 	switch v := res.(type) {
 	case nil:
 		return nil, mime, errors.New("decoded no image")
+	case *Anim:
+		ivctx.Logf(ctx, "animation: %d frames, %v", v.Count, v.Duration)
+		return v, mime, nil
 	case image.Image:
 		b := v.Bounds()
 		ivctx.Logf(ctx, "dimensions: %dx%d", b.Dx(), b.Dy())
@@ -187,7 +247,7 @@ func resolve(ctx context.Context, mime string, res any, depth int) (image.Image,
 }
 
 // resolveFiles decodes the configured page of a file set.
-func resolveFiles(ctx context.Context, files *Files, depth int) (image.Image, string, error) {
+func resolveFiles(ctx context.Context, files *Files, depth int) (any, string, error) {
 	if len(files.Names) == 0 {
 		return nil, "", errors.New("no files to decode")
 	}

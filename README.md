@@ -214,6 +214,12 @@ $ iv https://example.com/image.png
 # a specific page of a pdf, epub, or comic archive
 $ iv -p 4 /path/to/document.pdf
 
+# play an animation -- a gif, a video, a lottie
+$ iv --animate /path/to/clip.webm
+
+# and again until control-c
+$ iv --loop /path/to/animation.gif
+
 # convert instead of displaying -- the encoder follows the output extension
 $ iv --out out.webp /path/to/image.heic
 
@@ -267,6 +273,43 @@ larger rather than blurred up to 72. A vector -- svg, lottie, pdf -- has no
 pixels of its own to preserve, so it is rasterized at the size it is displayed
 at instead of being resampled to it, and comes out sharp at any size.
 
+## Animating
+
+`-a`/`--animate` plays an animated file instead of showing a still of it, and
+`-l`/`--loop` plays it over and over until it is interrupted with control-c.
+Either one takes **exactly one file** -- the frames are drawn over the top of
+one another and there is one screen to draw them on -- and needs a terminal to
+draw to, so neither goes with `--out`.
+
+The screen is cleared, the file name is written at the top of it, and the
+frames follow underneath, each one clearing the one before it.
+
+Playback targets **30 frames a second** and runs for **a minute at most**, or
+for the animation's own length when that is shorter. A gif or a lottie plays at
+the speed it records, and a video is *sampled* rather than played: `iv` reads
+its length, works out how many frames a pass has room for, and takes them at
+even intervals across the whole of it -- so a two hour film comes out as the
+shape of the film in a minute, not its first minute at the right speed. The
+frames are exported while the ones before them are on screen rather than all
+up front, so the first frame is drawn straight away.
+
+Drawing a frame is not free: encoding an image for a terminal costs real time,
+and how much varies with the protocol, the terminal, and the size of the image.
+So the playback runs against the clock rather than against its own drawing --
+each frame has a moment it belongs at, and one whose moment has passed while
+the frame before it was still being drawn is dropped rather than played late.
+An animation keeps its own speed on a terminal that cannot draw it that fast;
+it just shows fewer of the frames.
+
+| Format                       | What it plays                                       |
+| ---------------------------- | --------------------------------------------------- |
+| Animated GIF                 | every frame, at the delays the file records          |
+| Video *(needs `ffmpeg`)*     | frames sampled across its length -- see above        |
+| Lottie, including dotLottie  | its timeline, rasterized frame by frame              |
+
+A file with nothing to play -- a jpeg, a single frame gif -- is not animated,
+and `--animate` says so rather than sitting on a still image.
+
 ## Formats
 
 `iv --list` prints what the binary in front of you actually has. Everything
@@ -276,7 +319,8 @@ itself was compiled.
 
 Anything holding more than one image is shown one at a time, and `-p N` picks
 which: a pdf or epub page, an icon size, a comic archive page, a lottie frame.
-An animated `gif` or `webp` is the exception, and always shows its first frame.
+An animated `gif` or `webp` is the exception, and always shows its first frame
+-- see [Animating](#animating) for playing one instead.
 
 ### Images
 
@@ -343,7 +387,8 @@ falls through to `blitz`, which renders the source as a document. Run with
 | Audio, as a card of its cover art and tags  | `mp3` `m4a` `m4b` `m4p` `flac` `ogg` `oga` `dsf` `aac`                                                     | `tag`    |
 
 The audio card draws a waveform when `ffmpeg` is there, and is drawn without
-one when it is not. `-t` picks the moment a video is snapshotted at.
+one when it is not. `-t` picks the moment a video is snapshotted at, and
+`--animate` plays it instead of snapshotting it at all.
 
 ### Fonts and executables
 

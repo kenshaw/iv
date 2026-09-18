@@ -33,8 +33,12 @@ func init() {
 	)
 }
 
-// decode snapshots a single frame of the video.
+// decode snapshots a single frame of the video, or samples it into an
+// animation when one was asked for -- see [animate].
 func decode(ctx context.Context, r io.Reader) (any, error) {
+	if ivctx.Animate(ctx) {
+		return animate(ctx, r)
+	}
 	src, cleanup, err := cmd.Source(ctx, r, ivctx.FileExt(ivctx.PathName(ctx)))
 	if err != nil {
 		return nil, err
