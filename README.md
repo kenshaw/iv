@@ -9,6 +9,7 @@ Kitty).
   <a href="#using" title="Using">Using</a> |
   <a href="#sizing" title="Sizing">Sizing</a> |
   <a href="#formats" title="Formats">Formats</a> |
+  <a href="#documents" title="Documents">Documents</a> |
   <a href="https://github.com/kenshaw/iv/releases" title="Releases">Releases</a>
 </p>
 
@@ -445,6 +446,17 @@ overrides that:
 libvips writes several of these itself, which `--encoder` reaches:
 `vips-webp` instead of `nativewebp`, or `vips-tiff` for a file the Go encoder
 has no compression for.
+
+## Documents
+
+| Document | For |
+| -------- | --- |
+| [`README.md`](README.md) | A person who uses `iv` |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | A person who changes `iv` |
+| [`AGENTS.md`](AGENTS.md) | A coding agent that changes `iv`. `CLAUDE.md` imports it for Claude Code |
+| [`docs/PLAN.md`](docs/PLAN.md) | The plan, every decision, and the open questions |
+| [`docs/BACKLOG.md`](docs/BACKLOG.md) | The work that is known and not done |
+| [`testdata/README.md`](testdata/README.md) | The test data, one folder per decoder |
 
 [homebrew]: https://brew.sh/
 [msys2]: https://www.msys2.org/

@@ -1,3 +1,5 @@
+* text=auto eol=lf
+
 # git's eol conversion corrupts fixtures on checkout: the plain (ascii) netpbm
 # files stop sniffing as images once their newlines become crlf
 /testdata/** -text

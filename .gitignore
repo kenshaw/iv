@@ -43,7 +43,12 @@
 
 /.bash_profile
 /.bashrc
-/.claude/
+# .claude holds the agent skills, which are tracked, and the state of one
+# person, which is not. settings.local.json holds the claude code permissions
+# of one person
+/.claude/*
+!/.claude/skills/
+.claude/settings.local.json
 /.gitconfig
 /.gitmodules
 /.idea
