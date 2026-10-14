@@ -4,7 +4,7 @@
 package icns
 
 import (
-	"github.com/jackmordaunt/icns/v3"
+	"github.com/jackmordaunt/icns/v4"
 	"github.com/kenshaw/iv/decoder"
 )
 
