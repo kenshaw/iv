@@ -70,10 +70,10 @@ func TestImportSubImage(t *testing.T) {
 	assertSame(t, sub, got, 0)
 }
 
-// TestExportNoAlpha checks an image libvips holds without an alpha band comes
+// TestUnwrapNoAlpha checks an image libvips holds without an alpha band comes
 // back opaque rather than transparent -- the band count is what says whether
 // there is one, and reading it wrong makes every pixel vanish.
-func TestExportNoAlpha(t *testing.T) {
+func TestUnwrapNoAlpha(t *testing.T) {
 	ctx := testContext(t)
 	Init(ctx)
 	// three bands of colour and nothing else, which is what an opaque jpeg or
@@ -87,10 +87,11 @@ func TestExportNoAlpha(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
-	got, err := Export(ctx, v)
+	opened, err := Open(ctx, v)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
+	got := opened.Unwrap()
 	if size := got.Bounds().Size(); size != (image.Point{X: w, Y: h}) {
 		t.Fatalf("expected %dx%d, got %v", w, h, size)
 	}
@@ -124,11 +125,11 @@ func roundTrip(t *testing.T, ctx context.Context, img image.Image) image.Image {
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
-	got, err := Export(ctx, v)
+	got, err := Open(ctx, v)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
-	return got
+	return got.Unwrap()
 }
 
 // assertSame checks two images hold the same pixels, comparing the
@@ -165,7 +166,7 @@ func loadNRGBA(t *testing.T, name string) *image.NRGBA {
 	pathName := filepath.Join("..", "testdata", filepath.FromSlash(name))
 	f, err := os.Open(pathName)
 	if err != nil {
-		t.Skipf("no test data: %v", err)
+		t.Fatalf("no test data: %v", err)
 	}
 	defer f.Close()
 	img, err := png.Decode(f)

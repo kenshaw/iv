@@ -7,6 +7,7 @@ package winres
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"io"
@@ -34,7 +35,7 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 	}
 	set, err := winres.LoadFromEXE(rs)
 	if err != nil {
-		return nil, fmt.Errorf("unable to load: %w", err)
+		return nil, fmt.Errorf("loading resources: %w", err)
 	}
 	var icons []image.Image
 	var walkErr error
@@ -48,17 +49,17 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 		}
 		icon, err := set.GetIconTranslation(id, lang)
 		if err != nil {
-			walkErr = fmt.Errorf("resource %v: unable to read icon: %w", id, err)
+			walkErr = fmt.Errorf("resource %v: reading icon: %w", id, err)
 			return false
 		}
 		var buf bytes.Buffer
 		if err := icon.SaveICO(&buf); err != nil {
-			walkErr = fmt.Errorf("resource %v: unable to save icon: %w", id, err)
+			walkErr = fmt.Errorf("resource %v: saving icon: %w", id, err)
 			return false
 		}
 		img, _, err := image.Decode(&buf)
 		if err != nil {
-			walkErr = fmt.Errorf("resource %v: unable to decode icon: %w", id, err)
+			walkErr = fmt.Errorf("resource %v: decoding icon: %w", id, err)
 			return false
 		}
 		icons = append(icons, img)
@@ -68,7 +69,7 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 	case walkErr != nil:
 		return nil, walkErr
 	case len(icons) == 0:
-		return nil, fmt.Errorf("no icons found")
+		return nil, errors.New("no icons found")
 	}
 	return icons, nil
 }

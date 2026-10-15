@@ -76,7 +76,7 @@ func TestMatch(t *testing.T) {
 	Register("m-mime", MimeType("image/png"), Extension("png"), Decoder(nilDecode))
 	Register("m-wild", MimeType("video/*"), Extension("mp4"), Decoder(nilDecode))
 	Register("m-pair", MimeTypeExtensionMatch("application/zip", "cbz"), Decoder(nilDecode))
-	Register("m-custom", Matcher(func(mime, ext string) bool {
+	Register("m-custom", Matcher(func(mime, _ string) bool {
 		return strings.HasPrefix(mime, "font/")
 	}), Decoder(nilDecode))
 	Register("m-str", StringMatcher(func(s string) bool {

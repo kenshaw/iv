@@ -2,16 +2,18 @@
 package all
 
 import (
+	// each package registers its decoder from init
 	_ "github.com/kenshaw/iv/decoder/archives"
 	_ "github.com/kenshaw/iv/decoder/binwalk"
 	_ "github.com/kenshaw/iv/decoder/blitz"
 	_ "github.com/kenshaw/iv/decoder/bmp"
+	_ "github.com/kenshaw/iv/decoder/calibre"
 	_ "github.com/kenshaw/iv/decoder/data"
 	_ "github.com/kenshaw/iv/decoder/ffmpeg"
-	_ "github.com/kenshaw/iv/decoder/fitz"
 	_ "github.com/kenshaw/iv/decoder/fontimg"
 	_ "github.com/kenshaw/iv/decoder/gif"
 	_ "github.com/kenshaw/iv/decoder/graphviz"
+	_ "github.com/kenshaw/iv/decoder/gxps"
 	_ "github.com/kenshaw/iv/decoder/icns"
 	_ "github.com/kenshaw/iv/decoder/ico"
 	_ "github.com/kenshaw/iv/decoder/jpeg"
@@ -21,6 +23,8 @@ import (
 	_ "github.com/kenshaw/iv/decoder/nativewebp"
 	_ "github.com/kenshaw/iv/decoder/netpbm"
 	_ "github.com/kenshaw/iv/decoder/png"
+	_ "github.com/kenshaw/iv/decoder/poppler"
+	_ "github.com/kenshaw/iv/decoder/psd"
 	_ "github.com/kenshaw/iv/decoder/qr"
 	_ "github.com/kenshaw/iv/decoder/resvg"
 	_ "github.com/kenshaw/iv/decoder/tag"

@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"image"
 	"image/color"
 	"io"
+	"strconv"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -106,7 +106,7 @@ func TestDecodeImagesSelectsPage(t *testing.T) {
 		{3, 3},
 		{9, 1}, // out of range falls back to the first
 	} {
-		t.Run(fmt.Sprint(test.page), func(t *testing.T) {
+		t.Run(strconv.FormatUint(uint64(test.page), 10), func(t *testing.T) {
 			c := ivctx.New()
 			c.Page = test.page
 			img, _, err := Decode(ivctx.WithConfig(context.Background(), c), "image/m", "", strings.NewReader("x"))
@@ -218,7 +218,7 @@ func TestDecodeFiles(t *testing.T) {
 		page uint
 		exp  int
 	}{{0, 1}, {2, 2}, {3, 3}, {99, 1}} {
-		t.Run(fmt.Sprint(test.page), func(t *testing.T) {
+		t.Run(strconv.FormatUint(uint64(test.page), 10), func(t *testing.T) {
 			c := ivctx.New()
 			c.Page = test.page
 			img, _, err := Decode(ivctx.WithConfig(context.Background(), c), "application/container", "", strings.NewReader("x"))

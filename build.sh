@@ -6,7 +6,6 @@ SRC=$(realpath $(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd))
 
 NAME=$(basename $SRC)
 VER=
-STATIC=0
 FORCE=0
 CHECK=1
 INSTALL=0
@@ -30,11 +29,10 @@ latest_tag() {
 }
 
 OPTIND=1
-while getopts "a:v:sfnibxt:r" opt; do
+while getopts "a:v:fnibxt:r" opt; do
 case "$opt" in
   a) ARCH=$OPTARG ;;
   v) VER=$OPTARG ;;
-  s) STATIC=1 ;;
   f) FORCE=1 ;;
   n) CHECK=0 ;;
   i) INSTALL=1 ;;
@@ -76,11 +74,9 @@ QEMUARCH=
 GNUTYPE=
 CC=
 CXX=
-EXTLD=g++
 
 if [[ "$PLATFORM" == "linux" && "$ARCH" != "$GOARCH" ]]; then
   case $ARCH in
-    arm)   CARCH=armhf   QEMUARCH=arm     GNUTYPE=gnueabihf ;;
     arm64) CARCH=aarch64 QEMUARCH=aarch64 GNUTYPE=gnu ;;
     *)
       echo "error: unknown arch $ARCH"
@@ -88,16 +84,8 @@ if [[ "$PLATFORM" == "linux" && "$ARCH" != "$GOARCH" ]]; then
     ;;
   esac
   LDARCH=$CARCH
-  if [[ "$ARCH" == "arm" ]]; then
-    if [ -d /usr/arm-linux-$GNUTYPE ]; then
-      LDARCH=arm
-    elif [ -d /usr/arm-none-linux-$GNUTYPE ]; then
-      LDARCH=arm-none
-    fi
-  fi
   CC=$LDARCH-linux-$GNUTYPE-gcc
   CXX=$LDARCH-linux-$GNUTYPE-c++
-  EXTLD=$LDARCH-linux-$GNUTYPE-g++
 fi
 
 LDFLAGS=(
@@ -106,34 +94,6 @@ LDFLAGS=(
   -X $LDNAME=$NAME
   -X $LDVERSION=$VER
 )
-
-if [ "$STATIC" = "1" ]; then
-  OUT=$DIR/${NAME}_static-$VER-$PLATFORM-$ARCH.$EXT
-  BIN=$DIR/${NAME}_static
-  case $PLATFORM in
-    linux)
-      TAGS+=(
-        netgo
-        osusergo
-      )
-      EXTLDFLAGS=(
-        -static
-        -lm
-        -ldl
-      )
-      EXTLDFLAGS="${EXTLDFLAGS[@]}"
-      LDFLAGS+=(
-        -linkmode=external
-        -extldflags \'$EXTLDFLAGS\'
-        -extld $EXTLD
-      )
-    ;;
-    *)
-      echo "ERROR: fully static builds not currently supported for $PLATFORM/$ARCH"
-      exit 1
-    ;;
-  esac
-fi
 
 # check not overwriting existing build artifacts
 if [[ -e $OUT && "$FORCE" != "1" && "$INSTALL" == "0" ]]; then
@@ -145,9 +105,6 @@ TAGS="${TAGS[@]}"
 LDFLAGS="${LDFLAGS[@]}"
 
 echo "APP:         $NAME/${VER} ($PLATFORM/$ARCH)"
-if [ "$STATIC" = "1" ]; then
-  echo "STATIC:      yes"
-fi
 echo "BUILD TAGS:  $TAGS"
 echo "LDFLAGS:     $LDFLAGS"
 

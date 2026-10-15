@@ -2,6 +2,7 @@
 package all
 
 import (
+	// each package registers its encoder from init
 	_ "github.com/kenshaw/iv/encoder/jpeg"
 	_ "github.com/kenshaw/iv/encoder/nativewebp"
 	_ "github.com/kenshaw/iv/encoder/pdf"

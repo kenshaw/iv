@@ -1,8 +1,6 @@
 package ivctx
 
 import (
-	"image"
-	"image/color"
 	"os"
 	"testing"
 )
@@ -143,28 +141,6 @@ func TestMode(t *testing.T) {
 		t.Error("expected an error")
 	} else if got != ModeBestFit {
 		t.Errorf("expected the mode left alone on an error, got %q", got)
-	}
-}
-
-// TestResize checks the resize honors the size asked for, and hands back the
-// image untouched when there is nothing to do.
-func TestResize(t *testing.T) {
-	ctx := WithConfig(t.Context(), New())
-	src := image.NewNRGBA(image.Rect(0, 0, 8, 8))
-	src.Set(0, 0, color.NRGBA{R: 255, A: 255})
-	if got := Resize(ctx, src, 8, 8); got != image.Image(src) {
-		t.Error("expected the same image back when it is already that size")
-	}
-	got := Resize(ctx, src, 32, 32)
-	if size := got.Bounds().Size(); size != (image.Point{X: 32, Y: 32}) {
-		t.Fatalf("expected 32x32, got %v", size)
-	}
-	// a whole number magnification replicates pixels, so the corner the
-	// source painted is still that color across the whole 4x4 block
-	for _, pt := range []image.Point{{X: 0, Y: 0}, {X: 3, Y: 3}} {
-		if r, _, _, a := got.At(pt.X, pt.Y).RGBA(); r>>8 != 255 || a>>8 != 255 {
-			t.Errorf("expected the magnified pixel at %v to keep its color", pt)
-		}
 	}
 }
 

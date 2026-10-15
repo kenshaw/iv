@@ -14,6 +14,7 @@ import (
 
 	"github.com/kenshaw/iv/encoder"
 	"github.com/kenshaw/iv/ivctx"
+	"github.com/kenshaw/iv/ivimg"
 	"github.com/xo/blitz"
 )
 
@@ -68,7 +69,8 @@ func encode(ctx context.Context, w io.Writer, img image.Image) error {
 // one already -- every decoder that renders rather than decodes hands one
 // back, so the common path copies nothing.
 func toRGBA(img image.Image) *image.RGBA {
-	if rgba, ok := img.(*image.RGBA); ok {
+	img = ivimg.Unwrap(img)
+	if rgba, ok := img.(*image.RGBA); ok && rgba.Rect.Min == (image.Point{}) {
 		return rgba
 	}
 	b := img.Bounds()

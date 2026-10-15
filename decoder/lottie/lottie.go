@@ -31,6 +31,10 @@ func init() {
 		decoder.Desc("Lottie animations"),
 		decoder.Extension("json"),
 		decoder.MimeType(mime, "application/lottie+json"),
+		// the mime type of a lottie is video/lottie+json, which the ffmpeg
+		// decoder also claims with video/*. Without this, the order of the
+		// two depends on the order in which their packages are initialized.
+		decoder.Before("ffmpeg"),
 		// a .lot or .lottie holding a bare document sniffs as
 		// application/json, which says nothing about what the json is, so the
 		// two unambiguous extensions are paired with it here. A .json is not:

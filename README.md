@@ -9,6 +9,7 @@ Kitty).
   <a href="#using" title="Using">Using</a> |
   <a href="#sizing" title="Sizing">Sizing</a> |
   <a href="#formats" title="Formats">Formats</a> |
+  <a href="#performance" title="Performance">Performance</a> |
   <a href="#documents" title="Documents">Documents</a> |
   <a href="https://github.com/kenshaw/iv/releases" title="Releases">Releases</a>
 </p>
@@ -152,8 +153,8 @@ $ export CGO_CFLAGS_ALLOW='-Xpreprocessor'
 
 ### Windows
 
-Build inside [MSYS2][], in the UCRT64 environment rather than MINGW64: the
-bundled mupdf calls `__intrinsic_setjmpex`, which only the UCRT runtime has.
+Build inside [MSYS2][], in the UCRT64 environment. The CI builds there, and
+a build in MINGW64 is not tested.
 
 ```sh
 $ pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-pkgconf \
@@ -178,28 +179,25 @@ $ ./build.sh -v v0.1.0
 
 `build.sh` writes to `build/<os>/<arch>/<version>/`. `-r` takes the version
 from the latest tag instead of `-v`, `-i` installs rather than packing, `-b`
-builds without packing, `-a` cross compiles to another arch, and `-s` makes a
-fully static linux binary.
+builds without packing, and `-a` cross compiles to another arch. A release
+is built for 64-bit targets only.
 
 ### Optional tools
 
-Three decoders shell out. Without the command, the file fails to render with
+Six decoders shell out. Without the command, the file fails to render with
 `<command> not in path` rather than being quietly skipped:
 
-| Command   | Used for                                           |
-| --------- | -------------------------------------------------- |
-| `soffice` | Word, Excel, PowerPoint, and OpenDocument documents |
-| `ffmpeg`  | video snapshots, and the waveform on an audio card  |
-| `binwalk` | images embedded in otherwise unrecognized files     |
+| Command         | Used for                                             |
+| --------------- | ---------------------------------------------------- |
+| `soffice`       | Word, Excel, PowerPoint, and OpenDocument documents  |
+| `ebook-convert` | EPUB, MOBI, AZW, and FictionBook books (calibre)     |
+| `xpstopng`      | XPS documents (libgxps)                              |
+| `pdftoppm`      | pdf pages, where libvips has no pdf loader (poppler) |
+| `ffmpeg`        | video snapshots, and the waveform on an audio card   |
+| `binwalk`       | images embedded in otherwise unrecognized files      |
 
 An audio card is the exception: it is drawn without a waveform rather than not
 at all.
-
-### 32-bit targets
-
-On `386` and `arm`, `epub`, `xps`, `mobi`, `fb2` and `psd` do not decode:
-go-fitz vendors its prebuilt mupdf for 64-bit targets only, and nothing
-registers for those formats there.
 
 ## Using
 
@@ -291,11 +289,11 @@ frames follow underneath, each one clearing the one before it.
 A pass runs for **a minute at most**, or for the animation's own length when
 that is shorter, and what it plays at depends on what it is playing:
 
-| Format                      | What it plays                                               |
-| --------------------------- | ----------------------------------------------------------- |
-| Animated GIF                | every frame, at the delays the file records                  |
-| Lottie, including dotLottie | its timeline, at the frame rate the composition declares     |
-| Video *(needs `ffmpeg`)*    | **12 frames a second**, sampled across its length -- below   |
+| Format                      | What it plays                                              |
+| --------------------------- | ---------------------------------------------------------- |
+| Animated GIF                | every frame, at the delays the file records                |
+| Lottie, including dotLottie | its timeline, at the frame rate the composition declares   |
+| Video *(needs `ffmpeg`)*    | **12 frames a second**, sampled across its length -- below |
 
 A video is *sampled* rather than played: `iv` reads its length, works out how
 many frames a pass has room for, and takes them at even intervals across the
@@ -332,9 +330,10 @@ the command they shell out to, and the libvips formats depend on how libvips
 itself was compiled.
 
 Anything holding more than one image is shown one at a time, and `-p N` picks
-which: a pdf or epub page, an icon size, a comic archive page, a lottie frame.
-An animated `gif` or `webp` is the exception, and always shows its first frame
--- see [Animating](#animating) for playing one instead.
+which: a pdf, epub or xps page, an icon size, a comic archive page, a lottie frame.
+An animated `gif` is the exception, and always shows its first frame -- see
+[Animating](#animating) for playing one instead. An animated `webp` or APNG
+shows its first frame, and does not play.
 
 ### Images
 
@@ -349,6 +348,7 @@ An animated `gif` or `webp` is the exception, and always shows its first frame
 | Netpbm, raw and plain                     | `pbm` `pgm` `ppm` `pnm` `pam`         | `netpbm`     |
 | Windows icons and cursors                 | `ico` `cur`                           | `ico`        |
 | Apple Icon Image                          | `icns`                                | `icns`       |
+| Photoshop, the merged image               | `psd` `psb`                           | `psd`        |
 | HEIC/HEIF and AVIF                        | `heic` `heif` `avif`                  | `vips`       |
 | JPEG 2000 and JPEG XL                     | `jp2` `jpf` `j2k` `jxl` `jxs`         | `vips`       |
 | OpenEXR, Radiance HDR, PFM                | `exr` `hdr` `pfm` `rad`               | `vips`       |
@@ -386,7 +386,8 @@ falls through to `blitz`, which renders the source as a document. Run with
 | Format                                                           | Extensions                                                                                 | Decoder       |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------- |
 | PDF, including password protected                                | `pdf`                                                                                      | `vips-pdf`    |
-| EPUB, XPS, MOBI, FictionBook, Photoshop                          | `epub` `xps` `oxps` `mobi` `fb2` `psd`                                                     | `fitz`        |
+| EPUB, MOBI, AZW, FictionBook *(needs `ebook-convert`)*           | `epub` `mobi` `azw` `azw3` `fb2`                                                           | `calibre`     |
+| XPS *(needs `xpstopng`)*                                         | `xps` `oxps`                                                                               | `gxps`        |
 | Markdown, HTML, and plain text                                   | `md` `markdown` `mkd` `mdown` `html` `htm` `xhtml` `txt`                                   | `blitz`       |
 | Comic book archives                                              | `cbz` `cbr` `cbt` `cb7`                                                                    | `archives`    |
 | Word, Excel, PowerPoint *(needs `soffice`)*                      | `doc` `docx` `dot` `dotx` `xls` `xlsx` `xlt` `xltx` `ppt` `pptx` `pot` `potx` `pps` `ppsx` | `libreoffice` |
@@ -406,18 +407,20 @@ one when it is not. `-t` picks the moment a video is snapshotted at, and
 
 ### Fonts and executables
 
-| Format                 | Extensions                                          | Decoder   |
-| ---------------------- | --------------------------------------------------- | --------- |
-| Font specimen previews | `ttf` `ttc` `otf` `woff` `woff2` `sfnt` `eot` `pfb` | `fontimg` |
-| Icons in a Windows PE  | `exe` `dll` `mui`                                   | `winres`  |
+| Format                                                          | Extensions                                          | Decoder   |
+| --------------------------------------------------------------- | --------------------------------------------------- | --------- |
+| Font specimen previews                                          | `ttf` `ttc` `otf` `woff` `woff2` `sfnt` `eot` `pfb` | `fontimg` |
+| Icons in a Windows PE                                           | `exe` `dll` `mui`                                   | `winres`  |
+| vCard contacts, as a business card with a QR code of the record | `vcf` `vcard`                                       | `vcard`   |
 
 ### Arguments that are not files
 
-| Argument                    | Example                             | Decoder     |
-| --------------------------- | ----------------------------------- | ----------- |
-| `data:` URLs                | `data:image/png;base64,iVBOR...`    | `data`      |
-| `WIFI:` codes, as a QR code | `WIFI:S:mynetwork;T:WPA;P:secret;;` | `qr`        |
-| `http://` and `https://`    | a page, or the image it names       | `blitz-url` |
+| Argument                                               | Example                                                              | Decoder     |
+| ------------------------------------------------------ | -------------------------------------------------------------------- | ----------- |
+| `data:` URLs                                           | `data:image/png;base64,iVBOR...`                                     | `data`      |
+| `WIFI:` codes, as a QR code                            | `WIFI:S:mynetwork;T:WPA;P:secret;;`                                  | `qr`        |
+| Other URIs that name something to act on, as a QR code | `mailto:`, `tel:`, `sms:`, `geo:`, `otpauth:`, `bitcoin:`, `magnet:` | `qr`        |
+| `http://` and `https://`                               | a page, or the image it names                                        | `blitz-url` |
 
 ### Anything else
 
@@ -442,21 +445,134 @@ overrides that:
 | `jp2`     | `vips-jp2k`  |
 | `jxl`     | `vips-jxl`   |
 | `tiff`    | `vips-tiff`  |
+| `pdf`     | `pdf`        |
 
-libvips writes several of these itself, which `--encoder` reaches:
-`vips-webp` instead of `nativewebp`, or `vips-tiff` for a file the Go encoder
-has no compression for.
+libvips also writes webp, and `--encoder vips-webp` selects it in place of
+`nativewebp`. The `pdf` encoder puts the image on one page of its own size by
+default. `--pdf-page a4` or `--pdf-page letter` lays it out on pages of that
+size instead, with a margin of `--pdf-margin` points.
+
+A png or a jpeg that is not scaled is written as the bytes of its file when it
+goes out in its own format, with no encode.
+
+## Performance
+
+### How an image reaches the terminal
+
+`iv` sends an image in the form that it already has, when the protocol of the
+terminal can take that form:
+
+| Image                                                                                        | Kitty                         | iTerm                        | Sixel   |
+| -------------------------------------------------------------------------------------------- | ----------------------------- | ---------------------------- | ------- |
+| A png that is not scaled, from a file, a `data:` URL, ffmpeg, a web page or a comic archive | the bytes of the file         | the bytes of the file        | encoded |
+| A jpeg that is not scaled                                                                    | raw RGB                       | the bytes of the file        | encoded |
+| An image that libvips decodes (heic, avif, jxl, pdf and others)                              | a PNG that libvips encodes    | a JPEG that libvips encodes  | encoded |
+| An image that a renderer draws (svg, lottie, documents, fonts, psd)                          | raw RGBA                      | encoded                      | encoded |
+| Any other image, such as a gif or a QR code                                                  | a PNG that rasterm encodes    | encoded                      | encoded |
+
+A png or a jpeg decodes its pixels only when something asks for them, so a
+file that is sent as its own bytes is never decoded. libvips scales and
+composites an image that it decoded, and encodes it only when the terminal
+encoder asks. An image that is scaled, or composited over `--bg`, is encoded
+again, because its pixels changed. An animated png and a CMYK jpeg are
+encoded too, because a terminal can show them differently from what `iv`
+decoded, and a jpeg with an EXIF orientation is turned the right way up.
+
+Raw pixels take the least time to encode, and the terminal must read more
+bytes. rasterm compresses raw pixels for Kitty with zlib when they compress to
+under a quarter of their size, so a page of markdown goes as 184 KiB in place
+of 8 MiB, and a photo goes raw.
+
+### Measures
+
+`ivcmd/bench_test.go` holds two benchmarks. `BenchmarkDecode` decodes each of
+30 files in `testdata/`, one or two for each decoder. `BenchmarkRender` also
+scales the image to a display of 1920x1200 pixels, and encodes it with the
+protocol that `TERM_GRAPHICS` selects. The output is discarded, so the times
+do not include the time that a terminal takes to show the image. The
+`out-B/op` metric is the size of the output.
+
+The same benchmark file ran against five versions: v0.17.3, v0.18.1, v0.18.1
+with only rasterm v0.1.18, this code with rasterm v0.1.18, and this code with
+rasterm v0.1.20. They ran on 2026-10-15, on an AMD Ryzen 9 9950X, with Go
+1.27.2 and libvips 8.18.7. Each benchmark ran 5 times in each of 6 rounds, and
+each round ran the versions in turn, so that a change in the machine fell on
+each version alike. Each value is the median of the 6 rounds.
+
+Each value below is the geometric mean over the 28 files that every version
+renders. v0.17.3 cannot render mermaid without `mmdc`, so mermaid is not in
+the mean, and neither is `gxps/example.xps` (see below).
+
+| Protocol | v0.17.3 | v0.18.1 | v0.18.1, rasterm v0.1.18 | This code, rasterm v0.1.18 | This code, rasterm v0.1.20 |
+| -------- | ------- | ------- | ------------------------ | -------------------------- | -------------------------- |
+| Kitty    | 14.7 ms | 14.6 ms | 11.8 ms, 0.81x           | 4.81 ms, 0.33x             | 5.14 ms, 0.35x             |
+| iTerm    | 11.6 ms | 11.5 ms | 11.1 ms, 0.96x           | 5.20 ms, 0.45x             | 5.20 ms, 0.45x             |
+| Sixel    | 21.3 ms | 21.3 ms | 21.1 ms, 0.99x           | 20.8 ms, 0.98x             | 20.8 ms, 0.98x             |
+
+Over the 30 files, the output that Kitty must read is 13.0 MiB for v0.18.1,
+56.0 MiB for this code with rasterm v0.1.18, which sends raw pixels as they
+are, and 17.2 MiB with rasterm v0.1.20, which compresses them.
+
+Some files, from v0.18.1 to this code with rasterm v0.1.20:
+
+| File                        | Kitty            | Kitty output       | iTerm            | iTerm output      |
+| --------------------------- | ---------------- | ------------------ | ---------------- | ----------------- |
+| `png/dice.png`              | 18.2 ms, 0.16 ms | 326 KiB, 285 KiB   | 12.9 ms, 0.18 ms | 62 KiB, 285 KiB   |
+| `png/precision.png`         | 70.1 ms, 0.65 ms | 1464 KiB, 1412 KiB | 33.2 ms, 0.65 ms | 242 KiB, 1409 KiB |
+| `jpeg/precision.jpg`        | 116 ms, 19.3 ms  | 2706 KiB, 3788 KiB | 27.8 ms, 0.16 ms | 230 KiB, 269 KiB  |
+| `vips/dome.heic`            | 838 ms, 498 ms   | 2497 KiB, 2715 KiB | 792 ms, 494 ms   | 463 KiB, 586 KiB  |
+| `vips/precision.jxl`        | 59.6 ms, 38.1 ms | 1369 KiB, 1676 KiB | 34.0 ms, 13.4 ms | 234 KiB, 305 KiB  |
+| `ffmpeg/sample_960x540.mp4` | 174 ms, 144 ms   | 601 KiB, 591 KiB   | 158 ms, 144 ms   | 135 KiB, 590 KiB  |
+| `resvg/choropleth.svg`      | 29.9 ms, 18.2 ms | 300 KiB, 265 KiB   | 21.1 ms, 20.7 ms | 166 KiB, 166 KiB  |
+| `lottie/rocket.json`        | 28.7 ms, 12.0 ms | 159 KiB, 148 KiB   | 26.1 ms, 25.5 ms | 121 KiB, 121 KiB  |
+| `blitz/sample.md`           | 137 ms, 127 ms   | 192 KiB, 184 KiB   | 148 ms, 147 ms   | 149 KiB, 149 KiB  |
+| `psd/alpha.psd`             | 76.1 ms, 4.30 ms | 380 KiB, 98 KiB    | 74.2 ms, 6.21 ms | 139 KiB, 31 KiB   |
+| `gxps/example.xps`          | 147 ms, 802 ms   | 593 KiB, 648 KiB   | 147 ms, 815 ms   | 368 KiB, 369 KiB  |
+
+An XPS document took 147 ms with mupdf, and takes about 800 ms with
+`xpstopng`, which iv runs since mupdf was removed. That one file raises each
+mean above by about 14%, so it is listed and not averaged.
+
+A png that the terminal gets as its own bytes now sends larger output to
+iTerm, which got a jpeg that rasterm encoded before. `png/dice.png` is 285 KiB
+in place of 62 KiB, and takes 0.18 ms in place of 13 ms.
+
+The decode benchmark is not shown, because a png, a jpeg and a file that
+libvips loads now decode their pixels only when something asks for them, so
+`BenchmarkDecode` measures only the header for them. Over the 18 other files,
+the decode takes 3.13 ms against 3.24 ms for v0.18.1. Sixel encodes every
+image from its pixels, so its row shows the cost of decoding, scaling and
+compositing, which is close to unchanged.
+
+### Running the benchmarks
+
+Run the decode benchmark once, and the render benchmark once for each
+protocol, in the `ivcmd` folder. Then compare two runs with `benchstat`:
+
+```sh
+cd ivcmd
+go test -run '^$' -bench '^BenchmarkDecode$' -benchtime 5x -count 6 -benchmem > decode.txt
+TERM_GRAPHICS=kitty go test -run '^$' -bench '^BenchmarkRender$' -benchtime 5x -count 6 -benchmem > kitty.txt
+TERM_GRAPHICS=iterm go test -run '^$' -bench '^BenchmarkRender$' -benchtime 5x -count 6 -benchmem > iterm.txt
+TERM_GRAPHICS=sixel go test -run '^$' -bench '^BenchmarkRender$' -benchtime 5x -count 6 -benchmem > sixel.txt
+go run golang.org/x/perf/cmd/benchstat@latest old/kitty.txt kitty.txt
+```
+
+The tests and the benchmarks need the decoder commands, which the Optional
+tools section names. To measure an earlier release, copy
+`ivcmd/bench_test.go` into a checkout of it. The `render` method that the
+benchmark calls has the same signature from v0.17.0.
 
 ## Documents
 
-| Document | For |
-| -------- | --- |
-| [`README.md`](README.md) | A person who uses `iv` |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | A person who changes `iv` |
-| [`AGENTS.md`](AGENTS.md) | A coding agent that changes `iv`. `CLAUDE.md` imports it for Claude Code |
-| [`docs/PLAN.md`](docs/PLAN.md) | The plan, every decision, and the open questions |
-| [`docs/BACKLOG.md`](docs/BACKLOG.md) | The work that is known and not done |
-| [`testdata/README.md`](testdata/README.md) | The test data, one folder per decoder |
+| Document                                   | For                                                                      |
+| ------------------------------------------ | ------------------------------------------------------------------------ |
+| [`README.md`](README.md)                   | A person who uses `iv`                                                   |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md)       | A person who changes `iv`                                                |
+| [`AGENTS.md`](AGENTS.md)                   | A coding agent that changes `iv`. `CLAUDE.md` imports it for Claude Code |
+| [`docs/PLAN.md`](docs/PLAN.md)             | The plan, every decision, and the open questions                         |
+| [`docs/BACKLOG.md`](docs/BACKLOG.md)       | The work that is known and not done                                      |
+| [`testdata/README.md`](testdata/README.md) | The test data, one folder per decoder                                    |
 
 [homebrew]: https://brew.sh/
 [msys2]: https://www.msys2.org/

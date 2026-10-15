@@ -11,56 +11,56 @@ than a raster, so what comes back is whatever the reader rasterized it at, and
 the test compares the shape rather than the pixel count. `encoder/pdf` covers
 the pagination itself, which needs no file to exercise.
 
-| Directory     | Decoder       | Notes                                                       |
-| ------------- | ------------- | ----------------------------------------------------------- |
-| `archives`    | `archives`    | The same two page comic as cbz, cbr, and cbt                |
-| `binwalk`     | `binwalk`     | Affinity Designer file with an embedded png                 |
-| `blitz`       | `blitz`       | A markdown and an html document                             |
-| `bmp`         | `bmp`         |                                                             |
-| `ffmpeg`      | `ffmpeg`      | Same clip as mkv and mp4                                    |
-| `fitz`        | `fitz`        | XPS documents                                               |
-| `fontimg`     | `fontimg`     | Static, variable, and monospace fonts                       |
-| `gif`         | `gif`         | Still and animated                                          |
-| `graphviz`    | `graphviz`    | DOT graph, sniffed by content rather than extension         |
-| `icns`        | `icns`        | Apple icon image, eight resolutions from 32 to 1024         |
-| `ico`         | `ico`         | Single and multi image icons                                |
-| `jpeg`        | `jpeg`        |                                                             |
-| `libreoffice` | `libreoffice` | Office documents; needs `soffice` in `$PATH`                |
-| `lottie`      | `lottie`      | Noto animated emoji, as json, `.lot`, and a dotLottie       |
-| `mermaid`     | `mermaid`     | One diagram per type the renderer understands               |
-| `nativewebp`  | `nativewebp`  | Lossy and lossless webp, each with its png reference decode |
-| `netpbm`      | `netpbm`      | pbm/pgm/ppm/pam, raw and plain                              |
-| `png`         | `png`         |                                                             |
-| `resvg`       | `resvg`       | SVGs, plain and gzipped, trivial to a large choropleth      |
-| `strings`     | `data`, `qr`, | Command line arguments, not files -- see below              |
-|               | `blitz-url`   |                                                             |
-| `tag`         | `tag`         | Silent audio carrying embedded cover art                    |
-| `tiff`        | `tiff`        | One file per compression the Go encoder supports            |
-| `vcard`       | `vcard`       | Contacts, drawn as a business card with a scannable code    |
-| `vips`        | `vips`        | heic/heif/jxl, plus a plain and a password protected pdf    |
-| `winres`      | `winres`      | Windows PE with embedded icons                              |
+| Directory     | Decoder       | Notes                                                         |
+| ------------- | ------------- | ------------------------------------------------------------- |
+| `archives`    | `archives`    | The same two page comic as cbz, cbr, and cbt                  |
+| `binwalk`     | `binwalk`     | Affinity Designer file with an embedded png                   |
+| `blitz`       | `blitz`       | A markdown and an html document                               |
+| `bmp`         | `bmp`         |                                                               |
+| `calibre`     | `calibre`     | One book as epub, mobi, azw3 and fb2; needs `ebook-convert`   |
+| `ffmpeg`      | `ffmpeg`      | Same clip as mkv and mp4                                      |
+| `fontimg`     | `fontimg`     | Static, variable, and monospace fonts                         |
+| `gif`         | `gif`         | Still and animated                                            |
+| `graphviz`    | `graphviz`    | DOT graph, sniffed by content rather than extension           |
+| `gxps`        | `gxps`        | XPS documents; needs `xpstopng`                               |
+| `icns`        | `icns`        | Apple icon image, eight resolutions from 32 to 1024           |
+| `ico`         | `ico`         | Single and multi image icons                                  |
+| `jpeg`        | `jpeg`        |                                                               |
+| `libreoffice` | `libreoffice` | Office documents; needs `soffice` in `$PATH`                  |
+| `lottie`      | `lottie`      | Noto animated emoji, as json, `.lot`, and a dotLottie         |
+| `mermaid`     | `mermaid`     | One diagram per type the renderer understands                 |
+| `nativewebp`  | `nativewebp`  | Lossy and lossless webp, each with its png reference decode   |
+| `netpbm`      | `netpbm`      | pbm/pgm/ppm/pam, raw and plain                                |
+| `png`         | `png`         |                                                               |
+| `psd`         | `psd`         | Photoshop, with alpha, CMYK, and 16-bit for the vips fallback |
+| `resvg`       | `resvg`       | SVGs, plain and gzipped, trivial to a large choropleth        |
+| `strings`     | `data`, `qr`, | Command line arguments, not files -- see below                |
+|               | `blitz-url`   |                                                               |
+| `tag`         | `tag`         | Silent audio carrying embedded cover art                      |
+| `tiff`        | `tiff`        | One file per compression the Go encoder supports              |
+| `vcard`       | `vcard`       | Contacts, drawn as a business card with a scannable code      |
+| `vips`        | `vips`        | heic/heif/jxl, plus a plain and a password protected pdf      |
+| `winres`      | `winres`      | Windows PE with embedded icons                                |
 
-Every decoder has test data. The two in `strings/` that reach the network are
-the only ones that need it, and they skip themselves when it is not there.
+Every decoder has test data, and no test reaches the network. A test fails
+when a command that it needs is missing, except for the commands that CI does
+not install on an OS, which `ivcmd/decode_test.go` names with the reason
+(D12 of `docs/PLAN.md`).
 
 ## Strings
 
 Some arguments to `iv` are not paths at all -- a `data:` URL, a `WIFI:` code,
-a http URL -- so `strings/` holds one such argument per file, with the
+a uri -- so `strings/` holds one such argument per file, with the
 extension `.iv_test_string` and a trailing newline that is not part of the
 argument. The extension is deliberately not one any decoder claims, so these
 files are never mistaken for something to render.
 
 | File                                 | Decoder     | Decodes to           |
 | ------------------------------------ | ----------- | -------------------- |
-| `wifi.iv_test_string`                | `qr`        | 350x350 QR code      |
+| `wifi.iv_test_string`                | `qr`        | 370x370 QR code      |
 | `data-svg-base64.iv_test_string`     | `data`      | 100x100 svg          |
 | `data-svg-urlencoded.iv_test_string` | `data`      | 64x64 svg            |
 | `data-png-base64.iv_test_string`     | `data`      | 1x1 png              |
-| `yahoo.iv_test_string`               | `blitz-url` | the page, 2400 wide  |
-| `ifconfig-me.iv_test_string`         | `blitz-url` | the page, 2400 wide  |
-| `finance-google.iv_test_string`      | `blitz-url` | the page, 2400 wide  |
-| `microsoft-favicon.iv_test_string`   | `ico`       | 128x128 icon         |
 
 The uri files cover what the `qr` decoder claims: the schemes it knows by
 name -- `mailto:`, `tel:`, `sms:`, `geo:`, `xmpp:`, `sip:`, `matrix:`,
@@ -78,24 +78,14 @@ keyed by file name; a string added without an entry in that table fails, so
 they cannot go quietly untested. `test.sh` passes the contents of each file as
 an argument and skips them when walking for files to open.
 
-The four URLs are the only test data that reaches the network. A fetch that
-fails is reported as `blitz.ErrFetch`, which the test skips on, so an
-unreachable site does not fail the suite while a blitz regression still does.
-
-Only the width of a rendered page is checked: a page is as tall as whatever
-the site served that minute, and the width is the one part of it `iv` decides.
-The three pages are picked to differ -- `ifconfig.me` is a small static page,
-`yahoo.com` a megabyte of markup, and `finance.google.com` a 302 to
-`www.google.com/finance/` laid out in cards and tables. The redirect is the
-point of that last one: the page has to be rendered against the url it was
-served from rather than the one asked for, or everything relative in it
-resolves against the wrong host.
-
-`www.microsoft.com/favicon.ico` is the other half of what `blitz-url` does. A
-url naming an image is still that image, so it is never rendered as a page --
-`blitz-url` hands the bytes back to the pipeline and the `ico` decoder takes
-them. The mime type is what the test asserts, because a page comes back
-without one; the size is left alone, since it is Microsoft's icon to change.
+No test reaches the network. `TestDecodeURL` in `ivcmd` serves
+`blitz/sample.html` and `ico/1.ico` from an `httptest` server on this machine,
+and covers the two things that `blitz-url` does with a url. It renders a page,
+also after a redirect, against the url that the page was served from. It hands
+an image that a url names back to the pipeline, which the mime type of the
+result shows, because a rendered page comes back without one. Only the width of
+a page is checked, which is the one part of it that `iv` decides. The four live
+pages that the test fetched before were dropped by D12 of `docs/PLAN.md`.
 
 `vips/file-sample_150kB.enc.pdf` is the plain pdf encrypted with the password
 `password`, kept in step with `encPassword` in `ivcmd/decode_test.go` and
@@ -157,6 +147,14 @@ but a `.doc` and a `.ppt` are only `application/x-ole-storage` -- the
   licensed [CC BY 4.0][cc-by-4].
 - `winres/go-winres.exe` -- built from [go-winres][].
 - `fontimg/` -- Figtree, Noto Mono, and Ubuntu.
+- `calibre/` -- `blitz/sample.html`, converted with `ebook-convert` of calibre
+  9.14 to epub, azw3 and fb2, with the title "iv sample". `sample.mobi` is the
+  epub converted with `--mobi-file-type both`, because calibre cannot read
+  back the MOBI 6 file that it writes from the html, which has no guide.
+- `psd/` -- generated with ImageMagick: `alpha.psd` from `png/tux.png`,
+  `cmyk.psd` from `png/rose.png` in the CMYK colorspace, and `deep16.psd` from
+  `png/rose.png` at 16 bits. oov/psd cannot read `deep16.psd`, so it covers
+  the fallback to libvips.
 
 ### Documents
 

@@ -8,6 +8,7 @@ import (
 	"image"
 	"io"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/kenshaw/iv/ivctx"
@@ -210,7 +211,8 @@ func candidates(ctx context.Context, mime, ext, name string) ([]*Entry, error) {
 		return []*Entry{d}, nil
 	}
 	matched := Match(ctx, mime, ext)
-	matched = slicesFilter(matched, func(d *Entry) bool { return d.decode != nil })
+	// Match returns a slice of its own, so it is filtered in place
+	matched = slices.DeleteFunc(matched, func(d *Entry) bool { return d.decode == nil })
 	if len(matched) == 0 {
 		return nil, fmt.Errorf("mime type %q: %w", mime, ErrNotSupported)
 	}
@@ -284,17 +286,6 @@ func readSeeker(r io.Reader) (io.ReadSeeker, error) {
 		return nil, err
 	}
 	return bytes.NewReader(buf), nil
-}
-
-// slicesFilter returns the elements of s satisfying f.
-func slicesFilter[S ~[]E, E any](s S, f func(E) bool) S {
-	var res S
-	for _, v := range s {
-		if f(v) {
-			res = append(res, v)
-		}
-	}
-	return res
 }
 
 // elide shortens a string for use in error messages.

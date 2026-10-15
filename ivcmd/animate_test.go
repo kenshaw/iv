@@ -17,9 +17,12 @@ import (
 
 // TestPlay checks that a pass draws every frame of an animation it can keep up
 // with, and that each frame is written with the clear and the name above it.
+//
+// Each frame is up for 50ms. A timer on Windows can fire about 16ms late, and
+// with frames of 5ms that made a frame late enough to be dropped.
 func TestPlay(t *testing.T) {
 	p, buf := testPlayer(t, 0)
-	switch n, err := p.play(t.Context(), testAnim(6, 5*time.Millisecond), false); {
+	switch n, err := p.play(t.Context(), testAnim(6, 50*time.Millisecond), false); {
 	case err != nil:
 		t.Fatalf("expected no error, got: %v", err)
 	case n != 6:

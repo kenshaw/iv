@@ -35,7 +35,7 @@ func TestDecodeCard(t *testing.T) {
 			pathName := filepath.Join("..", "..", "testdata", "tag", name)
 			f, err := os.Open(pathName)
 			if err != nil {
-				t.Skipf("no test data: %v", err)
+				t.Fatalf("no test data: %v", err)
 			}
 			defer f.Close()
 			res, err := decode(ivctx.WithPathName(context.Background(), pathName), f)
@@ -102,7 +102,7 @@ func loadImage(t *testing.T, pathName string) image.Image {
 	t.Helper()
 	f, err := os.Open(pathName)
 	if err != nil {
-		t.Skipf("no test data: %v", err)
+		t.Fatalf("no test data: %v", err)
 	}
 	defer f.Close()
 	img, _, err := image.Decode(f)
@@ -344,7 +344,7 @@ func TestSidecarNotUsedWhenEmbedded(t *testing.T) {
 	src := filepath.Join("..", "..", "testdata", "tag", "silent.flac")
 	audio, err := os.ReadFile(src)
 	if err != nil {
-		t.Skipf("no test data: %v", err)
+		t.Fatalf("no test data: %v", err)
 	}
 	write(t, dir, "silent.flac", audio)
 	write(t, dir, "cover.png", pngBytes(t, color.RGBA{1, 2, 3, 255}))

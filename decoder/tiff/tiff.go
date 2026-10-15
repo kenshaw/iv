@@ -5,6 +5,8 @@ package tiff
 
 import (
 	"github.com/kenshaw/iv/decoder"
+	// registers the tiff format with image.Decode, which RegisterBuiltin
+	// decodes through, and which a comic archive uses for its pages
 	_ "golang.org/x/image/tiff"
 )
 

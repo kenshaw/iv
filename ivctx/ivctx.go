@@ -1,13 +1,12 @@
-// Package ivctx provides the configuration, context plumbing, and shared
-// helpers used by the iv decoder and encoder pipelines.
+// Package ivctx provides the configuration of iv, and carries it on the
+// context through the decoder and encoder pipelines, with the path name and
+// the mime type of what is being decoded. It also computes the size that an
+// image is displayed at (see [Scale]), and the ivimg package scales the image
+// to it.
 package ivctx
 
 import (
 	"context"
-	"image"
-	"image/color"
-	"image/draw"
-	"io"
 	"path/filepath"
 	"strings"
 	"time"
@@ -72,15 +71,14 @@ func New() *Config {
 		MinWidth:   64,
 		MinHeight:  64,
 		DPI:        300,
-		Fg:         named(colors.Dimgray),
+		Fg:         named(colors.Black),
 		Bg:         named(colors.Transparent),
-		Border:     30,
+		Border:     40,
 		FontSize:   48,
 		FontFg:     named(colors.Black),
 		FontBg:     named(colors.White),
 		FontDPI:    100,
 		FontMargin: 5,
-		MermaidBg:  named(colors.White),
 		PDFPage:    "fit",
 		PDFMargin:  36,
 	}
@@ -180,67 +178,7 @@ func Page(ctx context.Context, n int) int {
 	return 0
 }
 
-// AddBorder adds a border of the configured width and background color to src.
-func AddBorder(ctx context.Context, src image.Image) image.Image {
-	c := Get(ctx)
-	b, w := src.Bounds(), int(c.Border)
-	x, y := b.Dx(), b.Dy()
-	dst := image.NewRGBA(image.Rect(0, 0, x+2*w, y+2*w))
-	draw.Draw(dst, dst.Bounds(), &image.Uniform{C: bgColor(c.Bg)}, image.Point{}, draw.Src)
-	draw.Draw(dst, image.Rect(w, w, w+x, w+y), src, b.Min, draw.Over)
-	return dst
-}
-
-// AddBackground composites src over the configured background color. Images
-// that supply their own background (svg) and fully transparent backgrounds are
-// returned as-is.
-func AddBackground(ctx context.Context, mime string, src image.Image) image.Image {
-	c := Get(ctx)
-	bg := c.Bg
-	if isTransparent(bg) && mime == "text/plain" { // mermaid
-		bg = c.MermaidBg
-	}
-	switch {
-	case isTransparent(bg), strings.HasPrefix(mime, "image/svg"):
-		return src
-	}
-	start := time.Now()
-	b, n := src.Bounds(), bg.NRGBA()
-	dst := image.NewNRGBA(b)
-	for i := range b.Dx() {
-		for j := range b.Dy() {
-			dst.SetNRGBA(b.Min.X+i, b.Min.Y+j, n)
-		}
-	}
-	draw.Draw(dst, b, src, b.Min, draw.Over)
-	c.Logger("add bg: %v", time.Since(start))
-	return dst
-}
-
-// isTransparent returns true when c is nil or fully transparent.
-func isTransparent(c *colors.Color) bool {
-	return c == nil || c.A == 0
-}
-
-// bgColor returns c as a [color.Color], defaulting to transparent.
-func bgColor(c *colors.Color) color.Color {
-	if c == nil {
-		return color.Transparent
-	}
-	return *c
-}
-
 // FileExt returns the lower case file extension of s, without the leading dot.
 func FileExt(s string) string {
 	return strings.ToLower(strings.TrimPrefix(filepath.Ext(s), "."))
-}
-
-// NopWriteCloser wraps a writer with a no-op close method.
-type NopWriteCloser struct {
-	io.Writer
-}
-
-// Close satisfies the [io.Closer] interface.
-func (NopWriteCloser) Close() error {
-	return nil
 }

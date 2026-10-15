@@ -7,7 +7,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"fmt"
+	"errors"
 	"io"
 	"regexp"
 
@@ -65,7 +65,7 @@ func detect(_ context.Context, r io.Reader) (string, error) {
 func decode(ctx context.Context, r io.Reader) (any, error) {
 	gv, _ := decoder.State(ctx).(*graphviz.Graphviz)
 	if gv == nil {
-		return nil, fmt.Errorf("graphviz not initialized")
+		return nil, errors.New("graphviz not initialized")
 	}
 	buf, err := io.ReadAll(r)
 	if err != nil {

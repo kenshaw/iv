@@ -11,9 +11,9 @@ import (
 )
 
 func TestProduce(t *testing.T) {
-	frames := Produce(func(_ context.Context, s *Sink) error {
+	frames := Produce(func(ctx context.Context, s *Sink) error {
 		for i := range 4 {
-			if !s.Send(image.NewRGBA(image.Rect(0, 0, 1+i, 1)), time.Duration(i)*time.Second) {
+			if !s.Send(ctx, image.NewRGBA(image.Rect(0, 0, 1+i, 1)), time.Duration(i)*time.Second) {
 				return errors.New("send refused")
 			}
 		}
@@ -46,7 +46,7 @@ func TestProduceStops(t *testing.T) {
 	frames := Produce(func(ctx context.Context, s *Sink) error {
 		defer close(stopped)
 		for {
-			if !s.Send(image.NewRGBA(image.Rect(0, 0, 1, 1)), 0) {
+			if !s.Send(ctx, image.NewRGBA(image.Rect(0, 0, 1, 1)), 0) {
 				return ctx.Err()
 			}
 		}
@@ -71,8 +71,8 @@ func TestProduceStops(t *testing.T) {
 // the frames it managed to send.
 func TestProduceError(t *testing.T) {
 	errExpected := errors.New("expected")
-	frames := Produce(func(_ context.Context, s *Sink) error {
-		s.Send(image.NewRGBA(image.Rect(0, 0, 1, 1)), 0)
+	frames := Produce(func(ctx context.Context, s *Sink) error {
+		s.Send(ctx, image.NewRGBA(image.Rect(0, 0, 1, 1)), 0)
 		return errExpected
 	})
 	var n int
@@ -95,8 +95,8 @@ func TestProduceError(t *testing.T) {
 // produced, that being work the playback would otherwise be doing between one
 // frame and the next.
 func TestSinkScales(t *testing.T) {
-	frames := Produce(func(_ context.Context, s *Sink) error {
-		s.Send(image.NewRGBA(image.Rect(0, 0, 400, 200)), 0)
+	frames := Produce(func(ctx context.Context, s *Sink) error {
+		s.Send(ctx, image.NewRGBA(image.Rect(0, 0, 400, 200)), 0)
 		return nil
 	})
 	ctx := animCtx(t, ivctx.ModeBestFit)

@@ -109,7 +109,7 @@ func renderFileErr(t *testing.T, ctx context.Context, name string) (string, erro
 	t.Helper()
 	buf, err := os.ReadFile(filepath.Join("..", "..", "testdata", "mermaid", name))
 	if err != nil {
-		t.Skipf("no test data: %v", err)
+		t.Fatalf("no test data: %v", err)
 	}
 	res, err := render(ctx, newRenderer(t, ctx), bytes.NewReader(buf))
 	if err != nil {
@@ -141,7 +141,7 @@ func newRenderer(t *testing.T, ctx context.Context) *renderer {
 		t.Fatalf("expected a *renderer, got %T", state)
 	}
 	t.Cleanup(func() {
-		if err := rend.Renderer.Close(ctx); err != nil {
+		if err := rend.Close(ctx); err != nil {
 			t.Errorf("expected no error, got: %v", err)
 		}
 		if rend.cache != nil {

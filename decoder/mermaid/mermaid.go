@@ -6,11 +6,14 @@ package mermaid
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/kenshaw/colors"
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/ivctx"
 	"github.com/tetratelabs/wazero"
@@ -35,6 +38,7 @@ func init() {
 // cache standing behind it. Both need closing.
 type renderer struct {
 	*mermaid.Renderer
+
 	cache wazero.CompilationCache
 }
 
@@ -58,7 +62,7 @@ func open(ctx context.Context) (any, error) {
 	r, err := mermaid.New(ctx, opts...)
 	if err != nil {
 		if v.cache != nil {
-			v.cache.Close(ctx)
+			err = errors.Join(err, v.cache.Close(ctx))
 		}
 		return nil, err
 	}
@@ -76,7 +80,7 @@ func shut(ctx context.Context) error {
 	}
 	var errs []error
 	if v.Renderer != nil {
-		errs = append(errs, v.Renderer.Close(ctx))
+		errs = append(errs, v.Close(ctx))
 	}
 	if v.cache != nil {
 		errs = append(errs, v.cache.Close(ctx))
@@ -96,7 +100,7 @@ func cacheDir() (string, error) {
 		return "", err
 	}
 	dir = filepath.Join(dir, "iv", "wazero")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return "", err
 	}
 	return dir, nil
@@ -120,12 +124,38 @@ func render(ctx context.Context, rend *renderer, r io.Reader) (any, error) {
 	}
 	// an unknown theme comes back as an error naming it, so there is nothing
 	// to check here
+	c := ivctx.Get(ctx)
 	svg, err := rend.RenderWith(ctx, string(buf), mermaid.Options{
-		Theme: mermaid.Theme(ivctx.Get(ctx).MermaidTheme),
+		Theme:  mermaid.Theme(c.MermaidTheme),
+		Config: config(c.MermaidBg),
 	})
 	if err != nil {
 		return nil, err
 	}
 	ivctx.Logf(ctx, "mermaid: %d bytes of source to %d of svg", len(buf), len(svg))
 	return decoder.NewBytes("image/svg+xml", []byte(svg)).WithExt("svg"), nil
+}
+
+// config returns the mermaid configuration that sets the background to bg. The
+// renderer draws the background into the svg, so it is set here and not
+// composited after. It returns nil when bg is nil, which leaves the
+// background of the theme.
+func config(bg *colors.Color) json.RawMessage {
+	if bg == nil {
+		return nil
+	}
+	v := "transparent"
+	if n := bg.NRGBA(); n.A != 0 {
+		v = fmt.Sprintf("#%02x%02x%02x", n.R, n.G, n.B)
+	}
+	buf, err := json.Marshal(map[string]map[string]string{
+		"themeVariables": {
+			"background": v,
+		},
+	})
+	if err != nil {
+		// a map of strings always marshals
+		panic(err)
+	}
+	return buf
 }

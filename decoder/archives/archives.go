@@ -5,6 +5,7 @@ package archives
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -57,7 +58,7 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 	case err != nil:
 		return nil, err
 	case len(names) == 0:
-		return nil, fmt.Errorf("no renderable images in archive")
+		return nil, errors.New("no renderable images in archive")
 	}
 	sort.Strings(names)
 	ivctx.Logf(ctx, "archive images: %d", len(names))

@@ -392,11 +392,11 @@ func order(decoders []*Entry) []*Entry {
 // fileExt returns the lower case extension of the name, without the leading
 // dot.
 func fileExt(name string) string {
-	i := strings.LastIndexByte(name, '.')
-	if i == -1 {
+	_, ext, ok := strings.CutLast(name, ".")
+	if !ok {
 		return ""
 	}
-	return strings.ToLower(name[i+1:])
+	return strings.ToLower(ext)
 }
 
 // builtinDecode decodes through Go's [image.Decode] registry.

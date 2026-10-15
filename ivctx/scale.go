@@ -3,13 +3,9 @@ package ivctx
 import (
 	"context"
 	"fmt"
-	"image"
 	"math"
 	"slices"
 	"strings"
-	"time"
-
-	xdraw "golang.org/x/image/draw"
 )
 
 // Mode is an image scaling mode: how the configured display size and minimum
@@ -21,6 +17,8 @@ import (
 // show or too small to see is touched at all.
 type Mode string
 
+// NewMode creates a mode for a command line flag. ox calls it for a flag of
+// the mode type, and the default of the flag then sets its value.
 func NewMode() (*Mode, error) {
 	mode := ModeNone
 	return &mode, nil
@@ -57,30 +55,30 @@ func Modes() []Mode {
 }
 
 // String satisfies the [fmt.Stringer] interface.
-func (mode Mode) String() string {
-	return string(mode)
+func (m Mode) String() string {
+	return string(m)
 }
 
 // Valid reports whether the mode is set and is a known one.
-func (mode *Mode) Valid() bool {
-	return mode != nil && slices.Contains(modes[:], *mode)
+func (m *Mode) Valid() bool {
+	return m != nil && slices.Contains(modes[:], *m)
 }
 
 // Get returns the mode, which is [ModeBestFit] when one was never set.
-func (mode *Mode) Get() Mode {
-	if !mode.Valid() {
+func (m *Mode) Get() Mode {
+	if !m.Valid() {
 		return ModeBestFit
 	}
-	return *mode
+	return *m
 }
 
 // MarshalText satisfies the [encoding.TextMarshaler] interface.
-func (mode *Mode) MarshalText() ([]byte, error) {
-	return []byte(*mode), nil
+func (m *Mode) MarshalText() ([]byte, error) {
+	return []byte(*m), nil
 }
 
 // UnmarshalText satisfies the [encoding.TextUnmarshaler] interface.
-func (mode *Mode) UnmarshalText(buf []byte) error {
+func (m *Mode) UnmarshalText(buf []byte) error {
 	v := Mode(strings.ToLower(strings.TrimSpace(string(buf))))
 	if !v.Valid() {
 		names := make([]string, len(modes))
@@ -89,13 +87,13 @@ func (mode *Mode) UnmarshalText(buf []byte) error {
 		}
 		return fmt.Errorf("invalid mode %q (expected one of: %s)", buf, strings.Join(names, ", "))
 	}
-	*mode = v
+	*m = v
 	return nil
 }
 
-// small is the longest edge below which an image is magnified by whole pixels
-// rather than resampled -- see [snap].
-const small = 64
+// Small is the longest edge, in pixels, at or below which an image is
+// magnified by a whole number rather than resampled. See [Config.Scale].
+const Small = 64
 
 // Scale returns the size an image of w x h pixels is displayed at.
 func Scale(ctx context.Context, w, h int) (int, int) {
@@ -186,7 +184,7 @@ func floor(w, h int, s float64, minW, minH int) float64 {
 // factor that would then overrun the display size is refused outright rather
 // than returning something that does not fit.
 func snap(w, h int, s float64, maxW, maxH int) int {
-	if s <= 1 || max(w, h) > small {
+	if s <= 1 || max(w, h) > Small {
 		return 0
 	}
 	n := int(math.Ceil(s - 1e-9))
@@ -202,38 +200,4 @@ func snap(w, h int, s float64, maxW, maxH int) int {
 // round returns v scaled by s, never smaller than a pixel.
 func round(v int, s float64) int {
 	return max(int(math.Round(float64(v)*s)), 1)
-}
-
-// Resize returns src scaled to w x h, and src itself when it is already that
-// size.
-func Resize(ctx context.Context, src image.Image, w, h int) image.Image {
-	b := src.Bounds()
-	if w <= 0 || h <= 0 || (b.Dx() == w && b.Dy() == h) {
-		return src
-	}
-	start := time.Now()
-	dst := image.NewNRGBA(image.Rect(0, 0, w, h))
-	kernel(b.Dx(), b.Dy(), w, h).Scale(dst, dst.Bounds(), src, b, xdraw.Src, nil)
-	Logf(ctx, "resize: %dx%d -> %dx%d: %v", b.Dx(), b.Dy(), w, h, time.Since(start))
-	return dst
-}
-
-// kernel returns the interpolator for scaling sw x sh to w x h.
-//
-// A whole number magnification of a small image is pixel replication, which is
-// what keeps icon art and pixel art crisp -- a smooth kernel blurs it into
-// nothing recognizable. Everything else, magnified or reduced, is resampled.
-func kernel(sw, sh, w, h int) xdraw.Interpolator {
-	if max(sw, sh) <= small && w >= sw && h >= sh &&
-		w%sw == 0 && h%sh == 0 && w/sw == h/sh && w/sw >= 2 {
-		return xdraw.NearestNeighbor
-	}
-	return xdraw.CatmullRom
-}
-
-// Fit scales src to the size the config displays it at.
-func Fit(ctx context.Context, src image.Image) image.Image {
-	b := src.Bounds()
-	w, h := Scale(ctx, b.Dx(), b.Dy())
-	return Resize(ctx, src, w, h)
 }

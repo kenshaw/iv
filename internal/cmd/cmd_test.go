@@ -24,7 +24,7 @@ func TestPath(t *testing.T) {
 	}
 	sh := New("sh")
 	if !sh.Available() {
-		t.Skip("sh not in path")
+		t.Fatal("sh not in path")
 	}
 	if sh.Name() != "sh" {
 		t.Errorf("expected name sh, got %q", sh.Name())
@@ -34,7 +34,7 @@ func TestPath(t *testing.T) {
 func TestRun(t *testing.T) {
 	c := New("sh")
 	if !c.Available() {
-		t.Skip("sh not in path")
+		t.Fatal("sh not in path")
 	}
 	ctx := context.Background()
 	buf, err := c.Run(ctx, "-c", "printf hello")
@@ -55,7 +55,7 @@ func TestRun(t *testing.T) {
 func TestCombinedOutput(t *testing.T) {
 	c := New("sh")
 	if !c.Available() {
-		t.Skip("sh not in path")
+		t.Fatal("sh not in path")
 	}
 	buf, err := c.CombinedOutput(context.Background(), "-c", "printf out; printf err >&2")
 	if err != nil {

@@ -38,7 +38,9 @@ every other agent read the same rules. Edit this file, not that one.
 | adding or changing test data | `testdata/README.md`, then D11 and D13 |
 | adding a decoder that runs an external command | `internal/cmd`, D7 and the "Optional tools" section of `README.md` |
 | changing mime detection | `decoder/mime.go`, D6 and D17 |
-| changing the libvips code | `vips/`, `decoder/vips`, `encoder/vips`, D5 and D8 |
+| changing how an image is scaled, composited or handed to an encoder | the package comment of `ivimg`, then D22 and D23 |
+| changing the libvips code | `vips/`, `decoder/vips`, `encoder/vips`, D5, D8 and D22 |
+| measuring a change for speed | the Performance section of `README.md`, and D26 |
 | changing animation | `ivcmd/animate.go`, `decoder/anim.go` and D19 |
 | changing a workflow | D14 and D15, and the comments in `.github/workflows/` |
 | writing a document, a code comment, an error message or a commit message | the `simple-english` skill. Load it first |
@@ -58,8 +60,12 @@ dbmeta D110. A bare number, as in D3, names a decision of this repository, in
   else.
 - `ivcmd/` holds the command: the flags, as `ox` struct tags on `Args`, and
   the code that renders each target. `animate.go` plays an animation.
-- `ivctx/` holds the configuration, which travels on the context, and the
-  helpers that the decoders and the encoders share, such as scaling.
+- `ivctx/` holds the configuration, which travels on the context, and
+  computes the size that an image is displayed at (`Scale`).
+- `ivimg/` holds the steps between the decoder and the encoder (D22):
+  `Prepare` scales an image and composites it over the background,
+  `DecodePNG` and `DecodeJPEG` keep the bytes of a file with its image, and
+  `Raw` chooses the form that each protocol gets.
 - `decoder/` holds the decoder registry and the pipeline (D10). A decoder
   returns an image, a set of images, or a new input for the pipeline. The
   pipeline stops after `maxDepth` hand-offs. `mime.go` sniffs the mime type
@@ -72,7 +78,8 @@ dbmeta D110. A bare number, as in D3, names a decision of this repository, in
   `encoder/all/` imports every encoder. `encoder/rasterm` draws to the
   terminal.
 - `vips/` holds the libvips code that `decoder/vips` and `encoder/vips` share
-  (D8).
+  (D8). Its `Image` keeps a decoded image in libvips, and scales,
+  composites and encodes it there (D22).
 - `internal/cmd/` finds an external command in `$PATH` on first use and runs
   it (D7). `internal/font/` finds the font that the generated cards use, and
   measures text in it.
@@ -94,6 +101,21 @@ These are the conventions that the code follows today.
   registered already.
 - `context.Context` is the first parameter of a decode or an encode function.
   `ivctx` reads the configuration from it.
+- A decoder for a format that a terminal can show as it is keeps the bytes
+  of the file with the image, through `decoder.BytesDecoder` and
+  `ivimg.DecodePNG` or `ivimg.DecodeJPEG`. A step that changes the pixels
+  returns a new image that holds no bytes (D22).
+- libvips decodes when the pixels are asked for, which can be after the
+  pipeline closed the file. Load a libvips image from bytes, never from a
+  stream of the input (D22).
+- Make a resvg renderer with all of its options in `resvg.New`. From resvg
+  v0.12.1 a renderer cannot change after it is made, and a change to
+  `resvg.Default` is ignored. The svg decoder builds its renderer in its init
+  func. `TestSerifIsLatin` fails when the font families stop taking effect.
+- Do not compare two `image.Image` values with `==`. A `rasterm.PNG` holds a
+  slice, and the comparison panics. An encoder that encodes the pixels itself
+  calls `ivimg.Unwrap` first, because the encoders of the standard library are
+  fast only for their own concrete types.
 - Wrap an error with `%w`. An error message is lower case, and it starts with
   the thing that failed, as in `mime type %q: %w` or `decoder %q: not
   registered`.
@@ -103,10 +125,14 @@ These are the conventions that the code follows today.
 - If a library cannot handle a format in this build, return
   `ErrUnsupportedFormat` from `decoder` or `encoder`, so that a test can skip.
 - Code that works only on some platforms uses a build constraint in the file
-  name or a `//go:build` line, as `decoder/fitz` and `ivctx/term_unix.go` do.
+  name or a `//go:build` line, as `decoder/blitz/link_windows.go` and
+  `ivctx/term_unix.go` do.
 - A test is in the package that it tests, not in an `_test` package.
-- A test skips with `t.Skip` when an external command, libmagic, a test file,
-  the network or a libvips format is missing (D12, which is Proposed).
+- A test fails when an external command, libmagic, a test file or a libvips
+  format is missing (D27). It does not skip. The one exception is a command
+  that CI does not install on an operating system, which `untested` in
+  `ivcmd/decode_test.go` names with its reason. No test reaches the network.
+  A test that needs a web server runs one with `httptest`.
 - A comment inside a function is usually lower case, with no period at the
   end.
 
@@ -120,10 +146,13 @@ gofmt -l .
 go build ./...
 go vet ./...
 go test ./...
+golangci-lint run ./...
 ```
 
 CI runs `go test -race -v ./...` on Linux amd64 and arm64, macOS and Windows
-(D14).
+(D14), and `golangci-lint run ./...` with v2.14.0 (D29). The tests need every
+decoder command: `ffmpeg`, `soffice`, `ebook-convert`, `xpstopng`,
+`pdftoppm` and `binwalk` (D27).
 
 If you changed a decoder, an encoder or the pipeline, also run the smoke test:
 
@@ -133,8 +162,14 @@ go build -o ./iv . && ./test.sh
 
 `test.sh -t` draws each file to the terminal instead of discarding it.
 
-`iv` has no `.golangci.yml`, and CI runs no linter. Open question 3 in
-`docs/PLAN.md` asks Ken whether to add one.
+If you changed how an image is decoded, scaled or encoded, run the
+benchmarks, once for each protocol, and compare them with the last release
+(D26). The Performance section of `README.md` holds the commands.
+
+`.golangci.yml` sets `default: all`, and disables a linter with its reason
+beside it. A linter that makes idiomatic Go worse is disabled, and only a real
+defect gets a code change. Ask which one it is before you change the code
+(D29).
 
 `docs_test.go` in the root holds the tests for this setup (D21). They fail on
 a skill that is a link or that differs between its two copies, on a

@@ -5,6 +5,7 @@ package vcard
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -56,7 +57,7 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 	}
 	c := build(ctx, v, string(buf))
 	if c.name == "" {
-		return nil, fmt.Errorf("vcard: no name")
+		return nil, errors.New("vcard: no name")
 	}
 	ivctx.Logf(ctx, "vcard: %q %q %q, %d contact lines", c.name, c.title, c.org, len(c.contacts))
 	return decoder.NewBytes("image/svg+xml", c.svg()).WithExt("svg"), nil

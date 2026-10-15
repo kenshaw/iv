@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kenshaw/iv/ivctx"
+	"github.com/kenshaw/iv/ivimg"
 )
 
 // lookahead is how many frames a producer may run ahead of the display.
@@ -47,34 +48,37 @@ type Anim struct {
 
 // Sink is what an animation's producer sends its frames to.
 type Sink struct {
-	ctx context.Context
 	ch  chan Frame
-}
-
-// Context returns the producer's context, which is cancelled once the playback
-// has ended.
-func (s *Sink) Context() context.Context {
-	return s.ctx
+	err error
 }
 
 // Send hands a frame to the playback, blocking while the playback is still
-// working through the frames already sent.
+// working through the frames already sent. ctx is the context that
+// [Produce] handed the producer, which is cancelled once the playback has
+// ended.
 //
-// The frame is scaled and composited here, in the producer's goroutine, so
-// that the work of preparing one frame overlaps the drawing of the one before
-// it.
+// The frame is scaled and composited here with [ivimg.Prepare], in the
+// producer's goroutine, so that the work of preparing one frame overlaps the
+// drawing of the one before it.
 //
-// Reports whether the frame was taken. A false return means the playback has
-// ended -- interrupted, or out of time -- and the producer should stop.
-func (s *Sink) Send(img image.Image, delay time.Duration) bool {
+// Reports whether the frame was taken. A false return means that the producer
+// must stop: the playback ended, because it was interrupted or ran out of
+// time, or [ivimg.Prepare] returned an error for the frame. The playback
+// reports that error.
+func (s *Sink) Send(ctx context.Context, img image.Image, delay time.Duration) bool {
+	prepared, err := ivimg.Prepare(ctx, ivctx.Mime(ctx), img)
+	if err != nil {
+		s.err = err
+		return false
+	}
 	frame := Frame{
-		Image: ivctx.AddBackground(s.ctx, ivctx.Mime(s.ctx), ivctx.Fit(s.ctx, img)),
+		Image: prepared,
 		Delay: delay,
 	}
 	select {
 	case s.ch <- frame:
 		return true
-	case <-s.ctx.Done():
+	case <-ctx.Done():
 		return false
 	}
 }
@@ -92,8 +96,7 @@ func Produce(f func(context.Context, *Sink) error) func(context.Context) iter.Se
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 			s := &Sink{
-				ctx: ctx,
-				ch:  make(chan Frame, lookahead),
+				ch: make(chan Frame, lookahead),
 			}
 			errch := make(chan error, 1)
 			go func() {
@@ -106,8 +109,13 @@ func Produce(f func(context.Context, *Sink) error) func(context.Context) iter.Se
 				}
 			}
 			// a producer that stopped because the playback did has nothing to
-			// report but that
-			if err := <-errch; err != nil && ctx.Err() == nil {
+			// report but that. The error of the sink is read after the
+			// producer has returned, so it is not read while it is written.
+			err := <-errch
+			if err == nil {
+				err = s.err
+			}
+			if err != nil && ctx.Err() == nil {
 				yield(Frame{}, err)
 			}
 		}

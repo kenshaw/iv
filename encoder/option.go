@@ -4,6 +4,8 @@ import (
 	"context"
 	"image"
 	"io"
+
+	"github.com/kenshaw/iv/ivimg"
 )
 
 // Option is an encoder option.
@@ -24,10 +26,12 @@ func Encoder(f EncodeFunc) Option {
 }
 
 // ImageEncoder is an encoder option setting the encoding func from a plain
-// image encoder, such as [png.Encode].
+// image encoder, such as [png.Encode]. The encoder gets the pixels under each
+// wrapper of the image (see [ivimg.Unwrap]), because the encoders of the
+// standard library are fast only for their own concrete types.
 func ImageEncoder(f func(io.Writer, image.Image) error) Option {
 	return Encoder(func(_ context.Context, w io.Writer, img image.Image) error {
-		return f(w, img)
+		return f(w, ivimg.Unwrap(img))
 	})
 }
 

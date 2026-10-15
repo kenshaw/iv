@@ -6,13 +6,13 @@ require (
 	github.com/HugoSmits86/nativewebp v1.3.0
 	github.com/cshum/vipsgen v1.3.11
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
-	github.com/gen2brain/go-fitz v1.28.2
 	github.com/goccy/go-graphviz v0.2.10
 	github.com/jackmordaunt/icns/v4 v4.2.0
 	github.com/kenshaw/colors v0.2.4
 	github.com/kenshaw/fontimg v0.4.0
-	github.com/kenshaw/rasterm v0.1.17
+	github.com/kenshaw/rasterm v0.1.20
 	github.com/mholt/archives v0.1.5
+	github.com/oov/psd v0.0.0-20260818185439-a5d50ec0acac
 	github.com/sergeymakinen/go-bmp v1.0.0
 	github.com/sergeymakinen/go-ico v1.0.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
@@ -47,12 +47,12 @@ require (
 	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
-	github.com/ebitengine/purego v0.11.1 // indirect
 	github.com/flopp/go-findfont v0.1.0 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
 	github.com/go-fonts/latin-modern v0.3.3 // indirect
 	github.com/go-text/typesetting v0.3.5 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
+	github.com/gopherjs/gopherjs v1.21.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/klauspost/compress v1.20.3 // indirect
 	github.com/klauspost/pgzip v1.2.7 // indirect

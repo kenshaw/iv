@@ -6,10 +6,13 @@ package qr
 
 import (
 	"context"
+	"image"
 	"image/color"
+	"image/draw"
 	"regexp"
 	"strings"
 
+	"github.com/kenshaw/colors"
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/ivctx"
 	"github.com/skip2/go-qrcode"
@@ -56,9 +59,7 @@ func init() {
 	decoder.Register(
 		"qr",
 		decoder.Desc("QR codes for mailto:, tel:, geo:, otpauth: and other uris"),
-		decoder.StringMatcher(func(s string) bool {
-			return match(s)
-		}),
+		decoder.StringMatcher(match),
 		decoder.StringDecoder(decode),
 	)
 }
@@ -93,7 +94,35 @@ func decode(ctx context.Context, s string) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	q.ForegroundColor, q.BackgroundColor = color.Black, color.White
-	ivctx.Logf(ctx, "qr: %d bytes, version %d", len(s), q.VersionNumber)
-	return q.Image(-10), nil
+	c := ivctx.Get(ctx)
+	fg, bg := colorOr(c.Fg, color.Black), colorOr(c.Bg, color.White)
+	q.ForegroundColor, q.BackgroundColor, q.DisableBorder = fg, bg, true
+	ivctx.Logf(ctx, "qr: %d bytes, version %d, border %d", len(s), q.VersionNumber, c.Border)
+	return border(q.Image(-moduleSize), int(c.Border), fg, bg), nil
+}
+
+// moduleSize is the size of one module of the code, in pixels.
+const moduleSize = 10
+
+// colorOr returns c, or def when c is nil or fully transparent. A code with no
+// background is hard to read on a dark terminal, so a transparent background
+// is white.
+func colorOr(c *colors.Color, def color.Color) color.Color {
+	if c == nil || c.A == 0 {
+		return def
+	}
+	return c
+}
+
+// border returns src inside a border of w pixels in the background color. The
+// result is paletted with the two colors, which rasterm encodes as a small
+// PNG.
+//
+// A QR code needs a quiet zone around it to scan, and the default border of
+// 40 pixels is the 4 modules that the standard asks for. --border sets it.
+func border(src image.Image, w int, fg, bg color.Color) image.Image {
+	b := src.Bounds()
+	dst := image.NewPaletted(image.Rect(0, 0, b.Dx()+2*w, b.Dy()+2*w), color.Palette{bg, fg})
+	draw.Draw(dst, image.Rect(w, w, w+b.Dx(), w+b.Dy()), src, b.Min, draw.Src)
+	return dst
 }

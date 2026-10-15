@@ -5,8 +5,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"image"
+	"image/color"
 	"image/draw"
 	"image/png"
 	"runtime"
@@ -16,6 +18,7 @@ import (
 
 	"github.com/cshum/vipsgen/vips"
 	"github.com/kenshaw/iv/ivctx"
+	"github.com/kenshaw/iv/ivimg"
 	"github.com/xo/resvg"
 )
 
@@ -55,37 +58,254 @@ func Shutdown() {
 	vips.Shutdown()
 }
 
-// Export converts a vips image to a Go image.
+// Image is an image that libvips holds. It satisfies the [image.Image]
+// interface, and keeps its pixels in libvips until something asks for them:
 //
-// The pixels are copied straight out of libvips memory into a Go image with
-// the same layout. This used to go through a png, which cost a full encode
-// here and a full decode on the other side of it, both of them for nothing.
-func Export(ctx context.Context, v *vips.Image) (image.Image, error) {
+//   - [Image.Resize] and [Image.Flatten] run in libvips, and return a new
+//     Image. The pipeline scales and composites an Image with them.
+//   - [Image.PNG] encodes the image as a PNG in libvips, the first time that it
+//     is called. The Kitty and iTerm encoders of rasterm send the PNG as it
+//     is, so the encode is the last step before the terminal.
+//   - [Image.Vips] returns the image to the libvips file encoders.
+//   - [Image.At], [Image.ColorModel] and [Image.Unwrap] copy the pixels out of
+//     libvips into a Go image, the first time that one of them is called. An
+//     encoder that encodes the pixels itself uses the Go image.
+//
+// libvips decodes the pixels only when one of these asks for them, so a
+// decode error can arrive then. [Image.Err] returns it, and the encoder
+// entries of iv return it after an encode.
+//
+// An Image never changes the image that libvips holds, so the methods are
+// safe to call from more than one goroutine. Call [Image.Close] to release the
+// memory that libvips holds.
+type Image struct {
+	v *vips.Image
+
+	pixOnce sync.Once
+	pix     image.Image
+
+	pngOnce sync.Once
+	png     []byte
+
+	mu  sync.Mutex
+	err error
+}
+
+// Open returns v as an [Image]. A pdf page that is larger than
+// maxPdfDimension is scaled down to it first.
+func Open(ctx context.Context, v *vips.Image) (*Image, error) {
 	if v == nil {
-		return nil, fmt.Errorf("vips export: invalid image")
+		return nil, errors.New("vips open: invalid image")
 	}
-	start := time.Now()
 	ext, w, h := strings.TrimPrefix(string(v.Format()), "."), v.Width(), v.Height()
-	ivctx.Logf(ctx, "vips format: %s dimensions: %dx%d pages: %d", ext, w, h, v.Pages())
+	ivctx.Logf(ctx, "vips format: %s dimensions: %dx%d bands: %d pages: %d", ext, w, h, v.Bands(), v.Pages())
 	if ext == "pdf" {
 		// a cap, not a target: best fit grows as readily as it shrinks, and
 		// a page already inside the cap has nothing to gain from being
 		// resampled up to it
 		_, _, scale, _ := resvg.ScaleBestFit.Scale(uint(w), uint(h), maxPdfDimension, maxPdfDimension)
 		if scale = min(scale, 1.0); scale != 1.0 {
+			start := time.Now()
 			if err := v.Resize(float64(scale), nil); err != nil {
-				return nil, fmt.Errorf("vips unable to scale pdf: %w", err)
+				return nil, fmt.Errorf("vips scaling pdf: %w", err)
 			}
 			ivctx.Logf(ctx, "vips resize: %v", time.Since(start))
 		}
 	}
-	start = time.Now()
-	img, err := export(v)
-	if err != nil {
-		return nil, fmt.Errorf("vips export: %w", err)
+	return newImage(v), nil
+}
+
+// newImage returns an [Image] that holds v.
+func newImage(v *vips.Image) *Image {
+	return &Image{
+		v: v,
 	}
-	ivctx.Logf(ctx, "vips export: %T: %v", img, time.Since(start))
-	return img, nil
+}
+
+// Err returns the first error that libvips returned for the pixels of the
+// image, or nil.
+func (im *Image) Err() error {
+	im.mu.Lock()
+	defer im.mu.Unlock()
+	return im.err
+}
+
+// fail keeps err as the error of the image, when it is the first one.
+func (im *Image) fail(err error) {
+	im.mu.Lock()
+	defer im.mu.Unlock()
+	if im.err == nil {
+		im.err = err
+	}
+}
+
+// Bounds satisfies the [image.Image] interface.
+func (im *Image) Bounds() image.Rectangle {
+	return image.Rect(0, 0, im.v.Width(), im.v.Height())
+}
+
+// ColorModel satisfies the [image.Image] interface.
+func (im *Image) ColorModel() color.Model {
+	return im.Unwrap().ColorModel()
+}
+
+// At satisfies the [image.Image] interface.
+func (im *Image) At(x, y int) color.Color {
+	return im.Unwrap().At(x, y)
+}
+
+// Opaque returns true when the image has no alpha band. It reads the bands
+// and the interpretation, and not the pixels.
+func (im *Image) Opaque() bool {
+	switch im.v.Bands() {
+	case 1, 3:
+		return true
+	case 4:
+		return im.v.Interpretation() == vips.InterpretationCmyk
+	}
+	return false
+}
+
+// Unwrap returns the pixels of the image as a Go image: an [image.NRGBA], or
+// an [image.NRGBA64] for a 16-bit image. It copies them out of libvips the
+// first time that it is called. If the copy fails, it keeps the error for
+// [Image.Err] and returns a transparent image of the same size.
+func (im *Image) Unwrap() image.Image {
+	im.pixOnce.Do(func() {
+		pix, err := im.export()
+		if err != nil {
+			im.fail(fmt.Errorf("vips export: %w", err))
+			pix = image.NewNRGBA(im.Bounds())
+		}
+		im.pix = pix
+	})
+	return im.pix
+}
+
+// export copies the pixels out of a copy of the image, because [export]
+// changes the image that it is given.
+func (im *Image) export() (image.Image, error) {
+	c, err := im.v.Copy(nil)
+	if err != nil {
+		return nil, fmt.Errorf("copy: %w", err)
+	}
+	defer c.Close()
+	return export(c)
+}
+
+// PNG satisfies the [rasterm.PNGImage] interface. It encodes the image as an
+// 8-bit PNG in libvips the first time that it is called, with the
+// compression level of [pngCompression] and no metadata. If the encode
+// fails, it keeps the error for [Image.Err] and returns nil.
+func (im *Image) PNG() []byte {
+	im.pngOnce.Do(func() {
+		opts := vips.DefaultPngsaveBufferOptions()
+		opts.Compression, opts.Filter, opts.Keep = pngCompression, vips.PngFilterSub, vips.KeepNone
+		buf, err := im.v.PngsaveBuffer(opts)
+		if err != nil {
+			im.fail(fmt.Errorf("vips png: %w", err))
+			return
+		}
+		im.png = buf
+	})
+	return im.png
+}
+
+// pngCompression is the zlib compression level of [Image.PNG]. Level 1 takes
+// the least time, and rasterm uses the same level when it encodes a PNG. The
+// sub filter of PNG took less time than no filter for a photo, and made a
+// smaller file: 33 ms and 1498 KiB, against 42 ms and 2151 KiB, for
+// testdata/vips/precision.jxl.
+const pngCompression = 1
+
+// EncodeJPEG satisfies the JPEGEncoder interface of the ivimg package. It
+// encodes the image as a JPEG of the quality in libvips, with no metadata. A
+// JPEG has no alpha channel, so it is for an image with no alpha band.
+func (im *Image) EncodeJPEG(quality int) ([]byte, error) {
+	opts := vips.DefaultJpegsaveBufferOptions()
+	opts.Q, opts.Keep = quality, vips.KeepNone
+	buf, err := im.v.JpegsaveBuffer(opts)
+	if err != nil {
+		return nil, fmt.Errorf("vips jpeg: %w", err)
+	}
+	return buf, nil
+}
+
+// Vips returns the image that libvips holds. Do not change it: the [Image]
+// and every image made from it read the same pixels.
+func (im *Image) Vips() *vips.Image {
+	return im.v
+}
+
+// Resize satisfies the Resizer interface of the ivimg package. It scales a
+// copy of the image in libvips, with the nearest neighbor kernel where
+// [ivimg.Nearest] is true and the Lanczos 3 kernel of libvips otherwise.
+func (im *Image) Resize(ctx context.Context, w, h int) (image.Image, error) {
+	b := im.Bounds()
+	c, err := im.v.Copy(nil)
+	if err != nil {
+		return nil, fmt.Errorf("vips resize: copy: %w", err)
+	}
+	kernel := vips.KernelLanczos3
+	if ivimg.Nearest(b.Dx(), b.Dy(), w, h) {
+		kernel = vips.KernelNearest
+	}
+	if err := c.Resize(float64(w)/float64(b.Dx()), &vips.ResizeOptions{
+		Kernel: kernel,
+		Vscale: float64(h) / float64(b.Dy()),
+	}); err != nil {
+		c.Close()
+		return nil, fmt.Errorf("vips resize: %w", err)
+	}
+	if c.Width() != w || c.Height() != h {
+		ivctx.Logf(ctx, "vips resize: asked for %dx%d, got %dx%d", w, h, c.Width(), c.Height())
+	}
+	return newImage(c), nil
+}
+
+// Flatten satisfies the Flattener interface of the ivimg package. It
+// composites a copy of the image over the color in libvips. The copy is
+// converted to 8-bit sRGB first, so that the color is on the scale of the
+// pixels.
+func (im *Image) Flatten(_ context.Context, r, g, b uint8) (image.Image, error) {
+	c, err := im.v.Copy(nil)
+	if err != nil {
+		return nil, fmt.Errorf("vips flatten: copy: %w", err)
+	}
+	if err := srgb8(c); err != nil {
+		c.Close()
+		return nil, fmt.Errorf("vips flatten: %w", err)
+	}
+	if err := c.Flatten(&vips.FlattenOptions{
+		Background: []float64{float64(r), float64(g), float64(b)},
+		MaxAlpha:   255,
+	}); err != nil {
+		c.Close()
+		return nil, fmt.Errorf("vips flatten: %w", err)
+	}
+	return newImage(c), nil
+}
+
+// Close releases the memory that libvips holds for the image. Each [Image]
+// made from it holds its own reference, which its own Close releases.
+func (im *Image) Close() error {
+	im.v.Close()
+	return nil
+}
+
+// srgb8 converts v to 8-bit sRGB, in place.
+func srgb8(v *vips.Image) error {
+	if v.Interpretation() != vips.InterpretationSrgb {
+		if err := v.Colourspace(vips.InterpretationSrgb, nil); err != nil {
+			return fmt.Errorf("colourspace: %w", err)
+		}
+	}
+	if v.BandFormat() != vips.BandFormatUchar {
+		if err := v.Cast(vips.BandFormatUchar, nil); err != nil {
+			return fmt.Errorf("cast: %w", err)
+		}
+	}
+	return nil
 }
 
 // export converts the vips image to the Go image with the same memory layout.
@@ -158,11 +378,12 @@ func export(v *vips.Image) (image.Image, error) {
 // SaveFunc encodes a vips image in a specific format.
 type SaveFunc func(*vips.Image) ([]byte, error)
 
-// Save encodes a Go image with libvips.
+// Save encodes an image with libvips.
 //
-// An [image.NRGBA] is handed to libvips as memory with nothing copied, which
-// is what [Export] produces and what the scaler and the compositor leave
-// behind, so the common path converts nothing at all. Anything else is
+// An [Image] is saved from the image that libvips holds, with nothing
+// copied. An [image.NRGBA] is handed to libvips as memory with nothing
+// copied, which is what [Image.Unwrap] produces and what the scaler and the
+// compositor of the ivimg package leave behind. Anything else is
 // converted to one first, in a single pass. A 16 bit image is the exception:
 // libvips only takes 8 bit pixels from memory, so that one goes through a
 // lossless png rather than lose half its depth on the way in.
@@ -173,9 +394,18 @@ type SaveFunc func(*vips.Image) ([]byte, error)
 // that buffer from being collected while libvips is still reading it.
 func Save(ctx context.Context, img image.Image, save SaveFunc) ([]byte, error) {
 	if img == nil {
-		return nil, fmt.Errorf("vips save: invalid image")
+		return nil, errors.New("vips save: invalid image")
 	}
 	Init(ctx)
+	if v, ok := img.(*Image); ok {
+		ivctx.Logf(ctx, "vips save: from the vips image")
+		buf, err := save(v.Vips())
+		if err != nil {
+			return nil, fmt.Errorf("vips save: %w", err)
+		}
+		return buf, nil
+	}
+	img = ivimg.Unwrap(img)
 	start := time.Now()
 	v, keep, how, err := importImage(img)
 	if err != nil {

@@ -161,7 +161,7 @@ func TestDescribe(t *testing.T) {
 	}
 	desc, err := Describe(buf)
 	if err != nil {
-		t.Skipf("libmagic unavailable: %v", err)
+		t.Fatalf("libmagic unavailable: %v", err)
 	}
 	if !strings.Contains(strings.ToLower(desc), "png") {
 		t.Errorf("expected libmagic to describe a png, got %q", desc)
@@ -174,10 +174,10 @@ func TestDescribe(t *testing.T) {
 func TestDetectFallsBackToDescription(t *testing.T) {
 	buf, err := os.ReadFile("../testdata/fontimg/Ubuntu-R.ttf")
 	if err != nil {
-		t.Skipf("no font test data: %v", err)
+		t.Fatalf("no font test data: %v", err)
 	}
 	if _, err := Describe(buf); err != nil {
-		t.Skipf("libmagic unavailable: %v", err)
+		t.Fatalf("libmagic unavailable: %v", err)
 	}
 	RegisterMimeType("font/ttf", `^TrueType Font data`, `^OpenType font data`)
 	t.Cleanup(func() {
@@ -225,7 +225,7 @@ func TestDetectText(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			buf, err := os.ReadFile(name)
 			if err != nil {
-				t.Skipf("no test data: %v", err)
+				t.Fatalf("no test data: %v", err)
 			}
 			got, err := Detect(context.Background(), bytes.NewReader(buf))
 			if err != nil {

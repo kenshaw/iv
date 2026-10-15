@@ -22,30 +22,17 @@ model today.
 
 Source: found while writing D19. `--animate` plays a gif, a lottie file and a
 video. The `nativewebp` and `png` decoders register no animation, so an
-animated WebP or APNG shows its first frame only. The Formats section of
-`README.md` says that an animated `gif` or `webp` can play, and points at the
-Animating section. Either add the animation or correct the README.
+animated WebP or APNG shows its first frame only, as the Formats section of
+`README.md` now says.
+
+### Keep the PNG bytes in an icon
+
+Source: found while writing D22. An ico or icns file holds each large icon as
+a PNG, and the `ico`, `icns` and `winres` decoders decode those through other
+packages, which keep no bytes. The terminal encoder then sends raw pixels in
+place of the PNG.
 
 ## Documentation
-
-### Correct the package comment of internal/cmd
-
-Source: found while writing D18. The package comment in
-`internal/cmd/cmd.go` names `mmdc` as a command that a decoder runs. `2a02ec6`
-removed the last use of `mmdc`.
-
-### Add the vcard decoder and the QR schemes to the README
-
-Source: found while writing the current state in `PLAN.md`. `3a1e7b4` added
-the `vcard` decoder for `.vcf` files and more URI schemes to the `qr` decoder.
-The Formats section of `README.md` names neither. The "Arguments that are
-not files" table names only `data:`, `WIFI:`, `http://` and `https://`.
-
-### Add the pdf encoder to the README
-
-Source: found while writing the current state in `PLAN.md`. `encoder/pdf`
-registers the `pdf` encoder, and the Output table of `README.md` does not name
-it.
 
 ### Update the AUR sample output in the README
 
@@ -54,38 +41,28 @@ Source: found while reading `README.md`. The `makepkg` sample output shows
 
 ## Builds
 
-### Decide the 32-bit targets
+### Try MINGW64 on Windows
 
-Source: D15. `13ec599` removed the 32-bit ARM release build. `README.md` still
-has a "32-bit targets" section, and `decoder/fitz/fitz_unsupported.go` still
-builds for `386` and `arm`. This is open question 5 in `PLAN.md`.
+Source: D28. Windows builds under UCRT64 because the mupdf of go-fitz called
+`__intrinsic_setjmpex`, which only the UCRT runtime has. mupdf is gone, and
+nothing has tested MINGW64 since. This is open question 1 in `PLAN.md`.
 
-### Decide the static Linux release build
+## Performance
 
-Source: D15. The static build step in `.github/workflows/release.yml` is
-commented out, and `build.sh` still takes `-s`. This is open question 6 in
-`PLAN.md`.
+### Benchmark the libreoffice and calibre decoders
 
-### Decide whether iv has a lint configuration
-
-Source: D21. `iv` has no `.golangci.yml`, and CI runs no linter. This is open
-question 3 in `PLAN.md`.
-
-## Code
-
-### Wrap the soffice error in the decode test with %w
-
-Source: found while reading the error handling. `ivcmd/decode_test.go` writes
-`fmt.Errorf("soffice cannot run here: %v: %s", err, ...)`, which drops the
-error chain. Every other `fmt.Errorf` in the code wraps with `%w`.
+Source: D26. `BenchmarkDecode` and `BenchmarkRender` leave them out, because
+one run of `soffice` or `ebook-convert` takes a second or more. A benchmark of
+their own, run with a smaller count, can cover them.
 
 ## Removed from notes.txt
 
 `notes.txt` also lists three items that are done or that belong to another
 repository. They are not backlog items here:
 
-- "epub/mobi": `ca94f95` (2025-05-01) added the `fitz` decoder, which renders
-  EPUB, MOBI, XPS and FictionBook.
+- "epub/mobi": `ca94f95` (2025-05-01) added the `fitz` decoder, which
+  rendered EPUB, MOBI, XPS and FictionBook. D28 moved them to `calibre` and
+  `gxps`.
 - "support pdf decryption": `de977bc` (2026-08-05) added `--password` for a
   password protected pdf.
 - "fix `ox`" and "migrate `usql` to `ox`": the work is in `xo/ox` and

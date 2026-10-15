@@ -100,6 +100,47 @@ func ImageDecoder(f func(io.Reader) (image.Image, error)) Option {
 	})
 }
 
+// BytesDecoder is a decoder option setting the decoding func from an image
+// decoder that takes the whole of the input, such as [ivimg.DecodePNG]. A
+// decoder that keeps the bytes of the input with the image takes them this
+// way.
+func BytesDecoder(f func([]byte) (image.Image, error)) Option {
+	return Decoder(func(_ context.Context, r io.Reader) (any, error) {
+		buf, err := readAll(r)
+		if err != nil {
+			return nil, err
+		}
+		return f(buf)
+	})
+}
+
+// readAll reads r to its end. The pipeline hands a decoder an [io.ReadSeeker]
+// at its start, so the size is known, and the bytes are read into one buffer
+// of that size. [io.ReadAll] grows its buffer as it reads, which copied a
+// 1.4 MB PNG several times over.
+func readAll(r io.Reader) ([]byte, error) {
+	rs, ok := r.(io.ReadSeeker)
+	if !ok {
+		return io.ReadAll(r)
+	}
+	start, err := rs.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return io.ReadAll(r)
+	}
+	end, err := rs.Seek(0, io.SeekEnd)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := rs.Seek(start, io.SeekStart); err != nil {
+		return nil, err
+	}
+	buf := make([]byte, end-start)
+	if _, err := io.ReadFull(rs, buf); err != nil {
+		return nil, err
+	}
+	return buf, nil
+}
+
 // ImagesDecoder is a decoder option setting the decoding func from a
 // multi-image decoder, such as [ico.DecodeAll]. The configured page selects
 // which image is displayed.

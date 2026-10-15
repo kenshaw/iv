@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0" xmlns:l="http://www.w3.org/1999/xlink">
+<description>
+    <title-info>
+        <genre>antique</genre>
+        <author><first-name></first-name><last-name>iv</last-name></author>
+        <book-title>iv sample</book-title>
+        <lang>en</lang>
+    </title-info>
+    <document-info>
+        <author><first-name></first-name><last-name>iv</last-name></author>
+        <program-used>calibre 9.14.0</program-used>
+        <date>15.10.2026</date>
+        <id>e089e97f-d02f-4b6d-a13d-05dd03eab28b</id>
+        <version>1.0</version>
+    </document-info>
+    <publish-info>
+    </publish-info>
+</description>
+<body>
+<section>
+<p><strong>Sample Page</strong></p>
+<p>An html file for the blitz decoder, which renders it with a real css engine.</p>
+<empty-line/>
+<p><strong>Layout</strong></p>
+<p>Flexbox, gradients, borders and web typography all resolve, so this is a
+  fair test of the engine rather than of a markdown stylesheet.</p>
+<p><strong>Flexbox</strong>Two columns that share the row.</p>
+<p><strong>Gradients</strong>The header above is a linear gradient.</p>
+<p><strong>Table</strong></p>
+<p><strong>Decoder</strong></p>
+<p><strong>Input</strong></p>
+<p><strong>Output</strong></p>
+<p>blitz</p>
+<p>.md</p>
+<p>,</p>
+<p>.html</p>
+<p>image</p>
+<p>graphviz</p>
+<p>.dot</p>
+<p>image/svg+xml</p>
+<empty-line/>
+</section>
+</body>
+
+</FictionBook>

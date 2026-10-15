@@ -5,6 +5,8 @@ package netpbm
 
 import (
 	"github.com/kenshaw/iv/decoder"
+	// registers the netpbm format with image.Decode, which RegisterBuiltin
+	// decodes through, and which a comic archive uses for its pages
 	_ "github.com/spakin/netpbm"
 )
 

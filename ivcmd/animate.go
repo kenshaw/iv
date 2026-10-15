@@ -36,7 +36,7 @@ const (
 // are drawn one after another underneath. A pass runs for as long as the
 // animation does, up to [ivctx.AnimateMax], and --loop starts it over until
 // the playback is interrupted.
-func (args *Args) animate(ctx context.Context, stdout io.Writer, enc *encoder.Entry, t Target) (err error) {
+func (a *Args) animate(ctx context.Context, stdout io.Writer, enc *encoder.Entry, t Target) (err error) {
 	// control-c ends the playback rather than the process, which is what
 	// gives the cursor back and leaves the last frame on screen
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
@@ -74,7 +74,7 @@ func (args *Args) animate(ctx context.Context, stdout io.Writer, enc *encoder.En
 		// available is kitty being used
 		kitty: rasterm.Kitty.Available(),
 	}
-	if args.Quiet {
+	if a.Quiet {
 		p.name = ""
 	}
 	if _, err := io.WriteString(stdout, hideCursor+clearScreen); err != nil {
@@ -83,14 +83,14 @@ func (args *Args) animate(ctx context.Context, stdout io.Writer, enc *encoder.En
 	defer io.WriteString(stdout, showCursor)
 	for {
 		start := time.Now()
-		n, err := p.play(ctx, anim, args.Loop)
+		n, err := p.play(ctx, anim, a.Loop)
 		ivctx.Logf(ctx, "pass: %d of %d frames in %v, %d dropped", n, anim.Count, time.Since(start), p.dropped)
 		switch {
 		case err != nil:
 			return err
 		// an animation of a single frame is a still, and looping it would be
 		// redrawing the same image until it was interrupted
-		case !args.Loop, n < 2, ctx.Err() != nil:
+		case !a.Loop, n < 2, ctx.Err() != nil:
 			return nil
 		}
 	}

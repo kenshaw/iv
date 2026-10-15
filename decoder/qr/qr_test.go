@@ -1,6 +1,14 @@
 package qr
 
-import "testing"
+import (
+	"context"
+	"image"
+	"image/color"
+	"testing"
+
+	"github.com/kenshaw/colors"
+	"github.com/kenshaw/iv/ivctx"
+)
 
 func TestMatch(t *testing.T) {
 	for _, test := range []struct {
@@ -44,5 +52,43 @@ func TestMatch(t *testing.T) {
 		if got := match(test.s); got != test.exp {
 			t.Errorf("match(%q) = %v, want %v", test.s, got, test.exp)
 		}
+	}
+}
+
+// TestDecodeColors checks that --fg, --bg and --border reach the code, and
+// that a transparent background draws white.
+func TestDecodeColors(t *testing.T) {
+	navy, yellow, none := colors.New(0, 0, 128, 255), colors.New(255, 255, 0, 255), colors.New(0, 0, 0, 0)
+	for _, test := range []struct {
+		name   string
+		fg, bg *colors.Color
+		border uint
+		expBg  color.RGBA
+		expFg  color.RGBA
+	}{
+		{"default", nil, &none, 40, color.RGBA{255, 255, 255, 255}, color.RGBA{0, 0, 0, 255}},
+		{"colors", &navy, &yellow, 10, color.RGBA{255, 255, 0, 255}, color.RGBA{0, 0, 128, 255}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			c := ivctx.New()
+			c.Fg, c.Bg, c.Border = test.fg, test.bg, test.border
+			res, err := decode(ivctx.WithConfig(context.Background(), c), "WIFI:S:x;;")
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			img := res.(image.Image)
+			// the corner is the border, and a finder pattern starts right
+			// inside it
+			b := int(test.border)
+			if got := color.RGBAModel.Convert(img.At(0, 0)); got != test.expBg {
+				t.Errorf("expected the background %v in the border, got %v", test.expBg, got)
+			}
+			if got := color.RGBAModel.Convert(img.At(b, b)); got != test.expFg {
+				t.Errorf("expected the foreground %v at the edge of the border, got %v", test.expFg, got)
+			}
+			if got := color.RGBAModel.Convert(img.At(b-1, b-1)); got != test.expBg {
+				t.Errorf("expected the border to be %d pixels, got a module at %d", b, b-1)
+			}
+		})
 	}
 }

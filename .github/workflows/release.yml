@@ -67,9 +67,6 @@ jobs:
       - name: Build ${{ matrix.arch }}
         run: |
           ./build.sh -v $VER -a ${{ matrix.arch }}
-      #    - name: Build ${{ matrix.arch }} (static)
-      #      run: |
-      #        ./build.sh -v $VER -a ${{ matrix.arch }} -s
       - name: Archive artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -163,8 +160,9 @@ jobs:
       run:
         shell: 'msys2 {0}'
     steps:
-      # UCRT64 rather than MINGW64: go-fitz's libmupdf calls
-      # __intrinsic_setjmpex, which only ucrt has. build.sh packs with zip
+      # UCRT64 rather than MINGW64: the mupdf of go-fitz called
+      # __intrinsic_setjmpex, which only ucrt has. go-fitz is gone, and
+      # MINGW64 is untested since (see docs/BACKLOG.md). build.sh packs with zip
       - name: Install build dependencies
         uses: msys2/setup-msys2@v2
         with:

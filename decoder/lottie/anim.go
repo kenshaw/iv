@@ -38,7 +38,7 @@ func animate(ctx context.Context, rend *lottie.Renderer, buf []byte, w, h int) (
 				if err != nil {
 					return err
 				}
-				if !s.Send(img, delay) {
+				if !s.Send(ctx, img, delay) {
 					return nil
 				}
 			}

@@ -6,7 +6,7 @@ package binwalk
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"io"
 	"io/fs"
 	"os"
@@ -76,7 +76,7 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 		return nil, err
 	}
 	if len(fsys) == 0 {
-		return nil, fmt.Errorf("binwalk extracted no images")
+		return nil, errors.New("binwalk extracted no images")
 	}
 	names := make([]string, 0, len(fsys))
 	for name := range fsys {

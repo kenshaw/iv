@@ -33,7 +33,13 @@ gofmt -l .
 go build ./...
 go vet ./...
 go test ./...
+golangci-lint run ./...
 ```
+
+The tests fail when a decoder command is missing, so install `ffmpeg`,
+`soffice` (LibreOffice), `ebook-convert` (calibre), `xpstopng` (libgxps),
+`pdftoppm` (poppler) and `binwalk` first. The Optional tools section of
+[`README.md`](README.md#optional-tools) says what each one is for.
 
 If you changed a decoder, an encoder or the pipeline, also run the smoke test.
 It renders every file in `testdata/` through the command:
@@ -41,6 +47,10 @@ It renders every file in `testdata/` through the command:
 ```sh
 go build -o ./iv . && ./test.sh
 ```
+
+If you changed how an image is decoded, scaled or encoded, run the benchmarks
+and compare them with the last release. The Performance section of
+[`README.md`](README.md#performance) holds the commands and the last results.
 
 ## Agent skills
 

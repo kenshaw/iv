@@ -122,9 +122,7 @@ func parseLine(s string) (property, bool) {
 			k, v = "", s
 		}
 		k = strings.ToUpper(strings.TrimSpace(k))
-		for _, v := range splitEscaped(strings.Trim(strings.TrimSpace(v), `"`), ',') {
-			p.params[k] = append(p.params[k], v)
-		}
+		p.params[k] = append(p.params[k], splitEscaped(strings.Trim(strings.TrimSpace(v), `"`), ',')...)
 	}
 	return p, true
 }

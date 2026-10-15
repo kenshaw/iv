@@ -62,8 +62,8 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 		delays[i], total = d, total+d
 	}
 	return &decoder.Anim{
-		Frames: decoder.Produce(func(_ context.Context, s *decoder.Sink) error {
-			play(g, delays, s)
+		Frames: decoder.Produce(func(ctx context.Context, s *decoder.Sink) error {
+			play(ctx, g, delays, s)
 			return nil
 		}),
 		Count:    len(g.Image),
@@ -78,7 +78,7 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 // with that part before the next one is drawn. Sent as they come, the frames
 // would play as a scatter of fragments, so each is drawn onto a canvas carried
 // from frame to frame and a copy of the canvas is what is displayed.
-func play(g *gif.GIF, delays []time.Duration, s *decoder.Sink) {
+func play(ctx context.Context, g *gif.GIF, delays []time.Duration, s *decoder.Sink) {
 	canvas := image.NewRGBA(bounds(g))
 	var saved *image.RGBA
 	for i, frame := range g.Image {
@@ -91,7 +91,7 @@ func play(g *gif.GIF, delays []time.Duration, s *decoder.Sink) {
 			saved = clone(canvas)
 		}
 		draw.Draw(canvas, b, frame, b.Min, draw.Over)
-		if !s.Send(clone(canvas), delays[i]) {
+		if !s.Send(ctx, clone(canvas), delays[i]) {
 			return
 		}
 		switch disposal {

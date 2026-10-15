@@ -53,7 +53,8 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 		"-i", src,
 		"-vframes", "1",
 		"-q:v", "1",
-		"-f", "apng",
+		"-c:v", "png",
+		"-f", "image2pipe",
 		"-",
 	)
 	if err != nil {

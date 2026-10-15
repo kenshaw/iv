@@ -54,14 +54,39 @@ jobs:
             libheif-plugin-aomdec \
             libheif-plugin-aomenc
 
+      # the external commands that the decoders run. A test fails when one of
+      # them is missing (D12), so every runner installs what it has a
+      # package for, and ivcmd/decode_test.go names the rest
+      - name: Install decoder commands (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y --no-install-recommends \
+            ffmpeg \
+            libreoffice-writer \
+            binwalk \
+            calibre \
+            libgxps-utils \
+            poppler-utils
+
       - name: Install build dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install --quiet vips
           command -v pkg-config >/dev/null || brew install --quiet pkgconf
 
-      # UCRT64 rather than MINGW64: go-fitz's libmupdf calls
-      # __intrinsic_setjmpex, which only ucrt has
+      # LibreOffice and calibre are casks, which install an app rather than a
+      # command, so the folder of each command goes on the path
+      - name: Install decoder commands (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install --quiet ffmpeg binwalk libgxps poppler
+          brew install --quiet --cask libreoffice calibre
+          echo /Applications/LibreOffice.app/Contents/MacOS >> "$GITHUB_PATH"
+          echo /Applications/calibre.app/Contents/MacOS >> "$GITHUB_PATH"
+
+      # UCRT64 rather than MINGW64: the mupdf of go-fitz called
+      # __intrinsic_setjmpex, which only ucrt has. go-fitz is gone, and
+      # MINGW64 is untested since (see docs/BACKLOG.md)
       - name: Install build dependencies (Windows)
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
@@ -74,6 +99,9 @@ jobs:
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-pkgconf
             mingw-w64-ucrt-x86_64-libvips
+            mingw-w64-ucrt-x86_64-ffmpeg
+            mingw-w64-ucrt-x86_64-libgxps
+            mingw-w64-ucrt-x86_64-poppler
 
       - name: Install Go
         uses: actions/setup-go@v7
@@ -97,3 +125,36 @@ jobs:
       - name: Test
         run: |
           go test -race -v ./...
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # libvips and the libraries of blitz are cgo, and the linter type
+      # checks the packages that link them
+      - name: Install build dependencies
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            pkg-config \
+            libvips-dev \
+            libfontconfig-dev \
+            libfreetype-dev
+
+      - name: Install Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      # pinned, because .golangci.yml sets `default: all`, and a newer release
+      # can enable a linter that nobody chose
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
+
+      - name: Lint
+        run: golangci-lint run ./...
+

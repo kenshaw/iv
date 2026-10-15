@@ -88,7 +88,7 @@ var (
 	magicMu   sync.Mutex
 	magicOnce sync.Once
 	magicDB   *magic.Magic
-	magicErr  error
+	errMagic  error
 )
 
 // Describe returns libmagic's textual description of the buffer.
@@ -108,10 +108,10 @@ func DescribeMime(buf []byte) (string, error) {
 // withMagic runs fn against the shared libmagic handle.
 func withMagic(fn func(*magic.Magic) (string, error)) (string, error) {
 	magicOnce.Do(func() {
-		magicDB, magicErr = magic.New(magic.None)
+		magicDB, errMagic = magic.New(magic.None)
 	})
-	if magicErr != nil {
-		return "", magicErr
+	if errMagic != nil {
+		return "", errMagic
 	}
 	// a magic_t cookie is not safe for concurrent use
 	magicMu.Lock()

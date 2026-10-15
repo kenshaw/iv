@@ -6,6 +6,7 @@ package blitz
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"io"
@@ -75,15 +76,15 @@ var (
 	openOnce  sync.Once
 	shutOnce  sync.Once
 	shared    *blitz.Context
-	sharedErr error
+	errShared error
 )
 
 // open returns the shared blitz context, building it on first use.
 func open(context.Context) (any, error) {
 	openOnce.Do(func() {
-		shared, sharedErr = blitz.New(0)
+		shared, errShared = blitz.New(0)
 	})
-	return shared, sharedErr
+	return shared, errShared
 }
 
 // shut closes the shared blitz context. Both decoders register it, so it
@@ -102,7 +103,7 @@ func shut(context.Context) error {
 func engine(ctx context.Context) (*blitz.Context, error) {
 	c, _ := decoder.State(ctx).(*blitz.Context)
 	if c == nil {
-		return nil, fmt.Errorf("blitz not initialized")
+		return nil, errors.New("blitz not initialized")
 	}
 	return c, nil
 }

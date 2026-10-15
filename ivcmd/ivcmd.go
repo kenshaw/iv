@@ -15,14 +15,17 @@ import (
 
 	"github.com/kenshaw/colors"
 	"github.com/kenshaw/iv/decoder"
+	// registers every decoder
 	_ "github.com/kenshaw/iv/decoder/all"
 	"github.com/kenshaw/iv/encoder"
+	// registers every encoder
 	_ "github.com/kenshaw/iv/encoder/all"
 	"github.com/kenshaw/iv/ivctx"
+	"github.com/kenshaw/iv/ivimg"
 	"github.com/kenshaw/rasterm"
 	"github.com/tdewolff/canvas"
+	// registers the color type of ox, which the color flags use
 	_ "github.com/xo/ox/color"
-	"github.com/xo/resvg"
 )
 
 // DefaultEncoder is the encoder used when writing to a terminal.
@@ -39,9 +42,9 @@ type Args struct {
 	MinHeight       uint               `ox:"minimum height in pixels,short:h,default:64"`
 	DPI             uint               `ox:"image dpi,default:300,name:dpi"`
 	Page            uint               `ox:"page to display,short:p"`
-	Fg              *colors.Color      `ox:"foreground color,default:dimgray"`
+	Fg              *colors.Color      `ox:"qr code foreground color,default:black"`
 	Bg              *colors.Color      `ox:"background color,default:transparent"`
-	Border          uint               `ox:"border width,default:30"`
+	Border          uint               `ox:"qr code border width in pixels,default:40"`
 	FontSize        uint               `ox:"font preview size,default:48"`
 	FontStyle       canvas.FontStyle   `ox:"font preview style"`
 	FontVariant     canvas.FontVariant `ox:"font preview variant"`
@@ -55,7 +58,7 @@ type Args struct {
 	FPS             uint               `ox:"animation frames per second - 0 takes it from the animation,name:fps"`
 	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
 	MermaidTheme    string             `ox:"mermaid theme - default/dark/forest/neutral/modern"`
-	MermaidBg       *colors.Color      `ox:"default mermaid background,default:white"`
+	MermaidBg       *colors.Color      `ox:"mermaid background - the theme background when not set"`
 	BlitzDark       bool               `ox:"render documents and pages dark"`
 	PDFPage         string             `ox:"pdf page size - fit/a4/letter,default:fit,name:pdf-page"`
 	PDFMargin       uint               `ox:"pdf page margin in points,default:36,name:pdf-margin"`
@@ -72,45 +75,45 @@ func New() *Args {
 }
 
 // Config builds the pipeline config from the command arguments.
-func (args *Args) Config(stderr io.Writer) *ivctx.Config {
+func (a *Args) Config(stderr io.Writer) *ivctx.Config {
 	c := &ivctx.Config{
-		Verbose:         args.Verbose,
-		Quiet:           args.Quiet,
-		Mode:            args.Mode,
-		Width:           args.Width,
-		Height:          args.Height,
-		MinWidth:        args.MinWidth,
-		MinHeight:       args.MinHeight,
-		DPI:             args.DPI,
-		Page:            args.Page,
-		Fg:              args.Fg,
-		Bg:              args.Bg,
-		Border:          args.Border,
-		FontSize:        args.FontSize,
-		FontStyle:       args.FontStyle,
-		FontVariant:     args.FontVariant,
-		FontFg:          args.FontFg,
-		FontBg:          args.FontBg,
-		FontDPI:         args.FontDPI,
-		FontMargin:      args.FontMargin,
-		TimeCode:        args.TimeCode,
-		Animate:         args.Animate,
-		AnimateFPS:      args.FPS,
-		VipsConcurrency: args.VipsConcurrency,
-		MermaidTheme:    args.MermaidTheme,
-		MermaidBg:       args.MermaidBg,
-		BlitzDark:       args.BlitzDark,
-		PDFPage:         args.PDFPage,
-		PDFMargin:       args.PDFMargin,
-		Password:        args.Password,
-		ForceMime:       args.ForceMime,
+		Verbose:         a.Verbose,
+		Quiet:           a.Quiet,
+		Mode:            a.Mode,
+		Width:           a.Width,
+		Height:          a.Height,
+		MinWidth:        a.MinWidth,
+		MinHeight:       a.MinHeight,
+		DPI:             a.DPI,
+		Page:            a.Page,
+		Fg:              a.Fg,
+		Bg:              a.Bg,
+		Border:          a.Border,
+		FontSize:        a.FontSize,
+		FontStyle:       a.FontStyle,
+		FontVariant:     a.FontVariant,
+		FontFg:          a.FontFg,
+		FontBg:          a.FontBg,
+		FontDPI:         a.FontDPI,
+		FontMargin:      a.FontMargin,
+		TimeCode:        a.TimeCode,
+		Animate:         a.Animate,
+		AnimateFPS:      a.FPS,
+		VipsConcurrency: a.VipsConcurrency,
+		MermaidTheme:    a.MermaidTheme,
+		MermaidBg:       a.MermaidBg,
+		BlitzDark:       a.BlitzDark,
+		PDFPage:         a.PDFPage,
+		PDFMargin:       a.PDFMargin,
+		Password:        a.Password,
+		ForceMime:       a.ForceMime,
 	}
-	if args.Verbose {
+	if a.Verbose {
 		c.Logger = func(s string, v ...any) {
 			fmt.Fprintf(stderr, s+"\n", v...)
 		}
 	}
-	if !args.Quiet && !args.Verbose {
+	if !a.Quiet && !a.Verbose {
 		// verbose already puts these on stderr, in sequence
 		c.Warner = func(s string, v ...any) {
 			fmt.Fprintf(stderr, "warning: "+s+"\n", v...)
@@ -121,24 +124,24 @@ func (args *Args) Config(stderr io.Writer) *ivctx.Config {
 }
 
 // Run returns the command's exec func.
-func (args *Args) Run(stdout, stderr io.Writer) func(context.Context, []string) error {
+func (a *Args) Run(stdout, stderr io.Writer) func(context.Context, []string) error {
 	return func(ctx context.Context, cliargs []string) error {
-		return args.Exec(ctx, stdout, stderr, cliargs)
+		return a.Exec(ctx, stdout, stderr, cliargs)
 	}
 }
 
 // Exec runs the iv command.
-func (args *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []string) error {
-	if args.List {
+func (a *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []string) error {
+	if a.List {
 		return List(stdout)
 	}
 	// there is nothing to repeat, or to set a frame rate for, but an animation
-	args.Animate = args.Animate || args.Loop || args.FPS != 0
-	enc, err := args.encoder()
+	a.Animate = a.Animate || a.Loop || a.FPS != 0
+	enc, err := a.encoder()
 	if err != nil {
 		return err
 	}
-	c := args.Config(stderr)
+	c := a.Config(stderr)
 	ctx = ivctx.WithConfig(ctx, c)
 	// a decoder holding an engine -- graphviz, lottie, blitz -- releases it
 	// here, and a failure to is worth saying rather than dropping
@@ -147,35 +150,34 @@ func (args *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []
 			fmt.Fprintf(stderr, "error: %v\n", err)
 		}
 	}()
-	args.resolveDisplay(ctx, c, stdout)
-	args.configureResvg(c)
-	targets, errs := Targets(cliargs...)
+	a.resolveDisplay(ctx, c, stdout)
+	targets, errs := Targets(ctx, cliargs...)
 	for _, err := range errs {
 		fmt.Fprintf(stderr, "error: %v\n", err)
 	}
 	if len(targets) == 0 {
 		return errors.New("no targets to render")
 	}
-	if args.Out != "" && len(targets) != 1 {
+	if a.Out != "" && len(targets) != 1 {
 		return fmt.Errorf("--out requires exactly one target, got %d", len(targets))
 	}
-	if args.Animate {
+	if a.Animate {
 		// an animation is played where it is drawn, over the top of itself,
 		// and there is only one screen to play it on
 		switch {
 		case len(targets) != 1:
 			return fmt.Errorf("--animate requires exactly one target, got %d", len(targets))
-		case args.Out != "", !enc.Term:
+		case a.Out != "", !enc.Term:
 			return errors.New("--animate plays to the terminal, and cannot be written to a file")
 		}
-		if err := args.animate(ctx, stdout, enc, targets[0]); err != nil {
+		if err := a.animate(ctx, stdout, enc, targets[0]); err != nil {
 			return fmt.Errorf("animate %q: %w", targets[0].Name, err)
 		}
 		return nil
 	}
 	var failed bool
 	for _, t := range targets {
-		if err := args.render(ctx, stdout, enc, t); err != nil {
+		if err := a.render(ctx, stdout, enc, t); err != nil {
 			failed = true
 			fmt.Fprintf(stderr, "error: render %q: %v\n", t.Name, err)
 		}
@@ -188,16 +190,16 @@ func (args *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []
 
 // encoder returns the encoder to use, verifying that terminal graphics are
 // available when writing to a terminal.
-func (args *Args) encoder() (*encoder.Entry, error) {
+func (a *Args) encoder() (*encoder.Entry, error) {
 	switch {
-	case args.Encoder != "":
-		e, ok := encoder.Get(args.Encoder)
+	case a.Encoder != "":
+		e, ok := encoder.Get(a.Encoder)
 		if !ok {
-			return nil, fmt.Errorf("%q: %w (available: %s)", args.Encoder, encoder.ErrNotRegistered, strings.Join(encoder.Names(), ", "))
+			return nil, fmt.Errorf("%q: %w (available: %s)", a.Encoder, encoder.ErrNotRegistered, strings.Join(encoder.Names(), ", "))
 		}
 		return e, nil
-	case args.Out != "":
-		ext := ivctx.FileExt(args.Out)
+	case a.Out != "":
+		ext := ivctx.FileExt(a.Out)
 		e, ok := encoder.ForExt(ext)
 		if !ok {
 			return nil, fmt.Errorf("no encoder for extension %q (available: %s)", ext, strings.Join(encoder.Names(), ", "))
@@ -223,8 +225,8 @@ func (args *Args) encoder() (*encoder.Entry, error) {
 // terminal happened to be attached would be a surprising thing for a
 // conversion to do -- there, an unset display size stays unset, and only an
 // explicit --width/--height bounds the result.
-func (args *Args) resolveDisplay(ctx context.Context, c *ivctx.Config, stdout io.Writer) {
-	if c.Mode.Get() == ivctx.ModeNone || c.Width != 0 || c.Height != 0 || args.Out != "" {
+func (a *Args) resolveDisplay(ctx context.Context, c *ivctx.Config, stdout io.Writer) {
+	if c.Mode.Get() == ivctx.ModeNone || c.Width != 0 || c.Height != 0 || a.Out != "" {
 		return
 	}
 	f, ok := stdout.(*os.File)
@@ -248,21 +250,9 @@ func (args *Args) resolveDisplay(ctx context.Context, c *ivctx.Config, stdout io
 		t.Cols, t.Rows, t.Width, t.Height, how, c.Width, c.Height)
 }
 
-// configureResvg applies the background to the svg renderer.
-//
-// The display size is deliberately not passed on. resvg's best fit grows an
-// svg to fill whatever box it is given, so handing it the terminal meant every
-// svg arrived at terminal width whatever size it declared -- a 1000 pixel card
-// blown up to 1900 and resampled back down again by whatever came next. An
-// svg is rasterized at the size it declares, and [ivctx.Fit] then applies the
-// same ceiling and floor to it as to any other image.
-func (args *Args) configureResvg(c *ivctx.Config) {
-	resvg.WithBackground(c.Bg)(resvg.Default)
-}
-
 // render decodes the target and writes it with the encoder.
-func (args *Args) render(ctx context.Context, stdout io.Writer, enc *encoder.Entry, t Target) error {
-	if !args.Quiet && args.Out == "" {
+func (a *Args) render(ctx context.Context, stdout io.Writer, enc *encoder.Entry, t Target) error {
+	if !a.Quiet && a.Out == "" {
 		fmt.Fprintln(stdout, t.Name+":")
 	}
 	start := time.Now()
@@ -277,12 +267,19 @@ func (args *Args) render(ctx context.Context, stdout io.Writer, enc *encoder.Ent
 	if err != nil {
 		return err
 	}
+	defer ivimg.Close(img)
 	// scaled before the background is composited, so the compositing runs
 	// over the pixels that are actually displayed rather than all of them
-	img = ivctx.AddBackground(ctx, mime, ivctx.Fit(ctx, img))
+	prepared, err := ivimg.Prepare(ctx, mime, img)
+	if err != nil {
+		return err
+	}
+	// a step that made a new image made one that holds its own memory, and
+	// closing an image twice does nothing
+	defer ivimg.Close(prepared)
 	w := stdout
-	if args.Out != "" {
-		f, err := os.Create(args.Out)
+	if a.Out != "" {
+		f, err := os.Create(a.Out)
 		if err != nil {
 			return err
 		}
@@ -290,7 +287,7 @@ func (args *Args) render(ctx context.Context, stdout io.Writer, enc *encoder.Ent
 		w = f
 	}
 	encStart := time.Now()
-	if err := enc.Encode(ctx, w, img); err != nil {
+	if err := enc.Encode(ctx, w, prepared); err != nil {
 		return err
 	}
 	ivctx.Logf(ctx, "%s encode: %v", enc.Name, time.Since(encStart))
@@ -308,11 +305,11 @@ type Target struct {
 // Targets expands the command line arguments into render targets. Directories
 // expand to the files within them with a registered extension. Returns the
 // targets along with the errors for the arguments that could not be expanded.
-func Targets(cliargs ...string) ([]Target, []error) {
+func Targets(ctx context.Context, cliargs ...string) ([]Target, []error) {
 	var targets []Target
 	var errs []error
 	for _, name := range cliargs {
-		v, err := expand(name)
+		v, err := expand(ctx, name)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -323,7 +320,7 @@ func Targets(cliargs ...string) ([]Target, []error) {
 }
 
 // expand expands a single command line argument into render targets.
-func expand(name string) ([]Target, error) {
+func expand(ctx context.Context, name string) ([]Target, error) {
 	switch fi, err := os.Stat(name); {
 	case err == nil && fi.IsDir():
 		entries, err := os.ReadDir(name)
@@ -347,7 +344,7 @@ func expand(name string) ([]Target, error) {
 		return []Target{{Name: name}}, nil
 	}
 	// not on disk; a string decoder may still claim it
-	if len(decoder.MatchString(context.Background(), name)) != 0 {
+	if len(decoder.MatchString(ctx, name)) != 0 {
 		return []Target{{Name: name, IsString: true}}, nil
 	}
 	return nil, fmt.Errorf("open %q: %w", name, decoder.ErrNotSupported)

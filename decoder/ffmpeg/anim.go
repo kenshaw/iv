@@ -2,12 +2,10 @@ package ffmpeg
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"image"
-	"image/png"
 	"io"
 	"regexp"
 	"strconv"
@@ -16,6 +14,7 @@ import (
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/internal/cmd"
 	"github.com/kenshaw/iv/ivctx"
+	"github.com/kenshaw/iv/ivimg"
 )
 
 // The rate a video is sampled and played back at.
@@ -141,15 +140,16 @@ func read(ctx context.Context, s *decoder.Sink, v sampling) error {
 		ctx,
 		func(r io.Reader) error {
 			// ffmpeg writes the frames one after another with nothing between
-			// them, and a png decode stops at the end of the image it read,
-			// which leaves the reader at the start of the next one
+			// them, and a read stops at the end of the png it read, which
+			// leaves the reader at the start of the next one. Each frame
+			// keeps its bytes, so the terminal gets the png as it is.
 			br := bufio.NewReader(r)
 			for range v.count {
-				img, err := png.Decode(br)
+				img, err := ivimg.ReadPNG(br)
 				if err != nil {
 					return err
 				}
-				if !s.Send(img, v.delay) {
+				if !s.Send(ctx, img, v.delay) {
 					return nil
 				}
 			}
@@ -206,7 +206,7 @@ func seek(ctx context.Context, s *decoder.Sink, v sampling) error {
 		if res.err != nil {
 			return res.err
 		}
-		if !s.Send(res.img, v.delay) {
+		if !s.Send(ctx, res.img, v.delay) {
 			return nil
 		}
 	}
@@ -221,11 +221,11 @@ func grab(ctx context.Context, src, scale string, at time.Duration) (image.Image
 	if scale != "" {
 		params = append(params, "-vf", scale)
 	}
-	buf, err := ffmpeg.Run(ctx, append(params, "-f", "apng", "-")...)
+	buf, err := ffmpeg.Run(ctx, append(params, "-c:v", "png", "-f", "image2pipe", "-")...)
 	if err != nil {
 		return nil, err
 	}
-	return png.Decode(bytes.NewReader(buf))
+	return ivimg.DecodePNG(buf)
 }
 
 // scaleArg returns the ffmpeg filter scaling a w x h video to the size it is

@@ -13,6 +13,8 @@ import (
 	"slices"
 	"sort"
 	"sync"
+
+	"github.com/kenshaw/iv/ivimg"
 )
 
 var (
@@ -55,12 +57,17 @@ func (e *Entry) String() string {
 	return e.Name
 }
 
-// Encode encodes the image to the writer.
+// Encode encodes the image to the writer. If the image kept an error while it
+// was encoded (see [ivimg.Err]), Encode returns that error, because the
+// output then does not show the image.
 func (e *Entry) Encode(ctx context.Context, w io.Writer, img image.Image) error {
 	if e.encode == nil {
 		return fmt.Errorf("encoder %q: has no encode func", e.Name)
 	}
-	return e.encode(ctx, w, img)
+	if err := e.encode(ctx, w, img); err != nil {
+		return err
+	}
+	return ivimg.Err(img)
 }
 
 // Register registers an encoder. It panics when name is empty or already

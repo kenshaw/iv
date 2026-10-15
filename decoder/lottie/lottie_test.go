@@ -165,7 +165,7 @@ func render(t *testing.T, ctx context.Context, name string) image.Image {
 	t.Helper()
 	pathName := filepath.Join("..", "..", "testdata", "lottie", name)
 	if _, err := os.Stat(pathName); err != nil {
-		t.Skipf("no test data: %v", err)
+		t.Fatalf("no test data: %v", err)
 	}
 	img, _, err := decoder.DecodeFile(ctx, pathName)
 	if err != nil {

@@ -39,9 +39,9 @@ func NewBytes(mime string, buf []byte) *Image {
 }
 
 // WithExt sets the file extension reported to the pipeline on retry.
-func (img *Image) WithExt(ext string) *Image {
-	img.Ext = ext
-	return img
+func (im *Image) WithExt(ext string) *Image {
+	im.Ext = ext
+	return im
 }
 
 // Handoff hands decoding of the same stream to a specific decoder.

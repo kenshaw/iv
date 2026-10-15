@@ -84,7 +84,7 @@ func TestTargets(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got, errs := Targets(test.args...)
+			got, errs := Targets(t.Context(), test.args...)
 			if test.wantErr {
 				if len(errs) == 0 {
 					t.Fatalf("expected an error, got targets %v", got)
@@ -107,7 +107,7 @@ func TestTargetsCollectsErrorsAndTargets(t *testing.T) {
 	if err := os.WriteFile(good, []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	targets, errs := Targets(good, "nope:whatever", good)
+	targets, errs := Targets(t.Context(), good, "nope:whatever", good)
 	if len(targets) != 2 {
 		t.Errorf("expected 2 targets, got %d", len(targets))
 	}
@@ -149,12 +149,10 @@ func TestEncoderSelection(t *testing.T) {
 }
 
 func TestConfig(t *testing.T) {
-	fg, bg := colors.New(1, 2, 3, 4), colors.New(5, 6, 7, 8)
+	bg := colors.New(5, 6, 7, 8)
 	args := &Args{
 		Verbose:   true,
 		Page:      3,
-		Border:    12,
-		Fg:        &fg,
 		Bg:        &bg,
 		ForceMime: "image/png",
 	}
@@ -163,9 +161,7 @@ func TestConfig(t *testing.T) {
 	switch {
 	case c.Page != 3:
 		t.Errorf("expected page 3, got %d", c.Page)
-	case c.Border != 12:
-		t.Errorf("expected border 12, got %d", c.Border)
-	case c.Fg != &fg || c.Bg != &bg:
+	case c.Bg != &bg:
 		t.Error("expected the colors to carry over")
 	case c.ForceMime != "image/png":
 		t.Errorf("expected the forced mime to carry over, got %q", c.ForceMime)

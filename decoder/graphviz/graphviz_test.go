@@ -50,7 +50,7 @@ func TestDetect(t *testing.T) {
 // TestDecode renders the test graph through the pipeline.
 func TestDecode(t *testing.T) {
 	if _, err := os.Stat(dotFile); err != nil {
-		t.Skipf("no test data: %v", err)
+		t.Fatalf("no test data: %v", err)
 	}
 	img, _, err := decoder.DecodeFile(context.Background(), dotFile)
 	if err != nil {

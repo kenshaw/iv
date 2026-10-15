@@ -132,7 +132,7 @@ func TestDecodeCarriesTheRecord(t *testing.T) {
 			pathName := filepath.Join("..", "..", "testdata", "vcard", name)
 			buf, err := os.ReadFile(pathName)
 			if err != nil {
-				t.Skipf("no test data: %v", err)
+				t.Fatalf("no test data: %v", err)
 			}
 			res, err := decode(ivctx.WithPathName(context.Background(), pathName), bytes.NewReader(buf))
 			if err != nil {

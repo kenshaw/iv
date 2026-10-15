@@ -7,15 +7,18 @@ import (
 	"fmt"
 	"image"
 	"math"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
 
 	"github.com/kenshaw/iv/decoder"
-	"github.com/kenshaw/iv/decoder/blitz"
 	"github.com/kenshaw/iv/encoder"
 	"github.com/kenshaw/iv/ivctx"
 )
@@ -64,7 +67,17 @@ func TestDecodeFile(t *testing.T) {
 		{"pdf encrypted", "vips/file-sample_150kB.enc.pdf", "application/pdf", "vips-pdf", ""},
 		// libmagic does not recognize this one at all, so it routes on its
 		// extension -- which is what generic types are for
-		{"xps", "fitz/example.xps", "application/octet-stream", "fitz", ""},
+		{"xps", "gxps/example.xps", "application/octet-stream", "gxps", "xpstopng"},
+		{"xps zip", "gxps/xps-document-example.xps", "application/zip", "gxps", "xpstopng"},
+		{"epub", "calibre/sample.epub", "application/epub+zip", "calibre", "ebook-convert"},
+		{"mobi", "calibre/sample.mobi", "application/x-mobipocket-ebook", "calibre", "ebook-convert"},
+		{"azw3", "calibre/sample.azw3", "application/x-mobipocket-ebook", "calibre", "ebook-convert"},
+		// libmagic reads an fb2 as plain xml, so the extension decides
+		{"fb2", "calibre/sample.fb2", "text/xml", "calibre", "ebook-convert"},
+		{"psd", "psd/alpha.psd", "image/vnd.adobe.photoshop", "psd", ""},
+		{"psd cmyk", "psd/cmyk.psd", "image/vnd.adobe.photoshop", "psd", ""},
+		// oov/psd cannot read this one, and hands it to vips
+		{"psd 16-bit", "psd/deep16.psd", "image/vnd.adobe.photoshop", "psd", ""},
 		{"windows pe", "winres/go-winres.exe", "application/vnd.microsoft.portable-executable", "winres", ""},
 		// libmagic types plain text by what it looks like, and this document
 		// looks like c to it. text/x- is generic, so the extension decides
@@ -94,7 +107,7 @@ func TestDecodeFile(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			pathName := filepath.Join("..", "testdata", filepath.FromSlash(test.file))
 			if _, err := os.Stat(pathName); err != nil {
-				t.Skipf("no test data: %v", err)
+				t.Fatalf("no test data: %v", err)
 			}
 			ctx := testContext(t)
 			if strings.Contains(test.file, ".enc.") {
@@ -128,15 +141,10 @@ func TestDecodeFile(t *testing.T) {
 			// detection and routing are iv's own work and always run; only
 			// the decode needs the external tool
 			if test.cmd != "" {
-				if err := usable(test.cmd); err != nil {
-					t.Skipf("skipping decode: %v", err)
-				}
+				requireTool(t, test.cmd)
 			}
 			img, _, err := decoder.DecodeFile(ctx, pathName)
-			switch {
-			case errors.Is(err, decoder.ErrUnsupportedFormat):
-				t.Skipf("this build cannot decode %s: %v", test.name, err)
-			case err != nil:
+			if err != nil {
 				t.Fatalf("expected no error, got: %v", err)
 			}
 			assertImage(t, img)
@@ -184,15 +192,6 @@ func TestDecodeString(t *testing.T) {
 		"data-svg-base64":     {"image/svg+xml", image.Pt(100, 100)},
 		"data-svg-urlencoded": {"image/svg+xml", image.Pt(64, 64)},
 		"data-png-base64":     {"image/png", image.Pt(1, 1)},
-		// a page blitz renders is handed back as an image, so like the QR
-		// code it arrives without a mime type
-		"yahoo":          {"", image.Pt(pageWidth, 0)},
-		"ifconfig-me":    {"", image.Pt(pageWidth, 0)},
-		"finance-google": {"", image.Pt(pageWidth, 0)},
-		// a url naming an image is still that image: this one is not
-		// rendered as a page but handed back to the pipeline, and the mime is
-		// what says so -- a rendered page arrives without one
-		"microsoft-favicon": {"image/vnd.microsoft.icon", image.Pt(0, 0)},
 	}
 	dir := filepath.Join("..", "testdata", "strings")
 	names, err := filepath.Glob(filepath.Join(dir, "*"+StringExt))
@@ -216,11 +215,7 @@ func TestDecodeString(t *testing.T) {
 				t.Fatalf("expected no error, got: %v", err)
 			}
 			img, mime, err := decoder.DecodeString(testContext(t), s)
-			switch {
-			case errors.Is(err, blitz.ErrFetch):
-				// the network, or the site, rather than iv
-				t.Skipf("skipping decode: %v", err)
-			case err != nil:
+			if err != nil {
 				t.Fatalf("expected no error, got: %v", err)
 			}
 			if mime != want.mime {
@@ -242,6 +237,61 @@ func TestDecodeString(t *testing.T) {
 		if !seen[name] {
 			t.Errorf("%s%s is described but missing from %s", name, StringExt, dir)
 		}
+	}
+}
+
+// TestDecodeURL checks the two things that blitz-url does with a url, against
+// a server on this machine, so that the test needs no network: it renders a
+// page, against the url that the page was served from after a redirect, and
+// it hands an image that a url names back to the pipeline.
+func TestDecodeURL(t *testing.T) {
+	dir := filepath.Join("..", "testdata")
+	page, err := os.ReadFile(filepath.Join(dir, "blitz", "sample.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	icon, err := os.ReadFile(filepath.Join(dir, "ico", "1.ico"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/page/", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write(page)
+	})
+	mux.Handle("/moved", http.RedirectHandler("/page/", http.StatusFound))
+	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "image/vnd.microsoft.icon")
+		_, _ = w.Write(icon)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	for _, test := range []struct {
+		name  string
+		path  string
+		mime  string
+		width int
+	}{
+		// a page that blitz renders is handed back as an image, so like a
+		// QR code it arrives without a mime type
+		{"page", "/page/", "", pageWidth},
+		{"redirect", "/moved", "", pageWidth},
+		// a url naming an image is still that image: it is not rendered as
+		// a page, but handed back to the pipeline, and the mime type says so
+		{"image", "/favicon.ico", "image/vnd.microsoft.icon", 0},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			img, mime, err := decoder.DecodeString(testContext(t), srv.URL+test.path)
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			if mime != test.mime {
+				t.Errorf("expected mime %q, got %q", test.mime, mime)
+			}
+			if got := img.Bounds().Dx(); test.width != 0 && got != test.width {
+				t.Errorf("expected width %d, got %d", test.width, got)
+			}
+		})
 	}
 }
 
@@ -297,7 +347,7 @@ func TestDecodeTagCard(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			pathName := filepath.Join("..", "testdata", "tag", name)
 			if _, err := os.Stat(pathName); err != nil {
-				t.Skipf("no test data: %v", err)
+				t.Fatalf("no test data: %v", err)
 			}
 			got, mime, err := decoder.DecodeFile(testContext(t), pathName)
 			if err != nil {
@@ -358,7 +408,7 @@ func TestLibreOfficeRouting(t *testing.T) {
 			pathName := filepath.Join("..", "testdata", "libreoffice", test.file)
 			f, err := os.Open(pathName)
 			if err != nil {
-				t.Skipf("no test data: %v", err)
+				t.Fatalf("no test data: %v", err)
 			}
 			defer f.Close()
 			ctx := ivctx.WithPathName(testContext(t), pathName)
@@ -390,7 +440,7 @@ func TestDecodeIcnsResolutions(t *testing.T) {
 	exp := []int{1024, 512, 512, 256, 256, 128, 64, 32}
 	for i, size := range exp {
 		page := uint(i + 1)
-		t.Run(fmt.Sprint(size), func(t *testing.T) {
+		t.Run(strconv.Itoa(size), func(t *testing.T) {
 			c := ivctx.New()
 			c.Page = page
 			img, mime, err := decoder.DecodeFile(ivctx.WithConfig(context.Background(), c), pathName)
@@ -451,7 +501,7 @@ func TestDecodeComicArchive(t *testing.T) {
 		for i, f := range formats {
 			pathName := filepath.Join("..", "testdata", "archives", f.file)
 			if _, err := os.Stat(pathName); err != nil {
-				t.Skipf("no test data: %v", err)
+				t.Fatalf("no test data: %v", err)
 			}
 			c := ivctx.New()
 			c.Page = uint(page + 1)
@@ -506,10 +556,7 @@ func TestRoundTrip(t *testing.T) {
 		}
 		t.Run(e.Name, func(t *testing.T) {
 			var buf bytes.Buffer
-			switch err := e.Encode(ctx, &buf, img); {
-			case errors.Is(err, encoder.ErrUnsupportedFormat):
-				t.Skipf("this build cannot encode %s: %v", e.Ext, err)
-			case err != nil:
+			if err := e.Encode(ctx, &buf, img); err != nil {
 				t.Fatalf("expected no error, got: %v", err)
 			}
 			if buf.Len() == 0 {
@@ -517,10 +564,6 @@ func TestRoundTrip(t *testing.T) {
 			}
 			out, _, err := decoder.Decode(ctx, "", e.Ext, bytes.NewReader(buf.Bytes()))
 			switch {
-			case errors.Is(err, decoder.ErrUnsupportedFormat):
-				// this build can write the format but not read it back --
-				// msys2's libvips has no pdf loader, for one
-				t.Skipf("this build cannot decode %s: %v", e.Ext, err)
 			case err != nil:
 				t.Fatalf("expected the encoded image to decode, got: %v", err)
 			}
@@ -548,6 +591,31 @@ func aspect(p image.Point) float64 {
 
 // usable reports whether an external command the decoders shell out to can
 // actually be used.
+// untested names the commands that CI does not install on an operating
+// system, with the reason. A test that needs one of them skips on that
+// system, and a missing command fails the test on any other (D12).
+var untested = map[string]map[string]string{
+	"windows": {
+		"soffice":       "LibreOffice has no MSYS2 package",
+		"ebook-convert": "calibre has no MSYS2 package",
+		"binwalk":       "binwalk has no Windows package",
+	},
+}
+
+// requireTool fails the test when the command is not usable, unless
+// [untested] names it for this operating system.
+func requireTool(t *testing.T, name string) {
+	t.Helper()
+	err := usable(name)
+	if err == nil {
+		return
+	}
+	if reason, ok := untested[runtime.GOOS][name]; ok {
+		t.Skipf("%s is not tested on %s: %s", name, runtime.GOOS, reason)
+	}
+	t.Fatalf("%s is needed by this test: %v", name, err)
+}
+
 func usable(name string) error {
 	if name == "soffice" {
 		return sofficeUsable()
@@ -565,7 +633,7 @@ func usable(name string) error {
 // one process start.
 var sofficeUsable = sync.OnceValue(func() error {
 	if _, err := exec.LookPath("soffice"); err != nil {
-		return fmt.Errorf("soffice not in path")
+		return errors.New("soffice not in path")
 	}
 	dir, err := os.MkdirTemp("", "iv-soffice-probe.")
 	if err != nil {
@@ -579,7 +647,7 @@ var sofficeUsable = sync.OnceValue(func() error {
 	cmd := exec.Command("soffice", "--headless", "--convert-to", "pdf", "--outdir", dir, src)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("soffice cannot run here: %v: %s", err, bytes.TrimSpace(out))
+		return fmt.Errorf("soffice cannot run here: %w: %s", err, bytes.TrimSpace(out))
 	}
 	if _, err := os.Stat(filepath.Join(dir, "probe.pdf")); err != nil {
 		return fmt.Errorf("soffice produced no pdf: %s", bytes.TrimSpace(out))
