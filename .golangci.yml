@@ -1,0 +1,111 @@
+version: "2"
+# The posture is `default: all` with a disable list, as in the xo
+# repositories. A linter that makes idiomatic Go worse is disabled here with
+# its reason, and only a real defect gets a code change (see AGENTS.md).
+linters:
+  default: all
+  disable:
+    # measures of size and complexity, which say nothing about a defect
+    - cyclop
+    - funlen
+    - gocognit
+    - maintidx
+    - nestif
+    # iv names its own dependencies in go.mod, and has no list to enforce
+    - depguard
+    - gomodguard
+    # an error message built with fmt.Errorf at its one use reads better than
+    # a sentinel for each
+    - err113
+    # a deferred Close returns an error that nothing can act on
+    - errcheck
+    # a struct literal names only the fields that it sets
+    - exhaustruct
+    - exhaustruct_v5
+    # a switch that handles some values of a type, and answers the rest after
+    # the switch, says more than an empty case for each
+    - exhaustive
+    # a type keeps its helpers next to the methods that use them
+    - funcorder
+    # registration from init, and the registries it fills, are the design of
+    # the decoder and encoder packages (D10)
+    - gochecknoglobals
+    - gochecknoinits
+    - goconst
+    # a comment inside a declaration block is a phrase with no period, as a
+    # comment inside a function is (see AGENTS.md)
+    - godot
+    # an image.Image is returned on purpose: a decoder returns whatever image
+    # it has, and the pipeline wraps it (D22)
+    - ireturn
+    - lll
+    - mnd
+    - nilnil
+    - nlreturn
+    - noinlineerr
+    - paralleltest
+    - prealloc
+    # ivctx.Mode has the value receivers of fmt.Stringer and
+    # encoding.TextMarshaler, and the pointer receiver of
+    # encoding.TextUnmarshaler, which is how the standard library pairs them
+    - recvcheck
+    - testableexamples
+    - testpackage
+    - varnamelen
+    - wrapcheck
+    - wsl
+    - wsl_v5
+  settings:
+    gocritic:
+      disabled-checks:
+        # a switch with one case is how a test asserts one thing among
+        # several, and grows a case without a rewrite
+        - singleCaseSwitch
+    gosec:
+      excludes:
+        # iv opens the files that its user names, and the files that its own
+        # commands wrote
+        - G304
+        # the decoders run the commands that they name, with paths that iv
+        # made
+        - G204
+  exclusions:
+    rules:
+      # a test writes temporary files with the permissions of a user's files,
+      # and asserts with a type assertion that fails the test by panicking
+      - path: _test\.go
+        linters:
+          - forcetypeassert
+          - gosec
+      # a test helper takes *testing.T first, as the testing package does
+      - path: _test\.go
+        text: "context-as-argument"
+        linters:
+          - revive
+      # binwalk walks the folder that its own command wrote, in a temporary
+      # folder of iv
+      - path: decoder/binwalk/binwalk\.go
+        text: "G122"
+        linters:
+          - gosec
+      # TestRegisterPanics checks the panic for an odd number of pairs
+      - path: decoder/decoder_test\.go
+        text: "SA5012"
+        linters:
+          - staticcheck
+      # a pcm sample is a signed 16-bit value stored in two bytes
+      - path: decoder/tag/audio\.go
+        text: "G115"
+        linters:
+          - gosec
+      # a frame rate from the command line is far below the range of int64
+      - path: ivctx/anim\.go
+        text: "G115"
+        linters:
+          - gosec
+      # an unpremultiplied sample is at most 255, because a premultiplied
+      # sample is at most its alpha
+      - path: ivimg/raw\.go
+        text: "G115"
+        linters:
+          - gosec

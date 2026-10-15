@@ -557,6 +557,7 @@ func TestRoundTrip(t *testing.T) {
 		t.Run(e.Name, func(t *testing.T) {
 			var buf bytes.Buffer
 			if err := e.Encode(ctx, &buf, img); err != nil {
+				requireFormat(t, err)
 				t.Fatalf("expected no error, got: %v", err)
 			}
 			if buf.Len() == 0 {
@@ -602,6 +603,32 @@ var untested = map[string]map[string]string{
 	},
 }
 
+// unsupported names the libvips operations that the libvips of CI is built
+// without on an operating system, with the reason. A test that needs one of
+// them skips on that system, and a missing operation fails the test on any
+// other (D27).
+var unsupported = map[string]map[string]string{
+	"windows": {
+		"gifsave_buffer": "the libvips of MSYS2 is built without cgif",
+	},
+}
+
+// requireFormat skips the test when err is [encoder.ErrUnsupportedFormat] or
+// [decoder.ErrUnsupportedFormat] for an operation that [unsupported] names for
+// this operating system. It does nothing for any other error, and the caller
+// then fails the test.
+func requireFormat(t *testing.T, err error) {
+	t.Helper()
+	if !errors.Is(err, encoder.ErrUnsupportedFormat) && !errors.Is(err, decoder.ErrUnsupportedFormat) {
+		return
+	}
+	for op, reason := range unsupported[runtime.GOOS] {
+		if strings.Contains(err.Error(), op) {
+			t.Skipf("%s is not tested on %s: %s", op, runtime.GOOS, reason)
+		}
+	}
+}
+
 // requireTool fails the test when the command is not usable, unless
 // [untested] names it for this operating system.
 func requireTool(t *testing.T, name string) {
@@ -640,8 +667,10 @@ var sofficeUsable = sync.OnceValue(func() error {
 		return err
 	}
 	defer os.RemoveAll(dir)
-	src := filepath.Join(dir, "probe.csv")
-	if err := os.WriteFile(src, []byte("a,b\n1,2\n"), 0o644); err != nil {
+	// a text document, which LibreOffice Writer opens. A csv needs Calc,
+	// which CI does not install, and the tests convert only documents
+	src := filepath.Join(dir, "probe.txt")
+	if err := os.WriteFile(src, []byte("probe\n"), 0o644); err != nil {
 		return err
 	}
 	cmd := exec.Command("soffice", "--headless", "--convert-to", "pdf", "--outdir", dir, src)

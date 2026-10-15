@@ -41,6 +41,9 @@
 # png, ico, ttf, xps, txt, xml and html files that are all meant to be tracked
 !/testdata/**
 
+# the linter configuration, which *.yml would otherwise ignore
+!/.golangci.yml
+
 /.bash_profile
 /.bashrc
 # .claude holds the agent skills, which are tracked, and the state of one

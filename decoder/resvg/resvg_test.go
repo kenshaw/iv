@@ -17,6 +17,10 @@ import (
 // its labels as font-family="Times,serif", and a system with the urw configs
 // of fontconfig drew them as greek letters (see configureFamilies).
 //
+// The test names a family that no system has in front of serif, so that the
+// text falls back to serif as "Times" does where it is not installed. macOS
+// has a font called Times, which draws "Times,serif" correctly in Times.
+//
 // It broke once without a sound: resvg v0.12.1 ignores a change to a
 // renderer after it is made, and the families were set on [resvg.Default].
 func TestSerifIsLatin(t *testing.T) {
@@ -37,10 +41,10 @@ func TestSerifIsLatin(t *testing.T) {
 	}
 	r := state.(*resvg.Resvg)
 	defer r.Close()
-	got := render(t, r, "Times,serif")
+	got := render(t, r, "No Such Font,serif")
 	exp := render(t, r, name)
 	if !same(got, exp) {
-		t.Errorf("expected the text in Times,serif to draw with %s", name)
+		t.Errorf("expected the text in No Such Font,serif to draw with %s", name)
 	}
 }
 
