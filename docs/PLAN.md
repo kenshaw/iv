@@ -523,8 +523,8 @@ run it in CI. `.golangci.yml` sets `default: all`, and disables each linter
 that makes idiomatic Go worse here, with its reason beside it. A real defect
 got a code change: a context stored in `decoder.Sink`, a `context.Background`
 in the command, an error left unchecked, and a hand-written filter that
-`slices.DeleteFunc` replaces. The lint job pins golangci-lint v2.14.0, which
-found 0 issues.
+`slices.DeleteFunc` replaces. The Lint job pins a release of golangci-lint.
+v2.14.0 found 0 issues, and v2.15.0 found 0 issues on 2026-10-20.
 
 ### D30. A PNG or a JPEG decodes its pixels only when they are needed. Decided.
 

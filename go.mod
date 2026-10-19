@@ -10,7 +10,7 @@ require (
 	github.com/jackmordaunt/icns/v4 v4.2.0
 	github.com/kenshaw/colors v0.2.4
 	github.com/kenshaw/fontimg v0.4.0
-	github.com/kenshaw/rasterm v0.1.20
+	github.com/kenshaw/rasterm v0.1.21
 	github.com/mholt/archives v0.1.5
 	github.com/oov/psd v0.0.0-20260818185439-a5d50ec0acac
 	github.com/sergeymakinen/go-bmp v1.0.0
@@ -69,8 +69,8 @@ require (
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
 	github.com/stangelandcl/ppmd v0.1.1 // indirect
 	github.com/tdewolff/font v0.0.0-20261010204837-88a7f6b56918 // indirect
-	github.com/tdewolff/minify/v2 v2.24.20 // indirect
-	github.com/tdewolff/parse/v2 v2.8.17 // indirect
+	github.com/tdewolff/minify/v2 v2.24.22 // indirect
+	github.com/tdewolff/parse/v2 v2.8.19 // indirect
 	github.com/ulikunitz/xz v0.5.17 // indirect
 	github.com/xo/blitz/libblitz/freebsd-amd64 v0.1.3 // indirect
 	github.com/xo/blitz/libblitz/linux-amd64 v0.1.3 // indirect
@@ -101,7 +101,7 @@ require (
 	github.com/xo/resvg/libresvg/windows_amd64 v0.48.1 // indirect
 	github.com/xo/resvg/libresvg/windows_arm64 v0.48.1 // indirect
 	github.com/yuin/goldmark v1.8.6 // indirect
-	go4.org v0.0.0-20260112195520-a5071408f32f // indirect
+	go4.org v0.0.0-20261019143151-5b882263cdaf // indirect
 	golang.org/x/net v0.61.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 	modernc.org/knuth v0.6.0 // indirect
