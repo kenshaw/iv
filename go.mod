@@ -20,12 +20,12 @@ require (
 	github.com/tc-hib/winres v0.3.1
 	github.com/tdewolff/canvas v0.0.0-20260923214215-09804640d00c
 	github.com/tetratelabs/wazero v1.12.0
-	github.com/xo/blitz v0.4.1
+	github.com/xo/blitz v0.4.2
 	github.com/xo/lottie v0.1.0
 	github.com/xo/magic v0.3.0
 	github.com/xo/mermaid v0.1.1
 	github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18
-	github.com/xo/resvg v0.12.1
+	github.com/xo/resvg v0.13.0
 	golang.org/x/image v0.47.0
 	golang.org/x/sys v0.49.0
 	golang.org/x/term v0.47.0
@@ -72,16 +72,16 @@ require (
 	github.com/tdewolff/minify/v2 v2.24.24 // indirect
 	github.com/tdewolff/parse/v2 v2.8.20 // indirect
 	github.com/ulikunitz/xz v0.5.17 // indirect
-	github.com/xo/blitz/libblitz/freebsd-amd64 v0.1.4 // indirect
-	github.com/xo/blitz/libblitz/linux-amd64 v0.1.4 // indirect
-	github.com/xo/blitz/libblitz/linux-amd64-musl v0.1.4 // indirect
-	github.com/xo/blitz/libblitz/linux-arm64 v0.1.4 // indirect
-	github.com/xo/blitz/libblitz/linux-arm64-musl v0.1.4 // indirect
-	github.com/xo/blitz/libblitz/linux-armv7 v0.1.4 // indirect
-	github.com/xo/blitz/libblitz/macos-amd64 v0.1.4 // indirect
-	github.com/xo/blitz/libblitz/macos-arm64 v0.1.4 // indirect
-	github.com/xo/blitz/libblitz/windows-amd64 v0.1.4 // indirect
-	github.com/xo/blitz/libblitz/windows-arm64 v0.1.4 // indirect
+	github.com/xo/blitz/libblitz/freebsd-amd64 v0.1.5 // indirect
+	github.com/xo/blitz/libblitz/linux-amd64 v0.1.5 // indirect
+	github.com/xo/blitz/libblitz/linux-amd64-musl v0.1.5 // indirect
+	github.com/xo/blitz/libblitz/linux-arm64 v0.1.5 // indirect
+	github.com/xo/blitz/libblitz/linux-arm64-musl v0.1.5 // indirect
+	github.com/xo/blitz/libblitz/linux-armv7 v0.1.5 // indirect
+	github.com/xo/blitz/libblitz/macos-amd64 v0.1.5 // indirect
+	github.com/xo/blitz/libblitz/macos-arm64 v0.1.5 // indirect
+	github.com/xo/blitz/libblitz/windows-amd64 v0.1.5 // indirect
+	github.com/xo/blitz/libblitz/windows-arm64 v0.1.5 // indirect
 	github.com/xo/magic/libmagic/darwin_amd64/v5 v5.48.0 // indirect
 	github.com/xo/magic/libmagic/darwin_arm64/v5 v5.48.0 // indirect
 	github.com/xo/magic/libmagic/freebsd_amd64/v5 v5.48.0 // indirect
@@ -90,16 +90,16 @@ require (
 	github.com/xo/magic/libmagic/linux_arm64/v5 v5.48.0 // indirect
 	github.com/xo/magic/libmagic/windows_amd64/v5 v5.48.0 // indirect
 	github.com/xo/magic/libmagic/windows_arm64/v5 v5.48.0 // indirect
-	github.com/xo/resvg/libresvg/darwin_amd64 v0.48.1 // indirect
-	github.com/xo/resvg/libresvg/darwin_arm64 v0.48.1 // indirect
-	github.com/xo/resvg/libresvg/freebsd_amd64 v0.48.1 // indirect
-	github.com/xo/resvg/libresvg/linux_amd64 v0.48.1 // indirect
-	github.com/xo/resvg/libresvg/linux_amd64_musl v0.48.1 // indirect
-	github.com/xo/resvg/libresvg/linux_arm v0.48.1 // indirect
-	github.com/xo/resvg/libresvg/linux_arm64 v0.48.1 // indirect
-	github.com/xo/resvg/libresvg/linux_arm64_musl v0.48.1 // indirect
-	github.com/xo/resvg/libresvg/windows_amd64 v0.48.1 // indirect
-	github.com/xo/resvg/libresvg/windows_arm64 v0.48.1 // indirect
+	github.com/xo/resvg/libresvg/darwin_amd64 v0.49.0 // indirect
+	github.com/xo/resvg/libresvg/darwin_arm64 v0.49.0 // indirect
+	github.com/xo/resvg/libresvg/freebsd_amd64 v0.49.0 // indirect
+	github.com/xo/resvg/libresvg/linux_amd64 v0.49.0 // indirect
+	github.com/xo/resvg/libresvg/linux_amd64_musl v0.49.0 // indirect
+	github.com/xo/resvg/libresvg/linux_arm v0.49.0 // indirect
+	github.com/xo/resvg/libresvg/linux_arm64 v0.49.0 // indirect
+	github.com/xo/resvg/libresvg/linux_arm64_musl v0.49.0 // indirect
+	github.com/xo/resvg/libresvg/windows_amd64 v0.49.0 // indirect
+	github.com/xo/resvg/libresvg/windows_arm64 v0.49.0 // indirect
 	github.com/yuin/goldmark v1.8.6 // indirect
 	go4.org v0.0.0-20261027201236-1f47846d89da // indirect
 	golang.org/x/net v0.62.0 // indirect
