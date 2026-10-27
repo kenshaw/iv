@@ -20,7 +20,7 @@ require (
 	github.com/tc-hib/winres v0.3.1
 	github.com/tdewolff/canvas v0.0.0-20260923214215-09804640d00c
 	github.com/tetratelabs/wazero v1.12.0
-	github.com/xo/blitz v0.4.0
+	github.com/xo/blitz v0.4.1
 	github.com/xo/lottie v0.1.0
 	github.com/xo/magic v0.3.0
 	github.com/xo/mermaid v0.1.1
@@ -39,7 +39,7 @@ require (
 	github.com/BurntSushi/xgbutil v0.0.0-20190907113008-ad855c713046 // indirect
 	github.com/ByteArena/poly2tri-go v0.0.0-20170716161910-d102ad91854f // indirect
 	github.com/STARRY-S/zip v0.2.3 // indirect
-	github.com/andybalholm/brotli v1.2.6 // indirect
+	github.com/andybalholm/brotli v1.2.7 // indirect
 	github.com/benoitkugler/textlayout v0.3.2 // indirect
 	github.com/benoitkugler/textprocessing v0.0.6 // indirect
 	github.com/bodgit/plumbing v1.3.0 // indirect
@@ -55,10 +55,10 @@ require (
 	github.com/gopherjs/gopherjs v1.21.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/klauspost/compress v1.20.3 // indirect
-	github.com/klauspost/pgzip v1.2.7 // indirect
+	github.com/klauspost/pgzip v1.3.0 // indirect
 	github.com/mattn/go-sixel v0.0.14 // indirect
 	github.com/mikelolasagasti/xz v1.0.1 // indirect
-	github.com/minio/minlz v1.2.2 // indirect
+	github.com/minio/minlz v1.2.3 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/nwaples/rardecode/v2 v2.4.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.33 // indirect
@@ -69,19 +69,19 @@ require (
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
 	github.com/stangelandcl/ppmd v0.1.1 // indirect
 	github.com/tdewolff/font v0.0.0-20261010204837-88a7f6b56918 // indirect
-	github.com/tdewolff/minify/v2 v2.24.22 // indirect
-	github.com/tdewolff/parse/v2 v2.8.19 // indirect
+	github.com/tdewolff/minify/v2 v2.24.24 // indirect
+	github.com/tdewolff/parse/v2 v2.8.20 // indirect
 	github.com/ulikunitz/xz v0.5.17 // indirect
-	github.com/xo/blitz/libblitz/freebsd-amd64 v0.1.3 // indirect
-	github.com/xo/blitz/libblitz/linux-amd64 v0.1.3 // indirect
-	github.com/xo/blitz/libblitz/linux-amd64-musl v0.1.3 // indirect
-	github.com/xo/blitz/libblitz/linux-arm64 v0.1.3 // indirect
-	github.com/xo/blitz/libblitz/linux-arm64-musl v0.1.3 // indirect
-	github.com/xo/blitz/libblitz/linux-armv7 v0.1.3 // indirect
-	github.com/xo/blitz/libblitz/macos-amd64 v0.1.3 // indirect
-	github.com/xo/blitz/libblitz/macos-arm64 v0.1.3 // indirect
-	github.com/xo/blitz/libblitz/windows-amd64 v0.1.3 // indirect
-	github.com/xo/blitz/libblitz/windows-arm64 v0.1.3 // indirect
+	github.com/xo/blitz/libblitz/freebsd-amd64 v0.1.4 // indirect
+	github.com/xo/blitz/libblitz/linux-amd64 v0.1.4 // indirect
+	github.com/xo/blitz/libblitz/linux-amd64-musl v0.1.4 // indirect
+	github.com/xo/blitz/libblitz/linux-arm64 v0.1.4 // indirect
+	github.com/xo/blitz/libblitz/linux-arm64-musl v0.1.4 // indirect
+	github.com/xo/blitz/libblitz/linux-armv7 v0.1.4 // indirect
+	github.com/xo/blitz/libblitz/macos-amd64 v0.1.4 // indirect
+	github.com/xo/blitz/libblitz/macos-arm64 v0.1.4 // indirect
+	github.com/xo/blitz/libblitz/windows-amd64 v0.1.4 // indirect
+	github.com/xo/blitz/libblitz/windows-arm64 v0.1.4 // indirect
 	github.com/xo/magic/libmagic/darwin_amd64/v5 v5.48.0 // indirect
 	github.com/xo/magic/libmagic/darwin_arm64/v5 v5.48.0 // indirect
 	github.com/xo/magic/libmagic/freebsd_amd64/v5 v5.48.0 // indirect
@@ -101,8 +101,8 @@ require (
 	github.com/xo/resvg/libresvg/windows_amd64 v0.48.1 // indirect
 	github.com/xo/resvg/libresvg/windows_arm64 v0.48.1 // indirect
 	github.com/yuin/goldmark v1.8.6 // indirect
-	go4.org v0.0.0-20261019143151-5b882263cdaf // indirect
-	golang.org/x/net v0.61.0 // indirect
+	go4.org v0.0.0-20261027201236-1f47846d89da // indirect
+	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 	modernc.org/knuth v0.6.0 // indirect
 	modernc.org/token v1.1.0 // indirect
