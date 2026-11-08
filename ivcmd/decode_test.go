@@ -140,6 +140,9 @@ func TestDecodeFile(t *testing.T) {
 			}
 			// detection and routing are iv's own work and always run; only
 			// the decode needs the external tool
+			if reason, ok := untestedFiles[runtime.GOOS][test.file]; ok {
+				t.Skipf("%s is not decoded on %s: %s", test.file, runtime.GOOS, reason)
+			}
 			if test.cmd != "" {
 				requireTool(t, test.cmd)
 			}
@@ -590,16 +593,23 @@ func aspect(p image.Point) float64 {
 	return float64(p.X) / float64(p.Y)
 }
 
-// usable reports whether an external command the decoders shell out to can
-// actually be used.
 // untested names the commands that CI does not install on an operating
 // system, with the reason. A test that needs one of them skips on that
-// system, and a missing command fails the test on any other (D12).
+// system, and a missing command fails the test on any other (D27).
 var untested = map[string]map[string]string{
 	"windows": {
 		"soffice":       "LibreOffice has no MSYS2 package",
 		"ebook-convert": "calibre has no MSYS2 package",
 		"binwalk":       "binwalk has no Windows package",
+	},
+}
+
+// untestedFiles names the test files that CI does not decode on an operating
+// system, with the reason. The test of one of them still checks its mime type
+// and its decoder, and skips the decode on that system (D34).
+var untestedFiles = map[string]map[string]string{
+	"darwin": {
+		"calibre/sample.fb2": "ebook-convert of calibre 9.16 sometimes crashes on it with a segmentation fault",
 	},
 }
 
@@ -643,6 +653,8 @@ func requireTool(t *testing.T, name string) {
 	t.Fatalf("%s is needed by this test: %v", name, err)
 }
 
+// usable reports whether an external command the decoders shell out to can
+// actually be used.
 func usable(name string) error {
 	if name == "soffice" {
 		return sofficeUsable()

@@ -129,10 +129,13 @@ These are the conventions that the code follows today.
   `ivctx/term_unix.go` do.
 - A test is in the package that it tests, not in an `_test` package.
 - A test fails when an external command, libmagic, a test file or a libvips
-  format is missing (D27). It does not skip. The one exception is a command
-  that CI does not install on an operating system, which `untested` in
-  `ivcmd/decode_test.go` names with its reason. No test reaches the network.
-  A test that needs a web server runs one with `httptest`.
+  format is missing (D27). It does not skip. Three maps in
+  `ivcmd/decode_test.go` name the exceptions, each with its reason, for each
+  operating system: `untested` for a command that CI does not install,
+  `unsupported` for a libvips operation that the libvips of CI does not have,
+  and `untestedFiles` for a test file that crashes a command (D34). No test
+  reaches the network. A test that needs a web server runs one with
+  `httptest`.
 - A comment inside a function is usually lower case, with no period at the
   end.
 

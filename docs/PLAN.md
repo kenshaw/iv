@@ -103,13 +103,14 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D24](#d24---fg-and---border-set-the-colors-and-the-border-of-a-qr-code-decided) | --fg and --border set the colors and the border of a QR code | Decided |
 | [D25](#d25---mermaid-bg-sets-the-background-in-the-mermaid-renderer-decided) | --mermaid-bg sets the background in the mermaid renderer | Decided |
 | [D26](#d26-benchmarks-compare-the-releases-and-the-readme-holds-the-numbers-decided) | Benchmarks compare the releases, and the README holds the numbers | Decided |
-| [D27](#d27-a-test-fails-when-what-it-needs-is-missing-decided-amends-d12) | A test fails when what it needs is missing | Decided. Amends D12 |
+| [D27](#d27-a-test-fails-when-what-it-needs-is-missing-decided-amends-d12-amended-by-d34) | A test fails when what it needs is missing | Decided. Amends D12. Amended by D34 |
 | [D28](#d28-mupdf-is-removed-and-calibre-libgxps-oovpsd-and-poppler-take-its-formats-decided-amends-d22) | mupdf is removed, and calibre, libgxps, oov/psd and poppler take its formats | Decided. Amends D22 |
 | [D29](#d29-golangci-lint-checks-the-code-in-ci-with-the-rules-of-the-xo-repositories-decided) | golangci-lint checks the code in CI, with the rules of the xo repositories | Decided |
 | [D30](#d30-a-png-or-a-jpeg-decodes-its-pixels-only-when-they-are-needed-decided) | A PNG or a JPEG decodes its pixels only when they are needed | Decided |
 | [D31](#d31-the-code-follows-go-pedantry-where-the-two-disagreed-decided) | The code follows go-pedantry where the two disagreed | Decided |
 | [D32](#d32-iv-is-built-for-64-bit-targets-only-and-has-no-static-build-decided) | iv is built for 64-bit targets only, and has no static build | Decided |
 | [D33](#d33-kitty-gets-raw-pixels-compressed-with-zlib-when-they-compress-well-decided-amends-d22) | Kitty gets raw pixels compressed with zlib when they compress well | Decided. Amends D22 |
+| [D34](#d34-a-test-file-that-crashes-a-command-on-one-system-is-not-decoded-there-decided-amends-d27) | A test file that crashes a command on one system is not decoded there | Decided. Amends D27 |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -468,7 +469,7 @@ the protocol that `TERM_GRAPHICS` selects. The method has the same signature
 from v0.17.0, so the same file runs against each release. The Performance
 section of `README.md` holds the results and the commands that made them.
 
-### D27. A test fails when what it needs is missing. Decided. Amends D12.
+### D27. A test fails when what it needs is missing. Decided. Amends D12. Amended by D34.
 
 Ken decided on 2026-10-15 that a test fails, and does not skip, when an
 external command, libmagic, a test file or a libvips format is missing. A
@@ -573,6 +574,28 @@ inflater of that Ghostty, likely an older Zig. The same pixels in one stream
 with no flush, raw, and as a PNG all worked. rasterm v0.1.20 checks without a
 flush, so the stream is one plain stream of all the pixels, and Ken confirmed
 that it works in Ghostty.
+
+### D34. A test file that crashes a command on one system is not decoded there. Decided. Amends D27.
+
+On macOS, `ebook-convert` of calibre 9.16 sometimes crashes with a
+segmentation fault when it converts `calibre/sample.fb2`. It crashed in 2 of
+about 5 CI runs, on 476d042 and on the tag v0.19.3, and passed when the job
+ran again. It never crashed on Linux. The epub, mobi and azw3 files convert on
+macOS every time.
+
+Ken decided on 2026-10-28 that CI does not decode that file on macOS.
+`untestedFiles` in `ivcmd/decode_test.go` names each such file with its
+reason. The test still checks the mime type and the decoder of the file, and
+skips only the decode.
+
+A test can now skip for three reasons, and a map in `ivcmd/decode_test.go`
+names each case for each system:
+
+- `untested` names a command that CI does not install (D27).
+- `unsupported` names a libvips operation that the libvips of CI is built
+  without. On Windows, that is `gifsave_buffer`, because the libvips of MSYS2
+  has no cgif.
+- `untestedFiles` names a test file that crashes a command.
 
 ## Open questions for Ken
 
