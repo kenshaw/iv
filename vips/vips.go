@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cshum/vipsgen/vips"
+	"github.com/cshum/vipsgen/v2/vips"
 	"github.com/kenshaw/iv/ivctx"
 	"github.com/kenshaw/iv/ivimg"
 	"github.com/xo/resvg"
@@ -200,7 +200,7 @@ func (im *Image) export() (image.Image, error) {
 func (im *Image) PNG() []byte {
 	im.pngOnce.Do(func() {
 		opts := vips.DefaultPngsaveBufferOptions()
-		opts.Compression, opts.Filter, opts.Keep = pngCompression, vips.PngFilterSub, vips.KeepNone
+		opts.Compression, opts.Filter, opts.Keep = new(pngCompression), vips.PngFilterSub, new(vips.KeepNone)
 		buf, err := im.v.PngsaveBuffer(opts)
 		if err != nil {
 			im.fail(fmt.Errorf("vips png: %w", err))
@@ -223,7 +223,7 @@ const pngCompression = 1
 // JPEG has no alpha channel, so it is for an image with no alpha band.
 func (im *Image) EncodeJPEG(quality int) ([]byte, error) {
 	opts := vips.DefaultJpegsaveBufferOptions()
-	opts.Q, opts.Keep = quality, vips.KeepNone
+	opts.Q, opts.Keep = quality, new(vips.KeepNone)
 	buf, err := im.v.JpegsaveBuffer(opts)
 	if err != nil {
 		return nil, fmt.Errorf("vips jpeg: %w", err)
@@ -251,7 +251,7 @@ func (im *Image) Resize(ctx context.Context, w, h int) (image.Image, error) {
 		kernel = vips.KernelNearest
 	}
 	if err := c.Resize(float64(w)/float64(b.Dx()), &vips.ResizeOptions{
-		Kernel: kernel,
+		Kernel: new(kernel),
 		Vscale: float64(h) / float64(b.Dy()),
 	}); err != nil {
 		c.Close()
@@ -278,7 +278,7 @@ func (im *Image) Flatten(_ context.Context, r, g, b uint8) (image.Image, error) 
 	}
 	if err := c.Flatten(&vips.FlattenOptions{
 		Background: []float64{float64(r), float64(g), float64(b)},
-		MaxAlpha:   255,
+		MaxAlpha:   new(255.0),
 	}); err != nil {
 		c.Close()
 		return nil, fmt.Errorf("vips flatten: %w", err)

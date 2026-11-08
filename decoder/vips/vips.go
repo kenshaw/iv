@@ -12,7 +12,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cshum/vipsgen/vips"
+	"github.com/cshum/vipsgen/v2/vips"
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/ivctx"
 	ivvips "github.com/kenshaw/iv/vips"

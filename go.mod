@@ -4,7 +4,7 @@ go 1.27.1
 
 require (
 	github.com/HugoSmits86/nativewebp v1.3.0
-	github.com/cshum/vipsgen v1.3.11
+	github.com/cshum/vipsgen/v2 v2.1.2
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/goccy/go-graphviz v0.2.10
 	github.com/jackmordaunt/icns/v4 v4.2.0

@@ -183,6 +183,13 @@ needs libvips 8.18 or later. `1b24400` (2026-06-23) later set the `Unlimited`
 and `Memory` load options of `vipsgen`. Ken wrote on issue 5 that the new
 `vipsgen` can override the memory security limits of libvips.
 
+Ken asked on 2026-11-09 to move to `github.com/cshum/vipsgen/v2`. In v2, an
+option is a pointer when libvips takes a zero that differs from its default,
+and a nil pointer means that the option is not set. v1 dropped an option of
+zero. The nearest kernel is 0, so `Image.Resize` in `vips/` scaled small
+images with lanczos3 where `ivimg.Nearest` asked for nearest neighbor.
+`TestResizeNearest` fails when that happens again.
+
 ### D9. iv is cgo code. Decided.
 
 libvips arrived in `ff44958` (2024-04-11), and from then on `iv` links C

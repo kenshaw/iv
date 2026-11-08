@@ -10,7 +10,7 @@ import (
 	"image"
 	"io"
 
-	"github.com/cshum/vipsgen/vips"
+	"github.com/cshum/vipsgen/v2/vips"
 	"github.com/kenshaw/iv/encoder"
 	ivvips "github.com/kenshaw/iv/vips"
 )

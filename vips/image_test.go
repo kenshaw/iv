@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cshum/vipsgen/vips"
+	"github.com/cshum/vipsgen/v2/vips"
 	"github.com/kenshaw/iv/ivimg"
 	"github.com/kenshaw/rasterm"
 )
@@ -80,6 +80,43 @@ func TestImage(t *testing.T) {
 	}
 	if _, ok := ivimg.Unwrap(resized).(*image.NRGBA); !ok {
 		t.Errorf("expected the pixels as an NRGBA, got %T", ivimg.Unwrap(resized))
+	}
+}
+
+// TestResizeNearest checks that a small image that is magnified by a whole
+// number keeps the color of each source pixel. vipsgen v1 dropped a kernel of
+// 0, which is nearest, so libvips used lanczos3 and blurred the edges.
+func TestResizeNearest(t *testing.T) {
+	ctx := testContext(t)
+	Init(ctx)
+	src := image.NewGray(image.Rect(0, 0, 2, 2))
+	src.Pix = []uint8{0x00, 0xff, 0xff, 0x00}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, src); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	v, err := vips.NewImageFromBuffer(buf.Bytes(), nil)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	img, err := Open(ctx, v)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	defer img.Close()
+	resized, err := img.Resize(ctx, 8, 8)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	defer ivimg.Close(resized)
+	for y := range 8 {
+		for x := range 8 {
+			want := src.GrayAt(x/4, y/4).Y
+			r, g, b, _ := resized.At(x, y).RGBA()
+			if r>>8 != uint32(want) || g>>8 != uint32(want) || b>>8 != uint32(want) {
+				t.Fatalf("expected %#x at %d,%d, got %v", want, x, y, resized.At(x, y))
+			}
+		}
 	}
 }
 
