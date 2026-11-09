@@ -358,7 +358,7 @@ shows its first frame, and does not play.
 
 | Format                           | Extensions            | Decoder    |
 | -------------------------------- | --------------------- | ---------- |
-| SVG, plain and gzipped           | `svg` `svgz`          | `resvg`    |
+| SVG, plain and gzipped           | `svg` `svgz`          | `okage`    |
 | Lottie animations, and dotLottie | `json` `lot` `lottie` | `lottie`   |
 | Graphviz graph description       | `gv` `dot`            | `graphviz` |
 | Mermaid diagrams                 | `mmd` `mermaid`       | `mermaid`  |
@@ -523,7 +523,7 @@ Some files, from v0.18.1 to this code with rasterm v0.1.20:
 | `vips/dome.heic`            | 838 ms, 498 ms   | 2497 KiB, 2715 KiB | 792 ms, 494 ms   | 463 KiB, 586 KiB  |
 | `vips/precision.jxl`        | 59.6 ms, 38.1 ms | 1369 KiB, 1676 KiB | 34.0 ms, 13.4 ms | 234 KiB, 305 KiB  |
 | `ffmpeg/sample_960x540.mp4` | 174 ms, 144 ms   | 601 KiB, 591 KiB   | 158 ms, 144 ms   | 135 KiB, 590 KiB  |
-| `resvg/choropleth.svg`      | 29.9 ms, 18.2 ms | 300 KiB, 265 KiB   | 21.1 ms, 20.7 ms | 166 KiB, 166 KiB  |
+| `okage/choropleth.svg`      | 29.9 ms, 18.2 ms | 300 KiB, 265 KiB   | 21.1 ms, 20.7 ms | 166 KiB, 166 KiB  |
 | `lottie/rocket.json`        | 28.7 ms, 12.0 ms | 159 KiB, 148 KiB   | 26.1 ms, 25.5 ms | 121 KiB, 121 KiB  |
 | `blitz/sample.md`           | 137 ms, 127 ms   | 192 KiB, 184 KiB   | 148 ms, 147 ms   | 149 KiB, 149 KiB  |
 | `psd/alpha.psd`             | 76.1 ms, 4.30 ms | 380 KiB, 98 KiB    | 74.2 ms, 6.21 ms | 139 KiB, 31 KiB   |

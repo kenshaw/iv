@@ -53,9 +53,9 @@ func TestDecodeFile(t *testing.T) {
 		{"netpbm pbm plain", "netpbm/test-plain.pbm", "image/x-portable-bitmap", "netpbm", ""},
 		{"netpbm pgm plain", "netpbm/test-plain.pgm", "image/x-portable-graymap", "netpbm", ""},
 		{"netpbm ppm plain", "netpbm/tux-plain.ppm", "image/x-portable-pixmap", "netpbm", ""},
-		{"svg", "resvg/rect.svg", "image/svg+xml", "resvg", ""},
-		{"svg choropleth", "resvg/choropleth.svg", "image/svg+xml", "resvg", ""},
-		{"svgz", "resvg/rect.svgz", "application/gzip", "resvg", ""},
+		{"svg", "okage/rect.svg", "image/svg+xml", "okage", ""},
+		{"svg choropleth", "okage/choropleth.svg", "image/svg+xml", "okage", ""},
+		{"svgz", "okage/rect.svgz", "application/gzip", "okage", ""},
 		{"ico", "ico/1.ico", "image/vnd.microsoft.icon", "ico", ""},
 		{"ico multi", "ico/Mathijssen-Tuxlets-Test-Dummy-Tux.ico", "image/vnd.microsoft.icon", "ico", ""},
 		{"icns", "icns/test.icns", "image/x-icns", "icns", ""},
@@ -325,7 +325,7 @@ func readString(pathName string) (string, error) {
 
 // TestDecodeTagCard checks that every audio container renders to the card the
 // tag decoder draws -- an svg the decoder hands back to the pipeline, which
-// resvg rasterizes, so this covers the round trip through mime detection as
+// okage rasterizes, so this covers the round trip through mime detection as
 // well. That the card carries the right cover art is checked in the tag
 // package, which can read the svg before it is rasterized.
 // encPassword opens testdata/vips/file-sample_150kB.enc.pdf.

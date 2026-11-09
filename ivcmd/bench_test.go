@@ -47,7 +47,7 @@ var benchTargets = []string{
 	"png/dice.png",
 	"png/precision.png",
 	"psd/alpha.psd",
-	"resvg/choropleth.svg",
+	"okage/choropleth.svg",
 	"strings/data-png-base64.iv_test_string",
 	"strings/wifi.iv_test_string",
 	"tag/silent.mp3",

@@ -31,9 +31,9 @@ the pagination itself, which needs no file to exercise.
 | `mermaid`     | `mermaid`     | One diagram per type the renderer understands                 |
 | `nativewebp`  | `nativewebp`  | Lossy and lossless webp, each with its png reference decode   |
 | `netpbm`      | `netpbm`      | pbm/pgm/ppm/pam, raw and plain                                |
+| `okage`       | `okage`       | SVGs, plain and gzipped, trivial to a large choropleth        |
 | `png`         | `png`         |                                                               |
 | `psd`         | `psd`         | Photoshop, with alpha, CMYK, and 16-bit for the vips fallback |
-| `resvg`       | `resvg`       | SVGs, plain and gzipped, trivial to a large choropleth        |
 | `strings`     | `data`, `qr`, | Command line arguments, not files -- see below                |
 |               | `blitz-url`   |                                                               |
 | `tag`         | `tag`         | Silent audio carrying embedded cover art                      |
@@ -123,10 +123,10 @@ but a `.doc` and a `.ppt` are only `application/x-ole-storage` -- the
 - `bmp/rose.bmp` -- the gallery rose, converted to bmp.
 - `ico/Mathijssen-Tuxlets-Test-Dummy-Tux.ico` -- Mathijssen Tuxlets Test
   Dummy Tux.
-- `resvg/test.svg` -- [SVG Repo][svg-repo]. `resvg/rect.svgz` is
-  `resvg/rect.svg` gzipped: a `.svgz` sniffs as `application/gzip`, so only
+- `okage/test.svg` -- [SVG Repo][svg-repo]. `okage/rect.svgz` is
+  `okage/rect.svg` gzipped: a `.svgz` sniffs as `application/gzip`, so only
   the extension identifies it.
-- `icns/test.icns` -- generated from `resvg/test.svg`. Each entry is rendered
+- `icns/test.icns` -- generated from `okage/test.svg`. Each entry is rendered
   from the svg at its own resolution rather than downsampled from a single
   raster, so every size is crisp. The eight entries, in file order, are the
   full set the `icns` encoder supports:
@@ -256,7 +256,7 @@ rather than quietly rendering an empty document.
 ### Derived files
 
 `gif/`, `netpbm/`, and `tiff/` are generated from `png/tux.png` and
-`resvg/test.svg`. Tux carries an alpha channel, the document icon is line art,
+`okage/test.svg`. Tux carries an alpha channel, the document icon is line art,
 so between them they cover both what these formats need to represent.
 
 - `gif/tux.gif`, `gif/test.gif` -- stills. `gif/animated.gif` is six frames

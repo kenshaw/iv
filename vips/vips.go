@@ -19,7 +19,6 @@ import (
 	"github.com/cshum/vipsgen/v2/vips"
 	"github.com/kenshaw/iv/ivctx"
 	"github.com/kenshaw/iv/ivimg"
-	"github.com/xo/resvg"
 )
 
 // maxPdfDimension is the longest edge a rendered pdf page is capped at. A
@@ -100,13 +99,11 @@ func Open(ctx context.Context, v *vips.Image) (*Image, error) {
 	ext, w, h := strings.TrimPrefix(string(v.Format()), "."), v.Width(), v.Height()
 	ivctx.Logf(ctx, "vips format: %s dimensions: %dx%d bands: %d pages: %d", ext, w, h, v.Bands(), v.Pages())
 	if ext == "pdf" {
-		// a cap, not a target: best fit grows as readily as it shrinks, and
-		// a page already inside the cap has nothing to gain from being
-		// resampled up to it
-		_, _, scale, _ := resvg.ScaleBestFit.Scale(uint(w), uint(h), maxPdfDimension, maxPdfDimension)
-		if scale = min(scale, 1.0); scale != 1.0 {
+		// a cap, not a target: a page already inside the cap has nothing to
+		// gain from being resampled up to it
+		if scale := min(float64(maxPdfDimension)/float64(w), float64(maxPdfDimension)/float64(h), 1.0); scale != 1.0 {
 			start := time.Now()
-			if err := v.Resize(float64(scale), nil); err != nil {
+			if err := v.Resize(scale, nil); err != nil {
 				return nil, fmt.Errorf("vips scaling pdf: %w", err)
 			}
 			ivctx.Logf(ctx, "vips resize: %v", time.Since(start))

@@ -47,6 +47,14 @@ Source: D28. Windows builds under UCRT64 because the mupdf of go-fitz called
 `__intrinsic_setjmpex`, which only the UCRT runtime has. mupdf is gone, and
 nothing has tested MINGW64 since. This is open question 1 in `PLAN.md`.
 
+### Remove the flag that allows a duplicate symbol on Windows
+
+Source: D35. `decoder/blitz/link_windows.go` passes
+`-Wl,--allow-multiple-definition`, because the rust archives of blitz and
+resvg each held the runtime of rust. resvg is gone, so blitz is the only rust
+archive. Remove the flag, and make sure that the Windows job of CI still
+links.
+
 ## Performance
 
 ### Benchmark the libreoffice and calibre decoders

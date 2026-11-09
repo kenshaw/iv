@@ -1,6 +1,6 @@
 module github.com/kenshaw/iv
 
-go 1.27.1
+go 1.27.3
 
 require (
 	github.com/HugoSmits86/nativewebp v1.3.0
@@ -24,8 +24,8 @@ require (
 	github.com/xo/lottie v0.1.0
 	github.com/xo/magic v0.3.0
 	github.com/xo/mermaid v0.1.1
+	github.com/xo/okage v0.2.0
 	github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18
-	github.com/xo/resvg v0.13.0
 	golang.org/x/image v0.47.0
 	golang.org/x/sys v0.49.0
 	golang.org/x/term v0.47.0
@@ -90,16 +90,6 @@ require (
 	github.com/xo/magic/libmagic/linux_arm64/v5 v5.48.0 // indirect
 	github.com/xo/magic/libmagic/windows_amd64/v5 v5.48.0 // indirect
 	github.com/xo/magic/libmagic/windows_arm64/v5 v5.48.0 // indirect
-	github.com/xo/resvg/libresvg/darwin_amd64 v0.49.0 // indirect
-	github.com/xo/resvg/libresvg/darwin_arm64 v0.49.0 // indirect
-	github.com/xo/resvg/libresvg/freebsd_amd64 v0.49.0 // indirect
-	github.com/xo/resvg/libresvg/linux_amd64 v0.49.0 // indirect
-	github.com/xo/resvg/libresvg/linux_amd64_musl v0.49.0 // indirect
-	github.com/xo/resvg/libresvg/linux_arm v0.49.0 // indirect
-	github.com/xo/resvg/libresvg/linux_arm64 v0.49.0 // indirect
-	github.com/xo/resvg/libresvg/linux_arm64_musl v0.49.0 // indirect
-	github.com/xo/resvg/libresvg/windows_amd64 v0.49.0 // indirect
-	github.com/xo/resvg/libresvg/windows_arm64 v0.49.0 // indirect
 	github.com/yuin/goldmark v1.8.7 // indirect
 	go4.org v0.0.0-20261028031214-ed6929a230fe // indirect
 	golang.org/x/net v0.62.0 // indirect

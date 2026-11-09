@@ -11,7 +11,7 @@ import (
 	"github.com/kenshaw/iv/decoder"
 	// a dot graph is rendered to svg and handed back to the pipeline, so the
 	// svg decoder has to be in the binary for a decode to finish
-	_ "github.com/kenshaw/iv/decoder/resvg"
+	_ "github.com/kenshaw/iv/decoder/okage"
 )
 
 // dotFile is the dot graph the tests render.

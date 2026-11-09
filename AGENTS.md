@@ -108,10 +108,11 @@ These are the conventions that the code follows today.
 - libvips decodes when the pixels are asked for, which can be after the
   pipeline closed the file. Load a libvips image from bytes, never from a
   stream of the input (D22).
-- Make a resvg renderer with all of its options in `resvg.New`. From resvg
-  v0.12.1 a renderer cannot change after it is made, and a change to
-  `resvg.Default` is ignored. The svg decoder builds its renderer in its init
-  func. `TestSerifIsLatin` fails when the font families stop taking effect.
+- The svg decoder renders with the `svg.Renderer` of okage (D35). The
+  renderer loads the fonts of the system on its first render, and sets each
+  css generic family to the first of its candidates that is installed, such
+  as `svg.SerifCandidates`. Change a candidate list in okage, not in `iv`.
+  `TestSerifIsLatin` fails when the font families stop taking effect.
 - Do not compare two `image.Image` values with `==`. A `rasterm.PNG` holds a
   slice, and the comparison panics. An encoder that encodes the pixels itself
   calls `ivimg.Unwrap` first, because the encoders of the standard library are

@@ -79,7 +79,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | --- | --- | --- |
 | [D1](#d1-iv-draws-images-with-terminal-graphics-and-never-as-text-decided) | iv draws images with terminal graphics and never as text | Decided |
 | [D2](#d2-speed-is-not-a-goal-decided) | Speed is not a goal | Decided |
-| [D3](#d3-svg-renders-with-xoresvg-decided) | SVG renders with xo/resvg | Decided |
+| [D3](#d3-svg-renders-with-xoresvg-decided-amended-by-d35) | SVG renders with xo/resvg | Decided. Amended by D35 |
 | [D4](#d4-the-command-line-is-parsed-with-xoox-decided) | The command line is parsed with xo/ox | Decided |
 | [D5](#d5-libvips-decodes-the-formats-that-no-go-package-covers-decided-amended-by-d8) | libvips decodes the formats that no Go package covers | Decided. Amended by D8 |
 | [D6](#d6-iv-selects-a-decoder-by-the-mime-type-of-the-content-decided-amended-by-d17) | iv selects a decoder by the mime type of the content | Decided. Amended by D17 |
@@ -111,6 +111,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D32](#d32-iv-is-built-for-64-bit-targets-only-and-has-no-static-build-decided) | iv is built for 64-bit targets only, and has no static build | Decided |
 | [D33](#d33-kitty-gets-raw-pixels-compressed-with-zlib-when-they-compress-well-decided-amends-d22) | Kitty gets raw pixels compressed with zlib when they compress well | Decided. Amends D22 |
 | [D34](#d34-a-test-file-that-crashes-a-command-on-one-system-is-not-decoded-there-decided-amends-d27) | A test file that crashes a command on one system is not decoded there | Decided. Amends D27 |
+| [D35](#d35-svg-renders-with-okage-a-port-of-resvg-to-go-decided-amends-d3) | SVG renders with okage, a port of resvg to Go | Decided. Amends D3 |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -131,7 +132,7 @@ Issue 1, "iv is very slow", was closed on 2024-02-18. Ken wrote that he has no
 intention to make `iv` run faster. He named two causes: Go is slow to decode
 and encode images, and Sixel is slower than the other protocols.
 
-### D3. SVG renders with xo/resvg. Decided.
+### D3. SVG renders with xo/resvg. Decided. Amended by D35.
 
 `542deaf` (2024-02-02), the first release, added `github.com/xo/resvg`.
 `decoder/resvg` registers it for plain and gzipped SVG. Reason not recorded.
@@ -603,6 +604,62 @@ names each case for each system:
   without. On Windows, that is `gifsave_buffer`, because the libvips of MSYS2
   has no cgif.
 - `untestedFiles` names a test file that crashes a command.
+
+### D35. SVG renders with okage, a port of resvg to Go. Decided. Amends D3.
+
+okage v0.1.0 is a port of resvg 0.49.0 and of tiny-skia to Go, with no cgo.
+On 2026-11-10, the svg decoder moved from xo/resvg to okage, at the request
+of Ken, to see whether the slowdown is acceptable. Ken decided the same day
+to keep okage. The decoder took the name `okage`, in `decoder/okage`, and its
+test files moved to `testdata/okage` (D11).
+
+Three things changed:
+
+- okage reads no configuration of fontconfig. Its `svg.Renderer` loads the
+  fonts of the system folders and of the home folder on its first render. It
+  sets each css generic family, sans-serif too, to the first of its candidate
+  families that is installed, and uses the family of serif for a font that
+  is not installed. The lists of candidates were in `iv`, and moved to okage
+  v0.2.0 at the request of Ken, so that the decoder only makes a renderer and
+  calls it.
+- xo/resvg loaded every font of the system when the package started, for
+  `resvg.Default`. Each run of `iv` paid about 30 ms for it, whatever the
+  file. okage loads the fonts only when an svg is decoded, in about 78 ms for
+  3202 faces.
+- okage rounds the size of an svg, as the resvg command does. xo/resvg
+  truncated it, so some images are one pixel wider or taller.
+
+The renders of the test files look the same. Of the 10 that were compared,
+four have the same pixels, and the others differ in less than 1% of their
+pixels.
+
+The measurements ran on 2026-11-10, on an AMD Ryzen 9 9950X, with Go 1.27.3.
+`BenchmarkDecode` loads the fonts once, so it measures only the drawing. Each
+value is the median of 6 rounds, as the Performance section of `README.md`
+says:
+
+| File                            | xo/resvg | okage   | Change |
+| ------------------------------- | -------- | ------- | ------ |
+| `graphviz/booktest_sqlite3.dot` | 3.24 ms  | 3.99 ms | +23%   |
+| `mermaid/flowchart.mmd`         | 38.5 ms  | 39.5 ms | +3%    |
+| `okage/choropleth.svg`          | 15.3 ms  | 31.4 ms | +105%  |
+
+A run of the command includes the start of `iv` and the fonts. Each value is
+the mean of 15 runs that write a PNG to `/dev/null`:
+
+| File                            | xo/resvg | okage   |
+| ------------------------------- | -------- | ------- |
+| `png/dice.png`                  | 58 ms    | 30 ms   |
+| `okage/rect.svg`                | 108 ms   | 102 ms  |
+| `okage/choropleth.svg`          | 137 ms   | 160 ms  |
+| `okage/sunburst-book.svg`       | 1242 ms  | 619 ms  |
+| `graphviz/booktest_sqlite3.dot` | 111 ms   | 112 ms  |
+
+okage draws paths more slowly than resvg, and a file of many paths, such as
+the choropleth, shows it. A build with `GOEXPERIMENT=simd` gave the same bytes
+and the same times. A file that is not an svg starts faster, and a file with
+much text, such as the sunburst with its Chinese labels, draws in half the
+time.
 
 ## Open questions for Ken
 

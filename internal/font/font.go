@@ -15,7 +15,7 @@ import (
 
 // families are the families the card is set in, in order of preference. The
 // first one installed is both named in the svg and used to measure, so that
-// what is measured is what resvg goes on to draw.
+// what is measured is what okage goes on to draw.
 var families = []string{
 	"DejaVu Sans",
 	"Helvetica Neue",
