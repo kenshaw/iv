@@ -550,6 +550,43 @@ func TestDecodeComicArchive(t *testing.T) {
 	}
 }
 
+// TestDecodeMarkdownPages checks that a document taller than the display is
+// cut into pages of the display height, that --page selects one, and that a
+// document is one page when nothing sets a display size.
+func TestDecodeMarkdownPages(t *testing.T) {
+	pathName := filepath.Join("..", "testdata", "blitz", "sample.md")
+	decode := func(width, height, page uint) image.Image {
+		t.Helper()
+		c := ivctx.New()
+		c.Width, c.Height, c.Page = width, height, page
+		img, _, err := decoder.DecodeFile(ivctx.WithConfig(context.Background(), c), pathName)
+		if err != nil {
+			t.Fatalf("expected no error, got: %v", err)
+		}
+		return img
+	}
+	whole := decode(0, 0, 0)
+	if got := whole.Bounds().Size(); got.X != pageWidth || got.Y <= 1200 {
+		t.Fatalf("expected a document %d wide and more than 1200 tall, got %v", pageWidth, got)
+	}
+	// at a display of 1200x600, the width fits at half the size, so a page
+	// is 1200 rows of the image
+	first, second := decode(1200, 600, 1), decode(1200, 600, 2)
+	if got, exp := first.Bounds().Size(), image.Pt(pageWidth, 1200); got != exp {
+		t.Errorf("page 1: expected %v, got %v", exp, got)
+	}
+	if got, exp := second.Bounds().Size(), image.Pt(pageWidth, whole.Bounds().Dy()-1200); got != exp {
+		t.Errorf("page 2: expected %v, got %v", exp, got)
+	}
+	if err := sameImage(first, second); err == nil {
+		t.Error("expected the two pages to differ")
+	}
+	// a display that holds the document leaves it whole
+	if got, exp := decode(1200, 2000, 1).Bounds().Size(), whole.Bounds().Size(); got != exp {
+		t.Errorf("expected the whole document at %v, got %v", exp, got)
+	}
+}
+
 // TestRoundTrip decodes an image and re-encodes it with every registered
 // encoder, checking the output is non-empty and, where the format can be read
 // back, that it decodes to the same size.

@@ -335,6 +335,8 @@ itself was compiled.
 
 Anything holding more than one image is shown one at a time, and `-p N` picks
 which: a pdf, epub or xps page, an icon size, a comic archive page, a lottie frame.
+A Markdown or HTML document that is taller than the terminal is cut into pages
+as wide as the terminal, and `-p N` picks one of those too.
 An animated `gif` is the exception, and always shows its first frame -- see
 [Animating](#animating) for playing one instead. An animated `webp` or APNG
 shows its first frame, and does not play.

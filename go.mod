@@ -18,7 +18,7 @@ require (
 	github.com/spakin/netpbm v1.3.2
 	github.com/tc-hib/winres v0.3.1
 	github.com/tdewolff/canvas v0.0.0-20260923214215-09804640d00c
-	github.com/xo/blitz v0.4.4
+	github.com/xo/blitz v0.4.5
 	github.com/xo/lottie v0.1.0
 	github.com/xo/magic v0.3.0
 	github.com/xo/okage v0.4.0
@@ -68,16 +68,16 @@ require (
 	github.com/tdewolff/parse/v2 v2.8.20 // indirect
 	github.com/tetratelabs/wazero v1.12.0 // indirect
 	github.com/ulikunitz/xz v0.5.17 // indirect
-	github.com/xo/blitz/libblitz/freebsd-amd64 v0.1.7 // indirect
-	github.com/xo/blitz/libblitz/linux-amd64 v0.1.7 // indirect
-	github.com/xo/blitz/libblitz/linux-amd64-musl v0.1.7 // indirect
-	github.com/xo/blitz/libblitz/linux-arm64 v0.1.7 // indirect
-	github.com/xo/blitz/libblitz/linux-arm64-musl v0.1.7 // indirect
-	github.com/xo/blitz/libblitz/linux-armv7 v0.1.7 // indirect
-	github.com/xo/blitz/libblitz/macos-amd64 v0.1.7 // indirect
-	github.com/xo/blitz/libblitz/macos-arm64 v0.1.7 // indirect
-	github.com/xo/blitz/libblitz/windows-amd64 v0.1.7 // indirect
-	github.com/xo/blitz/libblitz/windows-arm64 v0.1.7 // indirect
+	github.com/xo/blitz/libblitz/freebsd-amd64 v0.1.8 // indirect
+	github.com/xo/blitz/libblitz/linux-amd64 v0.1.8 // indirect
+	github.com/xo/blitz/libblitz/linux-amd64-musl v0.1.8 // indirect
+	github.com/xo/blitz/libblitz/linux-arm64 v0.1.8 // indirect
+	github.com/xo/blitz/libblitz/linux-arm64-musl v0.1.8 // indirect
+	github.com/xo/blitz/libblitz/linux-armv7 v0.1.8 // indirect
+	github.com/xo/blitz/libblitz/macos-amd64 v0.1.8 // indirect
+	github.com/xo/blitz/libblitz/macos-arm64 v0.1.8 // indirect
+	github.com/xo/blitz/libblitz/windows-amd64 v0.1.8 // indirect
+	github.com/xo/blitz/libblitz/windows-arm64 v0.1.8 // indirect
 	github.com/xo/magic/libmagic/darwin_amd64/v5 v5.48.0 // indirect
 	github.com/xo/magic/libmagic/darwin_arm64/v5 v5.48.0 // indirect
 	github.com/xo/magic/libmagic/freebsd_amd64/v5 v5.48.0 // indirect

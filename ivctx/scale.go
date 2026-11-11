@@ -143,6 +143,37 @@ func (c *Config) Scale(w, h int) (int, int) {
 	return round(w, s), round(h, s)
 }
 
+// PageHeight returns the height, in pixels, of a page of an image w pixels
+// wide. A page of this height is displayed at the full width that the display
+// size allows. A taller one would be shrunk to fit the display height. It
+// returns 0 when the display size sets no height, or when the mode does not
+// fit the height, and then an image of any height is one page.
+func PageHeight(ctx context.Context, w int) int {
+	return Get(ctx).PageHeight(w)
+}
+
+// PageHeight returns the height, in pixels, of a page of an image w pixels
+// wide. See [PageHeight].
+func (c *Config) PageHeight(w int) int {
+	maxW, maxH := int(c.Width), int(c.Height)
+	if w <= 0 || maxH <= 0 {
+		return 0
+	}
+	switch c.Mode.Get() {
+	case ModeNone, ModeWidth:
+		return 0
+	case ModeHeight:
+		maxW = 0
+	}
+	// the scale that fits the width, which a page keeps because its height
+	// fits the display height at that scale
+	s := 1.0
+	if maxW > 0 {
+		s = math.Min(1, float64(maxW)/float64(w))
+	}
+	return max(int(float64(maxH)/s), 1)
+}
+
 // ceiling returns the scale at which w x h exactly fills the display size,
 // which is +Inf when neither dimension of it is set.
 func ceiling(w, h, maxW, maxH int) float64 {

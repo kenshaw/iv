@@ -115,6 +115,48 @@ func TestScaleForcedMinimum(t *testing.T) {
 	}
 }
 
+// TestPageHeight checks the height of a page: the height that the display
+// height allows at the scale that fits the width, so that each page is shown
+// at the full width.
+func TestPageHeight(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		mode       Mode
+		maxW, maxH uint
+		w          int
+		exp        int
+	}{
+		{"wider than the display", ModeBestFit, 1200, 800, 2400, 1600},
+		{"narrower than the display", ModeBestFit, 3000, 800, 2400, 800},
+		{"no display width", ModeBestFit, 0, 800, 2400, 800},
+		{"no display height", ModeBestFit, 1200, 0, 2400, 0},
+		{"no display size", ModeBestFit, 0, 0, 2400, 0},
+		{"shrink", ModeShrink, 1200, 800, 2400, 1600},
+		{"stretch", ModeStretch, 1200, 800, 2400, 1600},
+		{"height mode ignores the width", ModeHeight, 1200, 800, 2400, 800},
+		{"width mode has no pages", ModeWidth, 1200, 800, 2400, 0},
+		{"none has no pages", ModeNone, 1200, 800, 2400, 0},
+		{"no image", ModeBestFit, 1200, 800, 0, 0},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			c := New()
+			c.Mode, c.Width, c.Height = &test.mode, test.maxW, test.maxH
+			got := c.PageHeight(test.w)
+			if got != test.exp {
+				t.Fatalf("expected %d, got %d", test.exp, got)
+			}
+			// a page of this height is shown at the full width that fits
+			if got == 0 || test.mode == ModeHeight || test.mode == ModeStretch {
+				return
+			}
+			fitW, _ := c.Scale(test.w, 1)
+			if w, h := c.Scale(test.w, got); w != fitW || h > int(test.maxH) {
+				t.Errorf("expected a page shown at %dx%d or less, got %dx%d", fitW, test.maxH, w, h)
+			}
+		})
+	}
+}
+
 // TestScaleSnapsSmallImages checks a small image is magnified by a whole
 // number of pixels. A 16x16 icon resampled up to 61x61 is mush, where the same
 // icon at 4x is its own pixels drawn larger.

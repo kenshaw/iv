@@ -29,11 +29,12 @@ import (
 const (
 	width = 1200
 	scale = 2
-	// maxHeight bounds the render, in css pixels. A document taller than this
-	// is cut off, which is worth saying out loud -- see [render]. Raising it
-	// costs memory: the render is width*scale by maxHeight*scale in rgba, so
-	// 4000 is already 76MB at the numbers above.
-	maxHeight = 4000
+	// maxRows is the most pixel rows that blitz draws. Its renderer keeps the
+	// height of an image in 16 bits, and rounds it up to a whole tile of 4
+	// rows, so a render of more than 65532 rows fails. A document is drawn
+	// whole up to this height, and iv cuts it into pages. At scale 2, 65532
+	// rows of 2400 pixels are 600 MB.
+	maxRows = 65532
 )
 
 // UserAgent is the user agent sent with requests.
@@ -122,14 +123,38 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 	return render(ctx, c, string(buf), base(ctx), isHTML(ivctx.Mime(ctx), ivctx.PathName(ctx), buf))
 }
 
-// render renders the source as html or as markdown.
-func render(ctx context.Context, c *blitz.Context, src, baseURL string, html bool) (image.Image, error) {
-	opts := options(ctx)
+// render renders the whole source as html or as markdown, and cuts the image
+// into pages of the display height.
+//
+// A document that is taller than blitz draws at scale 2 is drawn again at
+// scale 1, which holds a document twice as tall in the same number of rows.
+// Only a document that is also taller than that is cut off.
+func render(ctx context.Context, c *blitz.Context, src, baseURL string, html bool) (any, error) {
 	kind := "markdown"
 	if html {
 		kind = "html"
 	}
-	ivctx.Logf(ctx, "blitz %s: %d bytes at %dx%g base %q", kind, len(src), opts.Width, opts.Scale, baseURL)
+	img, err := draw(ctx, c, src, baseURL, kind, html, scale)
+	if err != nil {
+		return nil, err
+	}
+	if truncated(img, scale) {
+		ivctx.Logf(ctx, "blitz %s: document is taller than %d css pixels, drawing it again at scale 1", kind, maxRows/scale)
+		if img, err = draw(ctx, c, src, baseURL, kind, html, 1); err != nil {
+			return nil, err
+		}
+		if truncated(img, 1) {
+			ivctx.Warnf(ctx, "blitz %s: document is taller than %d css pixels, truncated", kind, maxRows)
+		}
+	}
+	return pages(ctx, img), nil
+}
+
+// draw renders the source at a scale, up to the height that blitz draws.
+func draw(ctx context.Context, c *blitz.Context, src, baseURL, kind string, html bool, s uint32) (*image.RGBA, error) {
+	opts := options(ctx)
+	opts.Scale, opts.MaxHeight = float32(s), maxRows/s
+	ivctx.Logf(ctx, "blitz %s: %d bytes at %dx%d base %q", kind, len(src), opts.Width, s, baseURL)
 	render := c.RenderMarkdown
 	if html {
 		render = c.RenderHTML
@@ -138,14 +163,45 @@ func render(ctx context.Context, c *blitz.Context, src, baseURL string, html boo
 	if err != nil {
 		return nil, fmt.Errorf("blitz %s: %w", kind, err)
 	}
-	size := img.Bounds().Size()
-	ivctx.Logf(ctx, "blitz %s: %v", kind, size)
-	if size.Y >= int(float32(opts.MaxHeight)*opts.Scale) {
-		// the document ran past the cap, so what came back is the top of it
-		// rather than the whole thing
-		ivctx.Warnf(ctx, "blitz %s: document is taller than %d css pixels, truncated", kind, opts.MaxHeight)
-	}
+	ivctx.Logf(ctx, "blitz %s: %v", kind, img.Bounds().Size())
 	return img, nil
+}
+
+// truncated reports whether a render at a scale reached the height that blitz
+// draws, so that it holds the top of the document and not all of it.
+func truncated(img *image.RGBA, s uint32) bool {
+	return img.Bounds().Dy() >= int(maxRows/s*s)
+}
+
+// pages cuts the image into pages of the height that [ivctx.PageHeight]
+// returns, and the pipeline shows the page that --page selects. An image that
+// fits the display is one page and is not cut. Each page shares the pixels
+// of the image.
+func pages(ctx context.Context, img *image.RGBA) any {
+	b := img.Bounds()
+	h := ivctx.PageHeight(ctx, b.Dx())
+	if h == 0 || b.Dy() <= h {
+		return img
+	}
+	var v []image.Image
+	for y := b.Min.Y; y < b.Max.Y; y += h {
+		v = append(v, rows(img, y, min(y+h, b.Max.Y)))
+	}
+	ivctx.Logf(ctx, "blitz: %d pages of %d pixels", len(v), h)
+	return v
+}
+
+// rows returns the rows y0 to y1 of the image as an image of its own, at the
+// origin, that shares the pixels of the image.
+func rows(img *image.RGBA, y0, y1 int) *image.RGBA {
+	b := img.Bounds()
+	start := img.PixOffset(b.Min.X, y0)
+	end := img.PixOffset(b.Min.X, y1-1) + 4*b.Dx()
+	return &image.RGBA{
+		Pix:    img.Pix[start:end:end],
+		Stride: img.Stride,
+		Rect:   image.Rect(0, 0, b.Dx(), y1-y0),
+	}
 }
 
 // options returns the render options, honoring the configured background when
@@ -154,7 +210,7 @@ func render(ctx context.Context, c *blitz.Context, src, baseURL string, html boo
 func options(ctx context.Context) blitz.Options {
 	c := ivctx.Get(ctx)
 	opts := blitz.DefaultOptions()
-	opts.Width, opts.Scale, opts.MaxHeight, opts.UserAgent = width, scale, maxHeight, UserAgent
+	opts.Width, opts.UserAgent = width, UserAgent
 	if c.BlitzDark {
 		// a document is laid out light by default, so this is what makes a
 		// page's own dark styling apply

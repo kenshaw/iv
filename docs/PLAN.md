@@ -92,7 +92,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D13](#d13-test-data-is-checked-out-with-no-line-ending-conversion-decided) | Test data is checked out with no line ending conversion | Decided |
 | [D14](#d14-ci-tests-on-linux-macos-and-windows-and-linux-runs-ubuntu-2604-decided) | CI tests on Linux, macOS and Windows, and Linux runs ubuntu-26.04 | Decided |
 | [D15](#d15-a-release-builds-for-linux-macos-and-windows-decided) | A release builds for Linux, macOS and Windows | Decided |
-| [D16](#d16-markdown-html-and-web-pages-render-with-xoblitz-decided) | Markdown, HTML and web pages render with xo/blitz | Decided |
+| [D16](#d16-markdown-html-and-web-pages-render-with-xoblitz-decided-amended-by-d38) | Markdown, HTML and web pages render with xo/blitz | Decided. Amended by D38 |
 | [D17](#d17-mime-detection-uses-libmagic-through-xomagic-decided-amends-d6) | Mime detection uses libmagic through xo/magic | Decided. Amends D6 |
 | [D18](#d18-mermaid-renders-in-process-with-xomermaid-on-wazero-decided-amends-d7-amended-by-d36) | Mermaid renders in process with xo/mermaid on wazero | Decided. Amends D7. Amended by D36 |
 | [D19](#d19-iv-plays-one-animation-to-the-terminal-for-at-most-one-minute-decided) | iv plays one animation to the terminal, for at most one minute | Decided |
@@ -114,6 +114,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D35](#d35-svg-renders-with-okage-a-port-of-resvg-to-go-decided-amends-d3) | SVG renders with okage, a port of resvg to Go | Decided. Amends D3 |
 | [D36](#d36-one-decoder-named-zuzu-draws-dot-and-mermaid-decided-amends-d18) | One decoder named zuzu draws DOT and Mermaid | Decided. Amends D18 |
 | [D37](#d37-a-minimum-size-given-on-the-command-line-is-a-hard-floor-decided) | A minimum size given on the command line is a hard floor | Decided |
+| [D38](#d38-a-tall-document-is-drawn-whole-and-cut-into-pages-decided-amends-d16) | A tall document is drawn whole and cut into pages | Decided. Amends D16 |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -274,7 +275,7 @@ comment gives the reason: a cross build needs a libvips for the other
 architecture, and Homebrew does not install one. Windows builds under MSYS2,
 as D14 says.
 
-### D16. Markdown, HTML and web pages render with xo/blitz. Decided.
+### D16. Markdown, HTML and web pages render with xo/blitz. Decided. Amended by D38.
 
 `b9b637e` (2026-09-12), "blitz: add decoder, replacing markdown", removed the
 Markdown decoder, the HTTP decoder and `goldmark`. Before it, Markdown became
@@ -756,6 +757,32 @@ sets `MinWidthSet` and `MinHeightSet` of `ivctx.Config`.
 Two rules did not change. The display size is still the hard bound, so an
 image does not grow past the terminal. The modes `shrink`, `width` and
 `height` still drop the floor that they drop, even a forced one.
+
+### D38. A tall document is drawn whole and cut into pages. Decided. Amends D16.
+
+Before, `blitz` drew a Markdown or HTML document up to 4000 CSS pixels and
+cut off the rest. `iv` then shrank the whole image to fit the terminal, so a
+long document was too small to read. On 2026-11-12, Ken decided that `iv`
+draws the whole document and cuts the image into pages itself. A page is as
+tall as the display height allows at the scale that fits the display width,
+so each page fills the width of the terminal. `iv` cuts at that fixed height,
+and does not look for a gap between lines. A document that fits the display
+is not cut. `-p N` selects a page, as it does for a pdf.
+
+`ivctx.PageHeight` computes the height of a page. It returns 0, and nothing
+is cut, when no display height is set. This is the case for `--out` without
+`--height`, and for the modes `none` and `width`.
+
+The renderer of blitz draws at most 65532 pixel rows. It keeps the height in
+16 bits and rounds it up to a tile of 4 rows. Before blitz v0.4.5, a taller
+render failed with a wrong size or panicked, and since then it is an error
+that names the limit. At scale 2, that is 32766 CSS pixels and 600 MB of
+pixels. Ken chose
+to draw a document at scale 2, and to draw it again at scale 1 when it is
+taller than that. At scale 1, the same rows hold 65532 CSS pixels. Only a
+document taller than that is cut off, with a warning. The README of usql is
+36257 CSS pixels tall. It takes two renders, 1.5 seconds, and 41 pages on a
+display of 1600x900.
 
 ## Open questions for Ken
 
