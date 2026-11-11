@@ -55,6 +55,11 @@ type Config struct {
 	Password        string
 	ForceMime       string
 
+	// MinWidthSet and MinHeightSet report that the minimum was given on the
+	// command line. A minimum that was given is a hard floor (D37).
+	MinWidthSet  bool
+	MinHeightSet bool
+
 	// Logger is the verbose logger. Always non-nil after [Config.Init].
 	Logger func(string, ...any)
 	// Warner reports something the user should see whether or not they asked

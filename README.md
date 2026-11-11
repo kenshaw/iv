@@ -265,9 +265,13 @@ explicit `-W`/`-H` still applies.
 | `stretch`  | fill `-W` x `-H` exactly, disregarding the aspect ratio          |
 
 Where the floor and the ceiling disagree -- a minimum larger than the room
-there is to show it in -- the ceiling wins. An image that clears the floor in
-one dimension is not grown to clear it in the other, so a 1000x2 banner stays
-1000x2 rather than becoming 32000 wide.
+there is to show it in -- the ceiling wins. With the default minimums, an
+image that clears the floor in one dimension is not grown to clear it in the
+other, so a 1000x2 banner stays 1000x2 rather than becoming 32000 wide.
+
+A minimum that you give on the command line is forced. `iv --min-width=1000`
+grows a 367x344 image to 1000x937, although it is already taller than the
+default minimum height of 64.
 
 An image small enough to be icon art is magnified by a whole number of pixels
 and not resampled, so a 24x24 favicon is its own pixels drawn three times

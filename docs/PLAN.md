@@ -113,6 +113,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D34](#d34-a-test-file-that-crashes-a-command-on-one-system-is-not-decoded-there-decided-amends-d27) | A test file that crashes a command on one system is not decoded there | Decided. Amends D27 |
 | [D35](#d35-svg-renders-with-okage-a-port-of-resvg-to-go-decided-amends-d3) | SVG renders with okage, a port of resvg to Go | Decided. Amends D3 |
 | [D36](#d36-one-decoder-named-zuzu-draws-dot-and-mermaid-decided-amends-d18) | One decoder named zuzu draws DOT and Mermaid | Decided. Amends D18 |
+| [D37](#d37-a-minimum-size-given-on-the-command-line-is-a-hard-floor-decided) | A minimum size given on the command line is a hard floor | Decided |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -710,6 +711,26 @@ The time of one run of `iv`, the median of 21 runs, on 2026-11-11:
 | `journey.mmd`          | 122 ms | 41 ms |
 | `aws.mmd`              | 230 ms | 41 ms |
 | `sankey.mmd`           | 148 ms | 56 ms |
+
+### D37. A minimum size given on the command line is a hard floor. Decided.
+
+`--min-width` and `--min-height` default to 64. With the defaults, `iv` grows
+an image only when it is below both minimums, and only until it reaches one of
+them. A 1000x2 banner therefore stays 1000x2, and does not grow to 32000x64.
+
+That rule ignored a minimum that the user gave. `iv --min-width=1000` left a
+pie chart of 367x344 at its own size, because it was already taller than the
+default minimum height of 64. On 2026-11-11, Ken decided that a minimum given
+on the command line is forced, whatever the other minimum is. `iv` grows the
+image until it reaches each minimum that was given. The default of a minimum
+that was not given does not count.
+
+The `set:` option of the `ox` struct tag records whether a flag was given. It
+sets `MinWidthSet` and `MinHeightSet` of `ivctx.Config`.
+
+Two rules did not change. The display size is still the hard bound, so an
+image does not grow past the terminal. The modes `shrink`, `width` and
+`height` still drop the floor that they drop, even a forced one.
 
 ## Open questions for Ken
 

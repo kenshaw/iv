@@ -38,8 +38,8 @@ type Args struct {
 	Mode            *ivctx.Mode        `ox:"scaling mode,short:m,default:best-fit"`
 	Width           uint               `ox:"display width in pixels - 0 takes it from the terminal,short:W"`
 	Height          uint               `ox:"display height in pixels - 0 takes it from the terminal,short:H"`
-	MinWidth        uint               `ox:"minimum width in pixels,short:w,default:64"`
-	MinHeight       uint               `ox:"minimum height in pixels,short:h,default:64"`
+	MinWidth        uint               `ox:"minimum width in pixels,short:w,default:64,set:MinWidthSet"`
+	MinHeight       uint               `ox:"minimum height in pixels,short:h,default:64,set:MinHeightSet"`
 	DPI             uint               `ox:"image dpi,default:300,name:dpi"`
 	Page            uint               `ox:"page to display,short:p"`
 	Fg              *colors.Color      `ox:"qr code foreground color,default:black"`
@@ -67,6 +67,10 @@ type Args struct {
 	Out             string             `ox:"write to file instead of the terminal,short:o"`
 	Encoder         string             `ox:"output encoder"`
 	List            bool               `ox:"list registered decoders and encoders"`
+
+	// ox sets these when the flag is given on the command line
+	MinWidthSet  bool
+	MinHeightSet bool
 }
 
 // New creates the iv command arguments.
@@ -107,6 +111,8 @@ func (a *Args) Config(stderr io.Writer) *ivctx.Config {
 		PDFMargin:       a.PDFMargin,
 		Password:        a.Password,
 		ForceMime:       a.ForceMime,
+		MinWidthSet:     a.MinWidthSet,
+		MinHeightSet:    a.MinHeightSet,
 	}
 	if a.Verbose {
 		c.Logger = func(s string, v ...any) {

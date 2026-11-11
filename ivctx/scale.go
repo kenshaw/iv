@@ -126,7 +126,12 @@ func (c *Config) Scale(w, h int) (int, int) {
 	// an image already inside the display size keeps it, so the shrink never
 	// goes above 1
 	s := math.Min(1, ceiling(w, h, maxW, maxH))
-	s = floor(w, h, s, minW, minH)
+	switch forceW, forceH := c.MinWidthSet && minW > 0, c.MinHeightSet && minH > 0; {
+	case forceW || forceH:
+		s = force(w, h, s, minW, minH, forceW, forceH)
+	default:
+		s = floor(w, h, s, minW, minH)
+	}
 	// the display size is the one hard bound: where the two disagree -- a
 	// minimum larger than the space there is to show it in -- it wins
 	if c := ceiling(w, h, maxW, maxH); s > c {
@@ -171,6 +176,20 @@ func floor(w, h int, s float64, minW, minH int) float64 {
 	}
 	if minH > 0 {
 		g = math.Min(g, float64(minH)/(float64(h)*s))
+	}
+	return s * g
+}
+
+// force returns s raised, if it has to be, to the scale at which w x h
+// reaches each minimum that was given on the command line. A minimum that was
+// not given, and has its default, does not count (D37).
+func force(w, h int, s float64, minW, minH int, forceW, forceH bool) float64 {
+	g := 1.0
+	if forceW {
+		g = math.Max(g, float64(minW)/(float64(w)*s))
+	}
+	if forceH {
+		g = math.Max(g, float64(minH)/(float64(h)*s))
 	}
 	return s * g
 }

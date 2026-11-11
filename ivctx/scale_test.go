@@ -72,6 +72,49 @@ func TestScale(t *testing.T) {
 	}
 }
 
+// TestScaleForcedMinimum checks that a minimum given on the command line is a
+// hard floor (D37). The image grows until it reaches that minimum, even when
+// it already clears the other one, and the display size still bounds it.
+func TestScaleForcedMinimum(t *testing.T) {
+	for _, test := range []struct {
+		name           string
+		mode           Mode
+		maxW, maxH     uint
+		minW, minH     uint
+		forceW, forceH bool
+		w, h           int
+		expW, expH     int
+	}{
+		// the default minimum height does not stop a given minimum width
+		{"width", ModeBestFit, 0, 0, 1000, 64, true, false, 367, 344, 1000, 937},
+		{"height", ModeBestFit, 0, 0, 64, 1000, false, true, 367, 344, 1067, 1000},
+		// both given, so both are reached
+		{"both", ModeBestFit, 0, 0, 1000, 1000, true, true, 367, 344, 1067, 1000},
+		// a forced banner grows as far as it was asked to
+		{"wide banner", ModeBestFit, 0, 0, 64, 64, false, true, 1000, 2, 32000, 64},
+		// an image that already clears a forced minimum is left alone
+		{"already wide enough", ModeBestFit, 0, 0, 100, 64, true, false, 367, 344, 367, 344},
+		// the display size is still the hard bound
+		{"display size wins", ModeBestFit, 800, 600, 1000, 64, true, false, 367, 344, 640, 600},
+		// a mode that drops a floor drops a forced one too
+		{"shrink", ModeShrink, 0, 0, 1000, 64, true, false, 367, 344, 367, 344},
+		{"height mode drops the width", ModeHeight, 0, 0, 1000, 64, true, false, 367, 344, 367, 344},
+		// a forced zero is no floor at all
+		{"zero", ModeBestFit, 0, 0, 0, 64, true, false, 16, 16, 64, 64},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			c := New()
+			c.Mode, c.Width, c.Height = &test.mode, test.maxW, test.maxH
+			c.MinWidth, c.MinHeight = test.minW, test.minH
+			c.MinWidthSet, c.MinHeightSet = test.forceW, test.forceH
+			w, h := c.Scale(test.w, test.h)
+			if w != test.expW || h != test.expH {
+				t.Errorf("expected %dx%d, got %dx%d", test.expW, test.expH, w, h)
+			}
+		})
+	}
+}
+
 // TestScaleSnapsSmallImages checks a small image is magnified by a whole
 // number of pixels. A 16x16 icon resampled up to 61x61 is mush, where the same
 // icon at 4x is its own pixels drawn larger.
