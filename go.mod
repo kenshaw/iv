@@ -23,7 +23,7 @@ require (
 	github.com/xo/magic v0.3.0
 	github.com/xo/okage v0.4.0
 	github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18
-	github.com/xo/zuzu v0.2.0
+	github.com/xo/zuzu v0.2.1
 	golang.org/x/image v0.47.0
 	golang.org/x/sys v0.49.0
 	golang.org/x/term v0.47.0

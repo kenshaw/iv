@@ -669,7 +669,8 @@ WebAssembly. It reads DOT and Mermaid, and draws them to an `*image.RGBA`
 through okage. On 2026-11-11, Ken decided that one decoder named `zuzu`
 replaces the `graphviz` and `mermaid` decoders, as `resvg` became `okage`
 (D35). `testdata/graphviz` and `testdata/mermaid` merged into `testdata/zuzu`.
-The decoder came with zuzu v0.2.0 and okage v0.4.0.
+The decoder came with zuzu v0.2.0 and okage v0.4.0. zuzu v0.2.1 fixed a
+flowchart that it cut off at the bottom, and centered the labels of a pie.
 
 Ken made two more decisions on the same day:
 
