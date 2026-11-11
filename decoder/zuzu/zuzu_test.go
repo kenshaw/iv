@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -49,17 +50,9 @@ func TestDetect(t *testing.T) {
 	}
 }
 
-// TestDecode draws every file in the test data as an image.
+// TestDecode draws every graph and diagram in testdata/zuzu as an image.
 func TestDecode(t *testing.T) {
-	for _, name := range []string{
-		"booktest_sqlite3.dot",
-		"flowchart.mmd",
-		"pie.mmd",
-		"gantt.mmd",
-		"journey.mmd",
-		"sankey.mmd",
-		"aws.mmd",
-	} {
+	for _, name := range testFiles(t, "") {
 		t.Run(name, func(t *testing.T) {
 			b := renderFile(t, testContext(t), name).Bounds()
 			if b.Dx() <= 0 || b.Dy() <= 0 {
@@ -67,6 +60,39 @@ func TestDecode(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestDecodeBroken checks that zuzu still fails on each file in
+// testdata/zuzu/broken. These files are the targets for fixes in zuzu. When
+// zuzu draws one, move it to testdata/zuzu, so that TestDecode covers it.
+func TestDecodeBroken(t *testing.T) {
+	for _, name := range testFiles(t, "broken") {
+		t.Run(name, func(t *testing.T) {
+			if _, err := renderFileErr(t, testContext(t), filepath.Join("broken", name)); err == nil {
+				t.Errorf("zuzu draws %s now, so move it from testdata/zuzu/broken to testdata/zuzu", name)
+			}
+		})
+	}
+}
+
+// testFiles returns the names of the graphs and diagrams in a folder of
+// testdata/zuzu.
+func testFiles(t *testing.T, dir string) []string {
+	t.Helper()
+	entries, err := os.ReadDir(filepath.Join("..", "..", "testdata", "zuzu", dir))
+	if err != nil {
+		t.Fatalf("no test data: %v", err)
+	}
+	var names []string
+	for _, entry := range entries {
+		if !entry.IsDir() && slices.Contains(exts, ivctx.FileExt(entry.Name())) {
+			names = append(names, entry.Name())
+		}
+	}
+	if len(names) == 0 {
+		t.Fatalf("no test data in testdata/zuzu/%s", dir)
+	}
+	return names
 }
 
 // TestDecodeSyntaxError checks that a diagram that does not parse comes back
@@ -130,11 +156,12 @@ func renderFile(t *testing.T, ctx context.Context, name string) *image.RGBA {
 // decoder.
 func renderFileErr(t *testing.T, ctx context.Context, name string) (*image.RGBA, error) {
 	t.Helper()
-	buf, err := os.ReadFile(filepath.Join("..", "..", "testdata", "zuzu", name))
+	pathName := filepath.Join("..", "..", "testdata", "zuzu", name)
+	buf, err := os.ReadFile(pathName)
 	if err != nil {
 		t.Fatalf("no test data: %v", err)
 	}
-	res, err := decode(ctx, bytes.NewReader(buf))
+	res, err := decode(ivctx.WithPathName(ctx, pathName), bytes.NewReader(buf))
 	if err != nil {
 		return nil, err
 	}

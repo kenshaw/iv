@@ -60,6 +60,9 @@ func TestDecodeFile(t *testing.T) {
 		{"ico multi", "ico/Mathijssen-Tuxlets-Test-Dummy-Tux.ico", "image/vnd.microsoft.icon", "ico", ""},
 		{"icns", "icns/test.icns", "image/x-icns", "icns", ""},
 		{"dot", "zuzu/booktest_sqlite3.dot", "text/vnd.graphviz", "zuzu", ""},
+		// the first 512 bytes are comments, so the content does not say DOT,
+		// and libmagic reads the file as html. The extension decides
+		{"dot after comments", "zuzu/psg.gv", "text/html", "zuzu", ""},
 		{"ttf", "fontimg/Ubuntu-R.ttf", "font/ttf", "fontimg", ""},
 		{"jxl", "vips/precision.jxl", "image/jxl", "vips", ""},
 		{"heic", "vips/cyberpunk.heic", "image/heic", "vips", ""},
@@ -83,6 +86,7 @@ func TestDecodeFile(t *testing.T) {
 		// looks like c to it. text/x- is generic, so the extension decides
 		{"markdown", "blitz/sample.md", "text/x-c", "blitz", ""},
 		{"html", "blitz/sample.html", "text/html", "blitz", ""},
+		{"markdown that starts with html", "blitz/html-fragments.md", "text/html", "blitz", ""},
 		{"tag mp3", "tag/silent.mp3", "audio/mpeg", "tag", ""},
 		{"tag flac", "tag/silent.flac", "audio/flac", "tag", ""},
 		{"tag m4a", "tag/silent.m4a", "audio/x-m4a", "tag", ""},

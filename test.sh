@@ -66,9 +66,11 @@ done < <(find "$SRC/testdata/strings" -type f -name "*$STRING_EXT" | sort)
 
 echo
 echo '== files =='
+# testdata/zuzu/broken holds the diagrams that zuzu does not draw yet, so they
+# are not rendered here. TestDecodeBroken in decoder/zuzu checks them
 while read -r f; do
   run "$f"
-done < <(find "$SRC/testdata" -type f ! -name "*$STRING_EXT" | sort)
+done < <(find "$SRC/testdata" -path "$SRC/testdata/zuzu/broken" -prune -o -type f ! -name "*$STRING_EXT" -print | sort)
 
 echo
 if [ $fail -ne 0 ]; then

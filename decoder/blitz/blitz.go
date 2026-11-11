@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/url"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 
@@ -185,21 +186,30 @@ func base(ctx context.Context) string {
 	return (&url.URL{Scheme: "file", Path: filepath.ToSlash(filepath.Dir(abs)) + "/"}).String()
 }
 
-// htmlExts are the extensions parsed as html rather than markdown.
-var htmlExts = map[string]bool{"html": true, "htm": true, "xhtml": true}
+// The extensions that decide how a document is parsed.
+var (
+	htmlExts     = []string{"html", "htm", "xhtml"}
+	markdownExts = []string{"md", "markdown", "mkd", "mdown"}
+)
 
-// isHTML reports whether the source should be parsed as html. A .md file is
-// markdown whatever it contains, so the mime type and extension decide first;
-// only a document with neither is judged by what it starts with.
+// isHTML reports whether the source must be parsed as html.
+//
+// The extension decides first. A Markdown file that starts with html, such as
+// a README that starts with a centered logo in a <div>, is typed text/html by
+// libmagic, and is still Markdown. The mime type decides next, and only a
+// document with neither is judged by what it starts with.
 func isHTML(mime, pathName string, buf []byte) bool {
+	switch ext := ivctx.FileExt(pathName); {
+	case slices.Contains(htmlExts, ext):
+		return true
+	case slices.Contains(markdownExts, ext):
+		return false
+	}
 	switch {
 	case strings.Contains(mime, "html"):
 		return true
 	case strings.Contains(mime, "markdown"):
 		return false
-	}
-	if ext := ivctx.FileExt(pathName); ext != "" {
-		return htmlExts[ext]
 	}
 	s := strings.ToLower(strings.TrimSpace(string(buf[:min(len(buf), 256)])))
 	return strings.HasPrefix(s, "<!doctype html") || strings.HasPrefix(s, "<html")

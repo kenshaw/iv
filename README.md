@@ -376,9 +376,9 @@ when the diagram starts with front matter. `--mermaid-theme dark` draws a
 Mermaid diagram in the dark mode of zuzu, and each other theme draws it in the
 light mode. `--mermaid-bg` sets its background.
 
-zuzu draws only some kinds of Mermaid diagram. It does not draw an
-architecture, class, entity relationship, mindmap, sequence or state diagram,
-and `iv` shows its error for one of these. The icon packs fa, mdi, carbon and
+zuzu draws most kinds of Mermaid diagram. It does not draw a block, C4,
+gitGraph, requirement or timeline diagram, and `iv` shows its error for one of
+these. The icon packs fa, mdi, carbon and
 k8s are built in, so a label such as `fa:fa-globe` draws the icon.
 
 [zuzu]: https://github.com/xo/zuzu

@@ -15,7 +15,7 @@ the pagination itself, which needs no file to exercise.
 | ------------- | ------------- | ------------------------------------------------------------- |
 | `archives`    | `archives`    | The same two page comic as cbz, cbr, and cbt                  |
 | `binwalk`     | `binwalk`     | Affinity Designer file with an embedded png                   |
-| `blitz`       | `blitz`       | A markdown and an html document                               |
+| `blitz`       | `blitz`       | Markdown and html documents                                   |
 | `bmp`         | `bmp`         |                                                               |
 | `calibre`     | `calibre`     | One book as epub, mobi, azw3 and fb2; needs `ebook-convert`   |
 | `ffmpeg`      | `ffmpeg`      | Same clip as mkv and mp4                                      |
@@ -36,7 +36,7 @@ the pagination itself, which needs no file to exercise.
 |               | `blitz-url`   |                                                               |
 | `tag`         | `tag`         | Silent audio carrying embedded cover art                      |
 | `tiff`        | `tiff`        | One file per compression the Go encoder supports              |
-| `zuzu`        | `zuzu`        | A DOT graph, and one Mermaid diagram per kind that zuzu draws |
+| `zuzu`        | `zuzu`        | DOT graphs and Mermaid diagrams, and ones zuzu cannot draw    |
 | `vcard`       | `vcard`       | Contacts, drawn as a business card with a scannable code      |
 | `vips`        | `vips`        | heic/heif/jxl, plus a plain and a password protected pdf      |
 | `winres`      | `winres`      | Windows PE with embedded icons                                |
@@ -165,6 +165,12 @@ The html is read as `text/html`, which is a format rather than a guess. The html
 deliberately not plain -- a gradient header, a flex row, a bordered table --
 since what it is testing is a css engine rather than a markdown stylesheet.
 
+`blitz/html-fragments.md` is Markdown that holds html, as the README of usql
+does. It starts with a centered `<div>` that holds an image and a row of links,
+and it uses `<sup>` in a table, `<br>`, `<hr/>` and a `<p>` of html. libmagic
+types it as `text/html`, and the `.md` extension makes the `blitz` decoder read
+it as Markdown. The image is `png/logo.png`, so the test reaches no network.
+
 ### Contacts
 
 `vcard/john-doe.vcf` is a plain vCard 3.0. `vcard/folded.vcf` is the awkward
@@ -214,8 +220,14 @@ straight back here -- the same trip a comic archive's pages make.
 
 ### DOT graphs and Mermaid diagrams
 
-`zuzu/` holds one DOT graph and one Mermaid diagram for each kind that zuzu
-draws. zuzu reads each kind separately, so a kind that breaks breaks alone.
+`zuzu/` holds the graphs and diagrams that zuzu draws. `zuzu/broken/` holds
+diagrams that zuzu does not draw yet. They are the targets for fixes in zuzu.
+`TestDecode` in `decoder/zuzu` draws every file in `zuzu/`, and
+`TestDecodeBroken` checks that zuzu still fails on every file in
+`zuzu/broken/`. When zuzu draws one of them, `TestDecodeBroken` fails, and the
+file moves to `zuzu/`. `test.sh` does not render `zuzu/broken/`.
+
+The first files are simple, and cover one kind each:
 
 | File                   | Kind                         |
 | ---------------------- | ---------------------------- |
@@ -241,8 +253,49 @@ by extension.
 `aws.mmd` was written for the mermaid cli and its `--iconPacks`. Its labels
 name icons of the fa pack, such as `fa:fa-globe`, and zuzu draws them.
 
-`TestDecode` in `decoder/zuzu` draws every one of these files. If a kind stops
-drawing, the test fails, and the decoder does not return an empty image.
+The other Mermaid files show the most complex features of each kind. They
+come from the corpus of [mermaid-go-renderer][] at commit `9af8f11`, which
+took them from the documentation and the end-to-end tests of Mermaid 12.2.0.
+Both are under the MIT license, in `zuzu/LICENSE-mermaid.txt`.
+
+| File                        | Kind and features                                             |
+| --------------------------- | ------------------------------------------------------------- |
+| `flowchart-large.mmd`       | A generated flowchart of 110 nodes, with subgraphs and styles |
+| `flowchart-icons.mmd`       | A flowchart full of icons                                     |
+| `flowchart-shapes.mmd`      | Every shape of `@{ shape: ... }`, each linked to the others   |
+| `flowchart-markdown.mmd`    | Subgraphs and Markdown strings that span lines                |
+| `gantt-sections.mmd`        | Four sections, critical tasks, and tasks that follow others   |
+| `xychart-config.mmd`        | An xychart with all of its configuration in the front matter  |
+| `quadrant-styles.mmd`       | A quadrant chart with points that have their own styles       |
+| `treemap-nested.mmd`        | A treemap with many nested blocks                             |
+| `wardley-tea-shop.mmd`      | The tea shop of a Wardley map                                 |
+| `class-full.mmd`            | A class diagram with every kind of relation                   |
+| `sequence-features.mmd`     | Actors made and destroyed, backgrounds, loops and notes       |
+| `er-attributes.mmd`         | Attributes with keys and comments                             |
+| `state-composite-fork.mmd`  | A fork and a join inside a composite state                    |
+| `mindmap-shapes.mmd`        | Every node shape, with an icon of mdi                         |
+| `architecture-nested.mmd`   | Groups nested deeply                                          |
+
+zuzu v0.4.0 does not draw the kinds of the five files in `broken/`:
+
+| File in `broken/`           | Kind and features                                        |
+| --------------------------- | -------------------------------------------------------- |
+| `gitgraph-cherry-pick.mmd`  | Branch order, a cherry-pick with a tag, bottom to top    |
+| `timeline-sections.mmd`     | Sections, and long events with line breaks               |
+| `c4-context.mmd`            | The system context example of C4                         |
+| `block-nested.mmd`          | Nested blocks that span columns                          |
+| `requirement-relations.mmd` | Requirements and elements, with six kinds of relation    |
+
+The `.gv` files come from the gallery of the Graphviz website, at commit
+`ce9b383` of [graphviz.gitlab.io][]. They are under the Eclipse Public License
+2.0, in `zuzu/LICENSE-graphviz.txt`. Each one uses features that the schema
+graph does not: clusters, records with ports, labels of HTML in nested tables,
+gradients, colors and fonts on each node, and `rank=same`.
+
+Three of them also test how the decoder finds DOT. `psg.gv` starts with
+comment lines that fill the first 512 bytes, and libmagic types it as
+`text/html`. `grid.gv` and `Genetic_Programming.gv` put the `{` of the graph
+on the line after `graph`. In all three, the extension decides.
 
 ### Derived files
 
@@ -303,6 +356,8 @@ so between them they cover both what these formats need to represent.
 [svg-repo]: https://www.svgrepo.com
 [go-winres]: https://github.com/tc-hib/go-winres
 [xo/mermaid]: https://github.com/xo/mermaid
+[mermaid-go-renderer]: https://github.com/bvolpato/mermaid-go-renderer
+[graphviz.gitlab.io]: https://gitlab.com/graphviz/graphviz.gitlab.io
 [noto-emoji]: https://github.com/googlefonts/noto-emoji
 [xo/lottie]: https://github.com/xo/lottie
 [cc-by-4]: https://creativecommons.org/licenses/by/4.0/

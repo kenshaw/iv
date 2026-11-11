@@ -689,6 +689,18 @@ front matter of a Mermaid diagram, but a Markdown or a YAML file starts the
 same way. A claim would keep such a file from libmagic and from `blitz`. A
 Mermaid diagram with front matter routes by its extension.
 
+The extensions `gv`, `dot`, `mmd` and `mermaid` route a file to zuzu when
+libmagic types it as any kind of text. libmagic typed a DOT graph that starts
+with long comments as `text/html`, and the `blitz` decoder took it. A `.dot`
+that is not text is a template of Microsoft Word, and does not match. The
+extension also sets the dialect, and `zuzu.Sniff` decides only for a source
+with no extension, such as one read from standard input.
+
+On 2026-11-11, Ken asked for the test data to hold the most complex examples
+of Mermaid, and also examples that zuzu does not draw, as targets for fixes
+in zuzu. `testdata/zuzu/broken` holds those. `TestDecodeBroken` fails when
+zuzu draws one of them, so that the file moves to `testdata/zuzu`.
+
 `--mermaid-theme dark` sets the dark mode of zuzu, and each other theme sets
 the light mode. An unknown theme is an error that names it, as before.
 `--mermaid-bg` sets the background through `zuzu.WithBackground` (D25). Both
@@ -711,6 +723,19 @@ The time of one run of `iv`, the median of 21 runs, on 2026-11-11:
 | `journey.mmd`          | 122 ms | 41 ms |
 | `aws.mmd`              | 230 ms | 41 ms |
 | `sankey.mmd`           | 148 ms | 56 ms |
+
+On 2026-11-12, `iv` moved to zuzu v0.4.0, which also needs okage v0.4.0.
+zuzu now draws the architecture, class, entity relationship, mindmap,
+sequence and state diagrams, and seven files moved out of
+`testdata/zuzu/broken`. It does not draw a block, C4, gitGraph, requirement or
+timeline diagram. The decoder passes `zuzu.WithScale(2)`, so the image is
+twice as wide and twice as high as the layout of zuzu. At a scale of 1, the
+lines and the text of a diagram are blurred in a terminal.
+
+On the same day, `iv` moved to zuzu v0.5.0, which reads more of the syntax
+of Mermaid. Of the files in `testdata/zuzu`, only `gantt-sections.mmd` drew
+differently: it gained the bar of a short task that v0.4.0 left out. The
+five files in `testdata/zuzu/broken` still fail.
 
 ### D37. A minimum size given on the command line is a hard floor. Decided.
 

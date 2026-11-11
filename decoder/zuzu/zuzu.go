@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 
 	"github.com/kenshaw/iv/decoder"
@@ -30,8 +31,17 @@ const (
 	mermaidMime = "text/vnd.mermaid"
 )
 
+// exts are the extensions of the two dialects.
+var exts = []string{"gv", "dot", "mmd", "mermaid"}
+
 // peek is how many leading bytes are sniffed. zuzu needs no more than this.
 const peek = 512
+
+// scale is the ratio of the pixels of the image to the pixels of the
+// diagram. zuzu lays a diagram out for a screen, and at 1 its lines and text
+// are blurred in a terminal, which shows each pixel larger. At 2, the layout
+// does not change, and the image is twice as wide and twice as high.
+const scale = 2
 
 // ErrUnknownTheme is the error of a --mermaid-theme that names no theme.
 var ErrUnknownTheme = errors.New("unknown theme")
@@ -40,14 +50,15 @@ func init() {
 	decoder.Register(
 		"zuzu",
 		decoder.Desc("DOT graphs and Mermaid diagrams"),
-		decoder.Extension("gv", "dot"),
 		decoder.MimeType(dotMime, mermaidMime),
-		// the detector does not claim a diagram with front matter, so the
-		// extension routes it
-		decoder.MimeTypeExtensionMatch(
-			"text/plain", "mmd",
-			"text/plain", "mermaid",
-		),
+		// the detector does not claim a diagram with front matter, or a graph
+		// whose first 512 bytes are comments, so the extension routes it.
+		// libmagic types such a file as any kind of text, even text/html. A
+		// .dot that is not text is a template of Microsoft Word
+		decoder.Extension(exts...),
+		decoder.Matcher(func(mime, ext string) bool {
+			return strings.HasPrefix(mime, "text/") && slices.Contains(exts, ext)
+		}),
 		decoder.MimeDetector(detect),
 		decoder.Decoder(decode),
 	)
@@ -81,13 +92,9 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	// a source that reached this decoder and is not DOT came by the mime
-	// type or the extension of mermaid
-	dialect := zuzu.Mermaid
-	if d, _ := zuzu.Sniff(buf); d == zuzu.DOT {
-		dialect = zuzu.DOT
-	}
+	dialect := dialectOf(ctx, buf)
 	opts := []zuzu.RenderOption{
+		zuzu.WithScale(scale),
 		// the flowcharts of mermaid name the solid icons of font awesome as
 		// fa: and as fas:. Each pack is read on its first use
 		zuzu.WithIcons("fa", fa.Pack()),
@@ -118,6 +125,22 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 		return nil, err
 	}
 	return img, nil
+}
+
+// dialectOf returns the dialect of a source. The extension decides, and
+// without one, the content does. A source that reached this decoder and is
+// not DOT came by the mime type of mermaid.
+func dialectOf(ctx context.Context, buf []byte) zuzu.Dialect {
+	switch ivctx.FileExt(ivctx.PathName(ctx)) {
+	case "gv", "dot":
+		return zuzu.DOT
+	case "mmd", "mermaid":
+		return zuzu.Mermaid
+	}
+	if d, _ := zuzu.Sniff(buf); d == zuzu.DOT {
+		return zuzu.DOT
+	}
+	return zuzu.Mermaid
 }
 
 // themeMode returns the mode of zuzu for a --mermaid-theme. zuzu has a light
