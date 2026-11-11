@@ -30,9 +30,9 @@ The state below is the working tree of 2026-10-15, after D22 to D33.
   D30). `ivimg.Prepare` scales and composites stills and animation frames
   alike.
 - libvips decodes, scales and encodes the formats that no Go package covers
-  (D5, D8, D22). blitz renders Markdown, HTML and web pages (D16). The
-  mermaid renderer runs in process on wazero (D18). oov/psd decodes Photoshop
-  files (D28).
+  (D5, D8, D22). blitz renders Markdown, HTML and web pages (D16). zuzu
+  draws DOT graphs and Mermaid diagrams in Go (D36). oov/psd decodes
+  Photoshop files (D28).
 - Seven decoders run an external command that must be in `$PATH` (D7,
   D28):
   `ffmpeg` and `tag` run `ffmpeg` and `ffprobe`, `libreoffice` runs
@@ -94,7 +94,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D15](#d15-a-release-builds-for-linux-macos-and-windows-decided) | A release builds for Linux, macOS and Windows | Decided |
 | [D16](#d16-markdown-html-and-web-pages-render-with-xoblitz-decided) | Markdown, HTML and web pages render with xo/blitz | Decided |
 | [D17](#d17-mime-detection-uses-libmagic-through-xomagic-decided-amends-d6) | Mime detection uses libmagic through xo/magic | Decided. Amends D6 |
-| [D18](#d18-mermaid-renders-in-process-with-xomermaid-on-wazero-decided-amends-d7) | Mermaid renders in process with xo/mermaid on wazero | Decided. Amends D7 |
+| [D18](#d18-mermaid-renders-in-process-with-xomermaid-on-wazero-decided-amends-d7-amended-by-d36) | Mermaid renders in process with xo/mermaid on wazero | Decided. Amends D7. Amended by D36 |
 | [D19](#d19-iv-plays-one-animation-to-the-terminal-for-at-most-one-minute-decided) | iv plays one animation to the terminal, for at most one minute | Decided |
 | [D20](#d20-the-go-directive-follows-the-newest-release-of-go-decided) | The go directive follows the newest release of Go | Decided |
 | [D21](#d21-iv-is-set-up-for-coding-agents-as-every-xo-repository-is-decided) | iv is set up for coding agents as every xo repository is | Decided |
@@ -112,6 +112,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D33](#d33-kitty-gets-raw-pixels-compressed-with-zlib-when-they-compress-well-decided-amends-d22) | Kitty gets raw pixels compressed with zlib when they compress well | Decided. Amends D22 |
 | [D34](#d34-a-test-file-that-crashes-a-command-on-one-system-is-not-decoded-there-decided-amends-d27) | A test file that crashes a command on one system is not decoded there | Decided. Amends D27 |
 | [D35](#d35-svg-renders-with-okage-a-port-of-resvg-to-go-decided-amends-d3) | SVG renders with okage, a port of resvg to Go | Decided. Amends D3 |
+| [D36](#d36-one-decoder-named-zuzu-draws-dot-and-mermaid-decided-amends-d18) | One decoder named zuzu draws DOT and Mermaid | Decided. Amends D18 |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -289,7 +290,7 @@ changed only tests and `.gitignore`. `62ded31` moved to magic v0.2.1. A
 comment in `decoder/mime.go` gives one limit: the text analysis of libmagic
 read out of bounds and stopped the process on the mermaid and dot test files.
 
-### D18. Mermaid renders in process with xo/mermaid on wazero. Decided. Amends D7.
+### D18. Mermaid renders in process with xo/mermaid on wazero. Decided. Amends D7. Amended by D36.
 
 `dbb6c69` (2025-08-28) rendered mermaid with the `mmdc` command, and `cab5f7e`
 added its default icon pack and a white background. `2a02ec6` (2026-09-13)
@@ -660,6 +661,54 @@ the choropleth, shows it. A build with `GOEXPERIMENT=simd` gave the same bytes
 and the same times. A file that is not an svg starts faster, and a file with
 much text, such as the sunburst with its Chinese labels, draws in half the
 time.
+
+### D36. One decoder named zuzu draws DOT and Mermaid. Decided. Amends D18.
+
+zuzu (`github.com/xo/zuzu`) is a chart library in Go, with no cgo and no
+WebAssembly. It reads DOT and Mermaid, and draws them to an `*image.RGBA`
+through okage. On 2026-11-11, Ken decided that one decoder named `zuzu`
+replaces the `graphviz` and `mermaid` decoders, as `resvg` became `okage`
+(D35). `testdata/graphviz` and `testdata/mermaid` merged into `testdata/zuzu`.
+The decoder came with zuzu v0.2.0 and okage v0.4.0.
+
+Ken made two more decisions on the same day:
+
+- `iv` bundles the four icon packs of zuzu: fa, mdi, carbon and k8s. The
+  binary grew by 4 MB, from 111.9 MB to 115.9 MB.
+- `iv` keeps no fallback to xo/mermaid. If zuzu does not draw a Mermaid file,
+  the work is an issue for zuzu. zuzu v0.2.0 does not draw an architecture,
+  class, entity relationship, mindmap, sequence or state diagram. For these,
+  the decoder returns the error of zuzu. Their test files left `testdata`.
+
+The mime detector of the decoder is `zuzu.Sniff`. It returns
+`text/vnd.graphviz` for DOT and `text/vnd.mermaid` for Mermaid. The detector
+does not claim a file whose first line is `---`. zuzu reads that line as the
+front matter of a Mermaid diagram, but a Markdown or a YAML file starts the
+same way. A claim would keep such a file from libmagic and from `blitz`. A
+Mermaid diagram with front matter routes by its extension.
+
+`--mermaid-theme dark` sets the dark mode of zuzu, and each other theme sets
+the light mode. An unknown theme is an error that names it, as before.
+`--mermaid-bg` sets the background through `zuzu.WithBackground` (D25). Both
+flags change a Mermaid diagram only, and not a DOT graph.
+
+Ken decided that the output of zuzu does not have to match the output of
+graphviz or xo/mermaid. A difference in layout, size, color or font is not a
+defect. A defect is a part of a diagram that zuzu draws wrongly or does not
+draw, such as a node outside the image or two labels that overlap. Such a
+defect is an issue for zuzu.
+
+The time of one run of `iv`, the median of 21 runs, on 2026-11-11:
+
+| File                   | Before | zuzu  |
+| ---------------------- | ------ | ----- |
+| `booktest_sqlite3.dot` | 104 ms | 38 ms |
+| `flowchart.mmd`        | 171 ms | 37 ms |
+| `pie.mmd`              | 127 ms | 37 ms |
+| `gantt.mmd`            | 123 ms | 38 ms |
+| `journey.mmd`          | 122 ms | 41 ms |
+| `aws.mmd`              | 230 ms | 41 ms |
+| `sankey.mmd`           | 148 ms | 56 ms |
 
 ## Open questions for Ken
 

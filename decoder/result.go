@@ -17,7 +17,7 @@ import (
 
 // Image is a mime type and stream to run back through the decoding pipeline.
 // Used by decoders that transform their input into another format, such as
-// graphviz rendering dot to svg.
+// libreoffice converting a document to pdf.
 type Image struct {
 	Mime   string
 	Ext    string

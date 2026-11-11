@@ -21,14 +21,12 @@ the pagination itself, which needs no file to exercise.
 | `ffmpeg`      | `ffmpeg`      | Same clip as mkv and mp4                                      |
 | `fontimg`     | `fontimg`     | Static, variable, and monospace fonts                         |
 | `gif`         | `gif`         | Still and animated                                            |
-| `graphviz`    | `graphviz`    | DOT graph, sniffed by content rather than extension           |
 | `gxps`        | `gxps`        | XPS documents; needs `xpstopng`                               |
 | `icns`        | `icns`        | Apple icon image, eight resolutions from 32 to 1024           |
 | `ico`         | `ico`         | Single and multi image icons                                  |
 | `jpeg`        | `jpeg`        |                                                               |
 | `libreoffice` | `libreoffice` | Office documents; needs `soffice` in `$PATH`                  |
 | `lottie`      | `lottie`      | Noto animated emoji, as json, `.lot`, and a dotLottie         |
-| `mermaid`     | `mermaid`     | One diagram per type the renderer understands                 |
 | `nativewebp`  | `nativewebp`  | Lossy and lossless webp, each with its png reference decode   |
 | `netpbm`      | `netpbm`      | pbm/pgm/ppm/pam, raw and plain                                |
 | `okage`       | `okage`       | SVGs, plain and gzipped, trivial to a large choropleth        |
@@ -38,6 +36,7 @@ the pagination itself, which needs no file to exercise.
 |               | `blitz-url`   |                                                               |
 | `tag`         | `tag`         | Silent audio carrying embedded cover art                      |
 | `tiff`        | `tiff`        | One file per compression the Go encoder supports              |
+| `zuzu`        | `zuzu`        | A DOT graph, and one Mermaid diagram per kind that zuzu draws |
 | `vcard`       | `vcard`       | Contacts, drawn as a business card with a scannable code      |
 | `vips`        | `vips`        | heic/heif/jxl, plus a plain and a password protected pdf      |
 | `winres`      | `winres`      | Windows PE with embedded icons                                |
@@ -213,45 +212,37 @@ so only the extension separates this from any other archive. The decoder hands
 the entries back to the pipeline, which sniffs the one it picks and comes
 straight back here -- the same trip a comic archive's pages make.
 
-### Mermaid diagrams
+### DOT graphs and Mermaid diagrams
 
-`mermaid/` holds one diagram per type, which is what the coverage is about:
-the renderer parses each grammar separately, so a type that breaks breaks on
-its own.
+`zuzu/` holds one DOT graph and one Mermaid diagram for each kind that zuzu
+draws. zuzu reads each kind separately, so a kind that breaks breaks alone.
 
-| File                                       | Diagram type                    |
-| ------------------------------------------ | ------------------------------- |
-| `flowchart.mmd`                            | `flowchart`                     |
-| `sequence.mmd`                             | `sequenceDiagram`               |
-| `class.mmd`                                | `classDiagram`                  |
-| `state.mmd`                                | `stateDiagram-v2`               |
-| `er.mmd`                                   | `erDiagram`                     |
-| `pie.mmd`                                  | `pie`                           |
-| `gantt.mmd`                                | `gantt`                         |
-| `journey.mmd`                              | `journey`                       |
-| `mindmap.mmd`                              | `mindmap`                       |
-| `sankey.mmd`                               | `sankey-beta`                   |
-| `architecture.mmd`, `aws-architecture.mmd` | `architecture-beta`             |
-| `aws.mmd`                                  | `graph`, heavily subgraphed     |
+| File                   | Kind                         |
+| ---------------------- | ---------------------------- |
+| `booktest_sqlite3.dot` | DOT, with labels of HTML     |
+| `flowchart.mmd`        | `flowchart`                  |
+| `pie.mmd`              | `pie`                        |
+| `gantt.mmd`            | `gantt`                      |
+| `journey.mmd`          | `journey`                    |
+| `sankey.mmd`           | `sankey-beta`                |
+| `aws.mmd`              | `graph`, with many subgraphs |
 
-The nine from `flowchart.mmd` to `mindmap.mmd` are the corpus [xo/mermaid][]
-renders in its own tests, kept in step with it so a renderer upgrade can be
-checked against the same diagrams from both sides.
+`booktest_sqlite3.dot` is a schema graph in the form that dbtpl and usql
+write. Each table is a label of HTML, and the edge of the foreign key runs
+from the port of one row to the port of another. No libmagic type matches it,
+so the decoder finds it by its content.
 
-`sankey.mmd` and `aws-architecture.mmd` open with yaml frontmatter rather than
-a diagram header -- a `config:` block in the first, a `title:` and a `theme:`
-in the second -- which is the other thing they cover.
+The five Mermaid files from `flowchart.mmd` to `sankey.mmd` come from the
+corpus of [xo/mermaid][], which `iv` used before zuzu (D36). `sankey.mmd`
+starts with front matter, a `config:` block. The decoder does not claim a file
+by its content when it starts with front matter, so this file covers the route
+by extension.
 
-`aws.mmd` and `aws-architecture.mmd` were written for the mermaid cli and its
-`--iconPacks`, and they still say `fa:fa-globe` in their labels. The renderer
-has no icon packs, so those render as the literal text -- they are kept for the
-large subgraphed flowchart underneath, not for the icons. `architecture.mmd`
-needs no pack: `architecture-beta` carries its own icon set, and that one draws
-its cloud, database, disk and server properly.
+`aws.mmd` was written for the mermaid cli and its `--iconPacks`. Its labels
+name icons of the fa pack, such as `fa:fa-globe`, and zuzu draws them.
 
-`TestDecode` in `decoder/mermaid` renders every one of these and checks the
-labels survive into the svg, so a diagram type that stops parsing fails there
-rather than quietly rendering an empty document.
+`TestDecode` in `decoder/zuzu` draws every one of these files. If a kind stops
+drawing, the test fails, and the decoder does not return an empty image.
 
 ### Derived files
 

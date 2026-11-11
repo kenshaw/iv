@@ -218,8 +218,8 @@ func TestIsUnidentified(t *testing.T) {
 // still what routes the file.
 func TestDetectText(t *testing.T) {
 	for _, name := range []string{
-		"../testdata/mermaid/aws.mmd",
-		"../testdata/graphviz/booktest_sqlite3.dot",
+		"../testdata/zuzu/aws.mmd",
+		"../testdata/zuzu/booktest_sqlite3.dot",
 		"../testdata/blitz/sample.md",
 	} {
 		t.Run(name, func(t *testing.T) {

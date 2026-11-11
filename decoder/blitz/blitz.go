@@ -42,9 +42,9 @@ func init() {
 	decoder.Register(
 		"blitz",
 		decoder.Desc("Markdown and html documents"),
-		// text/plain is shared with mermaid, csv, and dot, so this is the last
+		// text/plain is shared with mermaid, csv and dot, so this is the last
 		// plain text decoder tried
-		decoder.After("mermaid", "graphviz", "libreoffice"),
+		decoder.After("zuzu", "libreoffice"),
 		decoder.Extension("md", "markdown", "mkd", "mdown", "txt", "html", "htm", "xhtml"),
 		decoder.MimeType(
 			"text/markdown",

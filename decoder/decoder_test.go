@@ -210,7 +210,7 @@ func TestInitClose(t *testing.T) {
 				closes++
 				// what the init func built is what there is to close, so a
 				// close func reaches it the same way a decode func does --
-				// the decoders holding an engine (graphviz, lottie) have
+				// the decoders holding an engine (lottie, blitz) have
 				// nothing else to release
 				if s, _ := State(ctx).(string); s != "state" {
 					t.Errorf("expected the init state on the close context, got %q", s)

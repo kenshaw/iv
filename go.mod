@@ -6,7 +6,6 @@ require (
 	github.com/HugoSmits86/nativewebp v1.3.0
 	github.com/cshum/vipsgen/v2 v2.1.2
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
-	github.com/goccy/go-graphviz v0.2.10
 	github.com/jackmordaunt/icns/v4 v4.2.0
 	github.com/kenshaw/colors v0.2.4
 	github.com/kenshaw/fontimg v0.4.0
@@ -19,13 +18,12 @@ require (
 	github.com/spakin/netpbm v1.3.2
 	github.com/tc-hib/winres v0.3.1
 	github.com/tdewolff/canvas v0.0.0-20260923214215-09804640d00c
-	github.com/tetratelabs/wazero v1.12.0
 	github.com/xo/blitz v0.4.2
 	github.com/xo/lottie v0.1.0
 	github.com/xo/magic v0.3.0
-	github.com/xo/mermaid v0.1.1
-	github.com/xo/okage v0.2.0
+	github.com/xo/okage v0.4.0
 	github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18
+	github.com/xo/zuzu v0.2.0
 	golang.org/x/image v0.47.0
 	golang.org/x/sys v0.49.0
 	golang.org/x/term v0.47.0
@@ -45,10 +43,7 @@ require (
 	github.com/bodgit/plumbing v1.3.0 // indirect
 	github.com/bodgit/sevenzip v1.6.5 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
-	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
-	github.com/flopp/go-findfont v0.1.0 // indirect
-	github.com/fogleman/gg v1.3.0 // indirect
 	github.com/go-fonts/latin-modern v0.3.3 // indirect
 	github.com/go-text/typesetting v0.3.5 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
@@ -71,6 +66,7 @@ require (
 	github.com/tdewolff/font v0.0.0-20261010204837-88a7f6b56918 // indirect
 	github.com/tdewolff/minify/v2 v2.24.25 // indirect
 	github.com/tdewolff/parse/v2 v2.8.20 // indirect
+	github.com/tetratelabs/wazero v1.12.0 // indirect
 	github.com/ulikunitz/xz v0.5.17 // indirect
 	github.com/xo/blitz/libblitz/freebsd-amd64 v0.1.5 // indirect
 	github.com/xo/blitz/libblitz/linux-amd64 v0.1.5 // indirect

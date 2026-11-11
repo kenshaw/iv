@@ -143,7 +143,7 @@ func (a *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []str
 	}
 	c := a.Config(stderr)
 	ctx = ivctx.WithConfig(ctx, c)
-	// a decoder holding an engine -- graphviz, lottie, blitz -- releases it
+	// a decoder holding an engine -- lottie, blitz -- releases it
 	// here, and a failure to is worth saying rather than dropping
 	defer func() {
 		if err := decoder.Close(ctx); err != nil {

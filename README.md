@@ -356,30 +356,28 @@ shows its first frame, and does not play.
 
 ### Vector graphics and diagrams
 
-| Format                           | Extensions            | Decoder    |
-| -------------------------------- | --------------------- | ---------- |
-| SVG, plain and gzipped           | `svg` `svgz`          | `okage`    |
-| Lottie animations, and dotLottie | `json` `lot` `lottie` | `lottie`   |
-| Graphviz graph description       | `gv` `dot`            | `graphviz` |
-| Mermaid diagrams                 | `mmd` `mermaid`       | `mermaid`  |
+| Format                           | Extensions            | Decoder  |
+| -------------------------------- | --------------------- | -------- |
+| SVG, plain and gzipped           | `svg` `svgz`          | `okage`  |
+| Lottie animations, and dotLottie | `json` `lot` `lottie` | `lottie` |
+| Graphviz graph description (DOT) | `gv` `dot`            | `zuzu`   |
+| Mermaid diagrams                 | `mmd` `mermaid`       | `zuzu`   |
 
 A `.json` is only taken as a lottie when the document itself says so, so an
 ordinary json file is left alone.
 
-Mermaid diagrams are rendered in process, with no browser and no Node -- the
-renderer is WebAssembly, run on wazero. `--mermaid-theme` picks one of
-`default`, `dark`, `forest`, `neutral` or `modern`. Compiling the module takes
-over a second, so the compiled code is cached under the user cache directory
-(`iv/wazero`) and every run after the first starts in tens of milliseconds.
+[zuzu][] draws DOT graphs and Mermaid diagrams in Go, with no external
+command. `iv` finds a graph or a diagram by its content, or by its extension
+when the diagram starts with front matter. `--mermaid-theme dark` draws a
+Mermaid diagram in the dark mode of zuzu, and each other theme draws it in the
+light mode. `--mermaid-bg` sets its background.
 
-It is a reimplementation of Mermaid rather than a port, so a diagram comes out
-*Mermaid-like* rather than identical to what `mermaid.js` draws, and the
-iconify icon packs the mermaid cli takes are not supported -- an `fa:fa-globe`
-in a label renders as that text.
+zuzu draws only some kinds of Mermaid diagram. It does not draw an
+architecture, class, entity relationship, mindmap, sequence or state diagram,
+and `iv` shows its error for one of these. The icon packs fa, mdi, carbon and
+k8s are built in, so a label such as `fa:fa-globe` draws the icon.
 
-A `.mmd` the renderer cannot parse is not an error: it is plain text, so it
-falls through to `blitz`, which renders the source as a document. Run with
-`-v` to see what the renderer made of it.
+[zuzu]: https://github.com/xo/zuzu
 
 ### Documents
 
