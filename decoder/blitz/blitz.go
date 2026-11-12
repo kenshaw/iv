@@ -134,13 +134,18 @@ func render(ctx context.Context, c *blitz.Context, src, baseURL string, html boo
 	if html {
 		kind = "html"
 	}
-	img, err := draw(ctx, c, src, baseURL, kind, html, scale)
+	// one highlighter serves both renders, so that a block is highlighted once
+	var h blitz.Highlighter
+	if !html {
+		h = highlighter(ctx)
+	}
+	img, err := draw(ctx, c, src, baseURL, kind, h, scale)
 	if err != nil {
 		return nil, err
 	}
 	if truncated(img, scale) {
 		ivctx.Logf(ctx, "blitz %s: document is taller than %d css pixels, drawing it again at scale 1", kind, maxRows/scale)
-		if img, err = draw(ctx, c, src, baseURL, kind, html, 1); err != nil {
+		if img, err = draw(ctx, c, src, baseURL, kind, h, 1); err != nil {
 			return nil, err
 		}
 		if truncated(img, 1) {
@@ -150,13 +155,16 @@ func render(ctx context.Context, c *blitz.Context, src, baseURL string, html boo
 	return pages(ctx, img), nil
 }
 
-// draw renders the source at a scale, up to the height that blitz draws.
-func draw(ctx context.Context, c *blitz.Context, src, baseURL, kind string, html bool, s uint32) (*image.RGBA, error) {
+// draw renders the source at a scale, up to the height that blitz draws. The
+// source is Markdown when h is not nil, and h colors its code blocks.
+func draw(ctx context.Context, c *blitz.Context, src, baseURL, kind string, h blitz.Highlighter, s uint32) (*image.RGBA, error) {
 	opts := options(ctx)
 	opts.Scale, opts.MaxHeight = float32(s), maxRows/s
 	ivctx.Logf(ctx, "blitz %s: %d bytes at %dx%d base %q", kind, len(src), opts.Width, s, baseURL)
-	render := c.RenderMarkdown
-	if html {
+	render := func(src, baseURL string, opts blitz.Options) (*image.RGBA, error) {
+		return c.RenderMarkdownHighlighted(src, baseURL, opts, h)
+	}
+	if h == nil {
 		render = c.RenderHTML
 	}
 	img, err := render(src, baseURL, opts)

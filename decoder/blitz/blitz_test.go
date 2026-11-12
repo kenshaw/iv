@@ -2,11 +2,15 @@ package blitz
 
 import (
 	"context"
+	"html"
 	"image"
 	"image/color"
+	"strings"
 	"testing"
 
 	"github.com/kenshaw/iv/ivctx"
+	"github.com/xo/transit"
+	"github.com/xo/transit/styles"
 )
 
 // TestIsHTML checks that the extension decides how a document is parsed
@@ -89,4 +93,100 @@ func TestPages(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestHighlight checks that the highlight query of every grammar compiles,
+// and that a snippet of each language comes back colored and escaped.
+func TestHighlight(t *testing.T) {
+	snippets := map[string]string{
+		"bash":       "echo \"<$HOME>\"\n",
+		"c":          "int main(void) { return 1 < 2; }\n",
+		"cpp":        "template <typename T> class A { public: T v; };\n",
+		"go":         "func main() { _ = 1 < 2 }\n",
+		"html":       "<p class=\"a\">a &amp; b</p>\n",
+		"java":       "class A { boolean b = 1 < 2; }\n",
+		"javascript": "const a = 1 < 2;\n",
+		"json":       "{\"a\": \"<b>\", \"c\": 1}\n",
+		"python":     "def f():\n    return 1 < 2\n",
+		"ruby":       "def f\n  1 < 2\nend\n",
+		"rust":       "fn main() { let a = 1 < 2; }\n",
+		"sql":        "select a from b where c < 2;\n",
+		"typescript": "const a: number = 1 < 2 ? 1 : 2;\n",
+	}
+	if len(snippets) != len(grammars) {
+		t.Fatalf("expected a snippet for each of the %d grammars, got %d", len(grammars), len(snippets))
+	}
+	style, ok := styles.Get(lightStyle)
+	if !ok {
+		t.Fatalf("no style %q", lightStyle)
+	}
+	ctx := context.Background()
+	parser, cursor := transit.NewParser(), transit.NewQueryCursor()
+	for name, code := range snippets {
+		t.Run(name, func(t *testing.T) {
+			s, err := highlight(ctx, parser, cursor, style, name, code)
+			switch {
+			case err != nil:
+				t.Fatalf("expected no error, got: %v", err)
+			case !strings.Contains(s, `<span style="color:#`):
+				t.Errorf("expected a colored span, got: %s", s)
+			case strings.Contains(s, "<2") || strings.Contains(s, "< 2") || strings.Contains(s, `"<b>"`):
+				t.Errorf("expected the code to be escaped, got: %s", s)
+			}
+			if got := spanText(s); got != code {
+				t.Errorf("expected the text of the code, got: %q", got)
+			}
+		})
+	}
+}
+
+// TestHighlightLanguage checks how the info string of a block names its
+// language.
+func TestHighlightLanguage(t *testing.T) {
+	style, _ := styles.Get(lightStyle)
+	ctx := context.Background()
+	parser, cursor := transit.NewParser(), transit.NewQueryCursor()
+	for _, test := range []struct {
+		lang    string
+		colored bool
+	}{
+		{"go", true},
+		{"Go", true},
+		{"golang", true},
+		{"rust,ignore", true},
+		{"js{1,3}", true},
+		{"sh", true},
+		{"postgresql", true},
+		{"tsql", true},
+		{"usql", true},
+		{"clickhouse", false},
+		{"neo4j", false},
+		{"ydb", false},
+		{"brainfuck", false},
+		{"", false},
+	} {
+		t.Run(test.lang, func(t *testing.T) {
+			s, err := highlight(ctx, parser, cursor, style, test.lang, "func main() {}\n")
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			if colored := s != ""; colored != test.colored {
+				t.Errorf("expected colored %t, got %q", test.colored, s)
+			}
+		})
+	}
+}
+
+// spanText returns the text of highlighted html, with the spans removed and
+// the escapes undone.
+func spanText(s string) string {
+	for {
+		i := strings.Index(s, "<span")
+		if i < 0 {
+			break
+		}
+		j := strings.Index(s[i:], ">")
+		s = s[:i] + s[i+j+1:]
+	}
+	return html.UnescapeString(strings.ReplaceAll(s, "</span>", ""))
 }

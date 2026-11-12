@@ -18,11 +18,26 @@ require (
 	github.com/spakin/netpbm v1.3.2
 	github.com/tc-hib/winres v0.3.1
 	github.com/tdewolff/canvas v0.0.0-20260923214215-09804640d00c
-	github.com/xo/blitz v0.4.5
+	github.com/xo/blitz v0.5.0
 	github.com/xo/lottie v0.1.0
 	github.com/xo/magic v0.3.0
 	github.com/xo/okage v0.4.0
 	github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18
+	github.com/xo/transit v0.7.8
+	github.com/xo/transit/grammars/bash v0.7.8
+	github.com/xo/transit/grammars/c v0.7.8
+	github.com/xo/transit/grammars/cpp v0.7.8
+	github.com/xo/transit/grammars/go v0.7.8
+	github.com/xo/transit/grammars/html v0.7.8
+	github.com/xo/transit/grammars/java v0.7.8
+	github.com/xo/transit/grammars/javascript v0.7.8
+	github.com/xo/transit/grammars/json v0.7.8
+	github.com/xo/transit/grammars/python v0.7.8
+	github.com/xo/transit/grammars/ruby v0.7.8
+	github.com/xo/transit/grammars/rust v0.7.8
+	github.com/xo/transit/grammars/sql v0.7.8
+	github.com/xo/transit/grammars/typescript v0.7.8
+	github.com/xo/transit/styles v0.7.8
 	github.com/xo/zuzu v0.5.0
 	golang.org/x/image v0.47.0
 	golang.org/x/sys v0.49.0

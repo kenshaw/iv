@@ -115,6 +115,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D36](#d36-one-decoder-named-zuzu-draws-dot-and-mermaid-decided-amends-d18) | One decoder named zuzu draws DOT and Mermaid | Decided. Amends D18 |
 | [D37](#d37-a-minimum-size-given-on-the-command-line-is-a-hard-floor-decided) | A minimum size given on the command line is a hard floor | Decided |
 | [D38](#d38-a-tall-document-is-drawn-whole-and-cut-into-pages-decided-amends-d16) | A tall document is drawn whole and cut into pages | Decided. Amends D16 |
+| [D39](#d39-blitz-colors-the-code-blocks-of-markdown-with-transit-decided) | blitz colors the code blocks of Markdown with transit | Decided |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -783,6 +784,39 @@ taller than that. At scale 1, the same rows hold 65532 CSS pixels. Only a
 document taller than that is cut off, with a warning. The README of usql is
 36257 CSS pixels tall. It takes two renders, 1.5 seconds, and 41 pages on a
 display of 1600x900.
+
+### D39. blitz colors the code blocks of Markdown with transit. Decided.
+
+blitz v0.5.0 added a hook for syntax highlighting. It calls a function for
+each fenced code block of a Markdown render, and the function returns the
+code as html. On 2026-11-12, Ken decided that `iv` fills the hook with
+transit (`github.com/xo/transit`), a port of tree-sitter to Go with no cgo.
+`decoder/blitz/highlight.go` parses each block with the grammar of its
+language, runs the highlight query of the grammar, and colors each capture
+with an inline style. The light style is `github` and the dark style, for
+`--blitz-dark`, is `github-dark`, both from `github.com/xo/transit/styles`.
+
+`iv` bundles 13 grammars of transit v0.7.8: Bash, C, C++, Go, HTML, Java,
+JavaScript, JSON, Python, Ruby, Rust, SQL and TypeScript. They cover the code
+blocks of most READMEs. The binary grew by 17.7 MB, from 117.9 MB to
+135.6 MB. A block in another language keeps its plain look.
+
+transit also has a grammar for each of 13 dialects of SQL. All 33 grammars
+with a highlight query make the binary 163.1 MB, and the dialects are most of
+the difference: neo4j alone is 4.4 MB. Ken decided that `iv` bundles only the
+generic `sql` grammar, and that a block of a dialect is colored with it. The
+names of cql, duckdb, mysql, oracle, postgres, sqlite3, sqlserver, surrealdb,
+trino and usql, and their common spellings, such as `postgresql` and `tsql`,
+map to `sql`. clickhouse, neo4j and ydb are not mapped, and their blocks keep
+the plain look. An HTML document
+is not highlighted, because the hook works on Markdown only.
+
+The highlight query of C++ joins the queries of C and C++, and that of
+TypeScript joins the queries of TypeScript and JavaScript, in the order of
+the `tree-sitter.json` of each grammar. A query compiles on the first use of
+its language. One highlighter serves both renders of a document (D38), and it
+keeps the html of each block, so that the second render does not parse the
+blocks again.
 
 ## Open questions for Ken
 

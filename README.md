@@ -398,6 +398,16 @@ k8s are built in, so a label such as `fa:fa-globe` draws the icon.
 | OpenDocument *(needs `soffice`)*                                 | `odt` `ods` `odp` `odg` `odf` `odc` `ott` `ots` `otp` `otg`                                | `libreoffice` |
 | RTF, Publisher, Visio, WordPerfect, csv, tsv *(needs `soffice`)* | `rtf` `pub` `vsd` `wpd` `csv` `tsv`                                                        | `libreoffice` |
 
+`blitz` colors the fenced code blocks of a Markdown document with
+[transit][], a port of tree-sitter to Go. It knows Bash, C, C++, Go, HTML,
+Java, JavaScript, JSON, Python, Ruby, Rust, SQL and TypeScript, with the
+colors of GitHub. A block of a dialect of SQL, such as `postgres`, `mysql`,
+`sqlite3`, `sqlserver`, `oracle` or `usql`, is colored as generic SQL.
+`--blitz-dark` uses the dark colors of GitHub. A block in another language
+keeps its plain look.
+
+[transit]: https://github.com/xo/transit
+
 ### Video and audio
 
 | Format                                      | Extensions                                                                                                 | Decoder  |
