@@ -116,6 +116,8 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D37](#d37-a-minimum-size-given-on-the-command-line-is-a-hard-floor-decided) | A minimum size given on the command line is a hard floor | Decided |
 | [D38](#d38-a-tall-document-is-drawn-whole-and-cut-into-pages-decided-amends-d16) | A tall document is drawn whole and cut into pages | Decided. Amends D16 |
 | [D39](#d39-blitz-colors-the-code-blocks-of-markdown-with-transit-decided) | blitz colors the code blocks of Markdown with transit | Decided |
+| [D40](#d40-zuzu-draws-an-emoji-in-color-decided) | zuzu draws an emoji in color | Decided |
+| [D41](#d41-a-lottie-draws-with-the-lottie-package-of-okage-decided) | A lottie draws with the lottie package of okage | Decided |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -313,11 +315,23 @@ rules:
 - `--animate` takes exactly one file, and it does not work with `--out`.
 - One pass plays for at most one minute.
 - A video is sampled at 12 frames per second across its length.
-- Playback follows the clock and drops a frame that is late.
+- Playback follows the clock and drops a frame that is late, unless the
+  decoder made it late (see below).
 - `--loop` and `--fps` imply `--animate`.
 
 An animated WebP or APNG does not play. No text gives a reason, and
 [`BACKLOG.md`](BACKLOG.md) holds the item.
+
+On 2026-11-13, Ken found that `--animate` showed only the first frame of a
+lottie. A frame of okage v0.6.0 took longer to draw than its time on screen,
+so every frame after the first came late, and the player dropped each one. A
+dropped frame saves time only when the drawing is slow and the next frame is
+ready. The decoder makes each frame in turn, so a frame that the decoder made
+late is followed by another late frame. The player now measures how long it
+waited for each frame. When it waited 1 ms or more, it draws the late frame
+and moves the rest of the pass back by the time lost. `fire.lottie` at
+1024x1024 showed 1 of its 65 frames, and now shows all 65 in 2.3 s, where
+the animation is 1.08 s long. `TestPlaySlowProducer` covers it.
 
 ### D20. The go directive follows the newest release of Go. Decided.
 
@@ -739,6 +753,25 @@ of Mermaid. Of the files in `testdata/zuzu`, only `gantt-sections.mmd` drew
 differently: it gained the bar of a short task that v0.4.0 left out. The
 five files in `testdata/zuzu/broken` still fail.
 
+On the same day, `iv` moved to zuzu v0.6.0, which needs okage v0.5.0. zuzu now
+draws the block, C4, gitGraph, requirement and timeline diagrams, and the five
+files moved out of `testdata/zuzu/broken`. Nine new files took their place,
+one for each kind that zuzu does not draw: cynefin, eventmodeling, ishikawa,
+kanban, packet, railroad, treeView, venn and zenuml. They come from the same
+corpus as the other files. zuzu v0.6.0 also draws edges darker and wider, with
+larger arrowheads, and moves apart the labels of edges that end at the same
+port. Both changes came from a report on the schema graphs of dbtpl.
+
+On the same day, `iv` moved to zuzu v0.7.0, which draws every kind of diagram
+of Mermaid 12.3. The nine files moved out of `testdata/zuzu/broken`, and the
+folder was empty. `TestDecodeBroken` and the folder were removed. If a later
+version of Mermaid adds a kind that zuzu does not draw, they can come back.
+
+zuzu v0.7.1 fixed the one defect that the nine files showed. In
+`venn-styles.mmd`, the texts "REST" and "GraphQL" of one area drew over each
+other. zuzu now stacks the texts of an area in one column when one of them is
+wider than its cell.
+
 ### D37. A minimum size given on the command line is a hard floor. Decided.
 
 `--min-width` and `--min-height` default to 64. With the defaults, `iv` grows
@@ -817,6 +850,57 @@ the `tree-sitter.json` of each grammar. A query compiles on the first use of
 its language. One highlighter serves both renders of a document (D38), and it
 keeps the html of each block, so that the second render does not parse the
 blocks again.
+
+### D40. zuzu draws an emoji in color. Decided.
+
+Without a font for emoji, zuzu draws nothing for an emoji, and reports the
+character with `zuzu.ErrNoGlyph`. zuzu v0.6.0 added the package
+`github.com/xo/zuzu/text/emoji`, which holds the font Noto Color Emoji. A
+render that gets the font through `zuzu.WithEmoji` draws an emoji in color.
+
+On 2026-11-12, Ken decided that `iv` passes the font. The binary grew by
+10.7 MB, from 138.0 MB to 148.7 MB. `testdata/zuzu/emoji.mmd` is a flowchart
+with an emoji in each label, and `TestDecodeEmoji` fails when zuzu reports an
+emoji that no font has.
+
+### D41. A lottie draws with the lottie package of okage. Decided.
+
+`iv` drew a lottie with `github.com/xo/lottie`, which runs the ThorVG engine
+as WebAssembly. okage v0.6.0 added the package `github.com/xo/okage/lottie`, a
+port of the crate velato to Go, which draws as ThorVG does where velato
+differs. On 2026-11-12, Ken decided that `iv` draws a lottie with it. The
+decoder parses the document once, and draws each frame on a new pixmap of
+okage, at the size that the frame is shown at.
+
+The pictures match those of ThorVG. Frames 1, 10 and 20 of the three files
+in `testdata/lottie`, at 300x300, differ by an RMSE of 0.27% to 0.59%. The
+binary is 4.2 MB smaller, because the WebAssembly runtime is gone.
+
+ThorVG took about 230 ms to start in each run of `iv`, and okage starts at
+once. One run of `iv` on a file at 1024x1024, the median of 7 runs:
+
+| File          | ThorVG | okage v0.6.0 | okage v0.6.1 |
+| ------------- | ------ | ------------ | ------------ |
+| `rocket.json` | 251 ms | 236 ms       | 55 ms        |
+| `fire.lottie` | 260 ms | 138 ms       | 76 ms        |
+| `star.lot`    | 240 ms | 57 ms        | 36 ms        |
+
+One frame took longer to draw. `BenchmarkDecode` drew `rocket.json` at
+1024x1024 in 8.4 ms with ThorVG, after ThorVG started, and in 195 ms with
+okage v0.6.0. Almost all of the time was in the pixel pipeline of okage,
+which composited each layer over the whole canvas. okage v0.6.1 composites
+only the part of each layer that has pixels, and the frames did not change.
+One frame at 1024x1024, as `iv -v` logs it:
+
+| File          | okage v0.6.0 | okage v0.6.1 |
+| ------------- | ------------ | ------------ |
+| `rocket.json` | 200 ms       | 18 ms        |
+| `fire.lottie` | 100 ms       | 40 ms        |
+| `star.lot`    | 26 ms        | 4.5 ms       |
+
+`fire.lottie` spends most of its time on gradients of more than two stops,
+which okage draws in its slower pipeline. A frame at 60 fps is on screen for
+16.7 ms, so at full size the fire plays slower than its own speed (D19).
 
 ## Open questions for Ken
 

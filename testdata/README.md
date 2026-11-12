@@ -220,12 +220,8 @@ straight back here -- the same trip a comic archive's pages make.
 
 ### DOT graphs and Mermaid diagrams
 
-`zuzu/` holds the graphs and diagrams that zuzu draws. `zuzu/broken/` holds
-diagrams that zuzu does not draw yet. They are the targets for fixes in zuzu.
-`TestDecode` in `decoder/zuzu` draws every file in `zuzu/`, and
-`TestDecodeBroken` checks that zuzu still fails on every file in
-`zuzu/broken/`. When zuzu draws one of them, `TestDecodeBroken` fails, and the
-file moves to `zuzu/`. `test.sh` does not render `zuzu/broken/`.
+`zuzu/` holds the graphs and diagrams that zuzu draws. `TestDecode` in
+`decoder/zuzu` draws every file in `zuzu/`.
 
 The first files are simple, and cover one kind each:
 
@@ -238,6 +234,7 @@ The first files are simple, and cover one kind each:
 | `journey.mmd`          | `journey`                    |
 | `sankey.mmd`           | `sankey-beta`                |
 | `aws.mmd`              | `graph`, with many subgraphs |
+| `emoji.mmd`            | `flowchart`, with emoji      |
 
 `booktest_sqlite3.dot` is a schema graph in the form that dbtpl and usql
 write. Each table is a label of HTML, and the edge of the foreign key runs
@@ -252,6 +249,9 @@ by extension.
 
 `aws.mmd` was written for the mermaid cli and its `--iconPacks`. Its labels
 name icons of the fa pack, such as `fa:fa-globe`, and zuzu draws them.
+
+`emoji.mmd` puts an emoji in each label. `TestDecodeEmoji` fails when zuzu
+draws one of them as nothing (D40).
 
 The other Mermaid files show the most complex features of each kind. They
 come from the corpus of [mermaid-go-renderer][] at commit `9af8f11`, which
@@ -275,16 +275,20 @@ Both are under the MIT license, in `zuzu/LICENSE-mermaid.txt`.
 | `state-composite-fork.mmd`  | A fork and a join inside a composite state                    |
 | `mindmap-shapes.mmd`        | Every node shape, with an icon of mdi                         |
 | `architecture-nested.mmd`   | Groups nested deeply                                          |
-
-zuzu v0.4.0 does not draw the kinds of the five files in `broken/`:
-
-| File in `broken/`           | Kind and features                                        |
-| --------------------------- | -------------------------------------------------------- |
-| `gitgraph-cherry-pick.mmd`  | Branch order, a cherry-pick with a tag, bottom to top    |
-| `timeline-sections.mmd`     | Sections, and long events with line breaks               |
-| `c4-context.mmd`            | The system context example of C4                         |
-| `block-nested.mmd`          | Nested blocks that span columns                          |
-| `requirement-relations.mmd` | Requirements and elements, with six kinds of relation    |
+| `gitgraph-cherry-pick.mmd`  | Branch order, a cherry-pick with a tag, bottom to top         |
+| `timeline-sections.mmd`     | Sections, and long events with line breaks                    |
+| `c4-context.mmd`            | The system context example of C4                              |
+| `block-nested.mmd`          | Nested blocks that span columns                               |
+| `requirement-relations.mmd` | Requirements and elements, with six kinds of relation         |
+| `cynefin-domains.mmd`       | All four main domains, with two or three items in each        |
+| `eventmodeling-data.mmd`    | Time frames of commands and events, with data blocks          |
+| `ishikawa-deep.mmd`         | Twelve causes, a chain seven levels deep, a repeated label    |
+| `kanban-metadata.mmd`       | Columns of cards with tickets, people and priorities          |
+| `packet-tcp.mmd`            | The fields of a TCP header, with the bit numbers              |
+| `railroad-grammar.mmd`      | The grammar of an expression, with loops and choices          |
+| `treeview-config.mmd`       | A nested tree, with its layout and colors in the front matter |
+| `venn-styles.mmd`           | Three sets, every union, text in each part, and fill styles   |
+| `zenuml-returns.mmd`        | Sync and async messages that return values                    |
 
 The `.gv` files come from the gallery of the Graphviz website, at commit
 `ce9b383` of [graphviz.gitlab.io][]. They are under the Eclipse Public License

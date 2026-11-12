@@ -22,6 +22,7 @@ import (
 	"github.com/xo/zuzu/icons/fa"
 	"github.com/xo/zuzu/icons/k8s"
 	"github.com/xo/zuzu/icons/mdi"
+	"github.com/xo/zuzu/text/emoji"
 	"github.com/xo/zuzu/theme"
 )
 
@@ -102,6 +103,9 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 		zuzu.WithIcons("mdi", mdi.Pack()),
 		zuzu.WithIcons("carbon", carbon.Pack()),
 		zuzu.WithIcons("k8s", k8s.Pack()),
+		// an emoji draws in color with the font of noto color emoji. Without
+		// it, an emoji draws nothing
+		zuzu.WithEmoji(emoji.Font()),
 	}
 	if dialect == zuzu.Mermaid {
 		c := ivctx.Get(ctx)

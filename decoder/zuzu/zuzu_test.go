@@ -3,6 +3,7 @@ package zuzu
 import (
 	"bytes"
 	"context"
+	"errors"
 	"image"
 	"image/color"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/kenshaw/colors"
 	"github.com/kenshaw/iv/ivctx"
+	"github.com/xo/zuzu"
 )
 
 // TestDetect checks that a graph or a diagram is recognized by its content,
@@ -52,7 +54,7 @@ func TestDetect(t *testing.T) {
 
 // TestDecode draws every graph and diagram in testdata/zuzu as an image.
 func TestDecode(t *testing.T) {
-	for _, name := range testFiles(t, "") {
+	for _, name := range testFiles(t) {
 		t.Run(name, func(t *testing.T) {
 			b := renderFile(t, testContext(t), name).Bounds()
 			if b.Dx() <= 0 || b.Dy() <= 0 {
@@ -62,24 +64,10 @@ func TestDecode(t *testing.T) {
 	}
 }
 
-// TestDecodeBroken checks that zuzu still fails on each file in
-// testdata/zuzu/broken. These files are the targets for fixes in zuzu. When
-// zuzu draws one, move it to testdata/zuzu, so that TestDecode covers it.
-func TestDecodeBroken(t *testing.T) {
-	for _, name := range testFiles(t, "broken") {
-		t.Run(name, func(t *testing.T) {
-			if _, err := renderFileErr(t, testContext(t), filepath.Join("broken", name)); err == nil {
-				t.Errorf("zuzu draws %s now, so move it from testdata/zuzu/broken to testdata/zuzu", name)
-			}
-		})
-	}
-}
-
-// testFiles returns the names of the graphs and diagrams in a folder of
-// testdata/zuzu.
-func testFiles(t *testing.T, dir string) []string {
+// testFiles returns the names of the graphs and diagrams in testdata/zuzu.
+func testFiles(t *testing.T) []string {
 	t.Helper()
-	entries, err := os.ReadDir(filepath.Join("..", "..", "testdata", "zuzu", dir))
+	entries, err := os.ReadDir(filepath.Join("..", "..", "testdata", "zuzu"))
 	if err != nil {
 		t.Fatalf("no test data: %v", err)
 	}
@@ -90,7 +78,7 @@ func testFiles(t *testing.T, dir string) []string {
 		}
 	}
 	if len(names) == 0 {
-		t.Fatalf("no test data in testdata/zuzu/%s", dir)
+		t.Fatal("no test data in testdata/zuzu")
 	}
 	return names
 }
@@ -139,6 +127,24 @@ func TestDecodeBackground(t *testing.T) {
 				t.Errorf("expected the corner to be %v, got %v", test.exp, got)
 			}
 		})
+	}
+}
+
+// TestDecodeEmoji checks that an emoji draws, in the font of Noto Color
+// Emoji. zuzu reports a character that no font has, and draws nothing for it.
+func TestDecodeEmoji(t *testing.T) {
+	ctx := testContext(t)
+	var missing []error
+	ivctx.Get(ctx).Logger = func(_ string, v ...any) {
+		for _, arg := range v {
+			if err, ok := arg.(error); ok && errors.Is(err, zuzu.ErrNoGlyph) {
+				missing = append(missing, err)
+			}
+		}
+	}
+	renderFile(t, ctx, "emoji.mmd")
+	for _, err := range missing {
+		t.Errorf("expected every emoji to draw, got: %v", err)
 	}
 }
 

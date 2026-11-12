@@ -323,6 +323,11 @@ the frame before it was still being drawn is dropped rather than played late.
 An animation keeps its own speed on a terminal that cannot draw it that fast;
 it just shows fewer of the frames.
 
+A frame that comes late because `iv` was still making it, as a lottie or a
+video can, is drawn late instead. Each frame is made in turn, so dropping it
+saves no time. Such an animation plays slower than its own speed, and shows
+every frame.
+
 A file with nothing to play -- a jpeg, a single frame gif -- is not animated,
 and `--animate` says so rather than sitting on a still image.
 
@@ -378,10 +383,9 @@ when the diagram starts with front matter. `--mermaid-theme dark` draws a
 Mermaid diagram in the dark mode of zuzu, and each other theme draws it in the
 light mode. `--mermaid-bg` sets its background.
 
-zuzu draws most kinds of Mermaid diagram. It does not draw a block, C4,
-gitGraph, requirement or timeline diagram, and `iv` shows its error for one of
-these. The icon packs fa, mdi, carbon and
-k8s are built in, so a label such as `fa:fa-globe` draws the icon.
+zuzu draws every kind of diagram of Mermaid 12.3. The icon packs fa, mdi,
+carbon and k8s are built in, so a label such as `fa:fa-globe` draws the icon.
+An emoji draws in color, with the font Noto Color Emoji.
 
 [zuzu]: https://github.com/xo/zuzu
 

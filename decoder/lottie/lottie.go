@@ -1,7 +1,7 @@
-// Package lottie supplies a lottie animation decoder for iv, rasterizing
-// frames with the thorvg vector engine.
+// Package lottie supplies a lottie animation decoder for iv. It draws the
+// frames with the lottie package of okage, in Go (D41).
 //
-// See: https://github.com/xo/lottie
+// See: https://github.com/xo/okage
 package lottie
 
 import (
@@ -12,14 +12,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
 	"io"
+	"math"
 	"path"
 	"slices"
 	"sort"
 
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/ivctx"
-	"github.com/xo/lottie"
+	"github.com/xo/okage"
+	"github.com/xo/okage/lottie"
 )
 
 // mime is the lottie mime type.
@@ -49,29 +52,8 @@ func init() {
 			"application/json", "lottie",
 		),
 		decoder.MimeDetector(detect),
-		decoder.Init(open, shut),
 		decoder.Decoder(decode),
 	)
-}
-
-// open builds the renderer. Compiling the thorvg webassembly module is the
-// expensive part of it, and the pipeline runs this once however many
-// animations are rendered.
-func open(ctx context.Context) (any, error) {
-	r, err := lottie.New(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return r, nil
-}
-
-// shut closes the renderer, releasing the webassembly runtime with it.
-func shut(ctx context.Context) error {
-	r, _ := decoder.State(ctx).(*lottie.Renderer)
-	if r == nil {
-		return nil
-	}
-	return r.Close(ctx)
 }
 
 // peek is how many leading bytes are sniffed for a lottie document.
@@ -91,7 +73,7 @@ const peek = 16 * 1024
 // a lottie.
 func detect(_ context.Context, r io.Reader) (string, error) {
 	buf, _ := bufio.NewReaderSize(r, peek).Peek(peek)
-	if _, _, ok := header(buf); !ok {
+	if !header(buf) {
 		return "", nil
 	}
 	return mime, nil
@@ -107,40 +89,44 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 	if isZip(buf) {
 		return dotLottie(ctx, buf)
 	}
-	rend, _ := decoder.State(ctx).(*lottie.Renderer)
-	if rend == nil {
-		return nil, errors.New("renderer not initialized")
+	c, err := lottie.Parse(buf)
+	if err != nil {
+		return nil, err
 	}
-	// only the size is taken from the document here, and a document this
-	// cannot read is still handed to thorvg to judge: a file reaching this
-	// point named .lot or .lottie was routed by that name rather than by the
-	// sniffer, and thorvg has the final say on what it can parse
-	nw, nh, _ := header(buf)
-	w, h := ivctx.Scale(ctx, nw, nh)
+	total := int(c.Frames[1] - c.Frames[0])
+	if c.Width == 0 || c.Height == 0 || total <= 0 {
+		return nil, ErrEmpty
+	}
+	// a composition has no pixels of its own, so it is drawn at the size that
+	// it is shown at, and not resampled to that size after
+	w, h := ivctx.Scale(ctx, int(c.Width), int(c.Height))
 	if ivctx.Animate(ctx) {
-		return animate(ctx, rend, buf, w, h)
+		return animate(ctx, c, total, w, h)
 	}
-	// thorvg draws to whatever size it is handed, so the animation is
-	// rasterized at the displayed size rather than resampled to it after: a
-	// composition has no pixels of its own to preserve. A zero size, from a
-	// document whose own size could not be read, leaves it on thorvg's.
-	//
-	// the errors this package returns already name themselves, and the
-	// pipeline prefixes the decoder on top, so nothing is added here
-	a, err := rend.Load(ctx, buf, lottie.Options{Width: w, Height: h})
-	if err != nil {
-		return nil, err
+	n := frameIndex(ctx, total)
+	ivctx.Logf(ctx, "lottie: %dx%d, %d frames at %g fps, rendering frame %d", w, h, total, c.FrameRate, n)
+	return frame(c, n, w, h)
+}
+
+// ErrEmpty is the error of a composition with no size or no frames.
+var ErrEmpty = errors.New("lottie has no size or no frames")
+
+// frame draws frame n of the composition, counted from its first frame, at
+// w x h.
+func frame(c *lottie.Composition, n, w, h int) (*image.RGBA, error) {
+	if w <= 0 || h <= 0 || w > math.MaxInt32 || h > math.MaxInt32 {
+		return nil, fmt.Errorf("lottie frame %dx%d: %w", w, h, ErrEmpty)
 	}
-	defer a.Close(ctx)
-	w, h = a.Size()
-	total := int(a.TotalFrames())
-	frame := frameIndex(ctx, total)
-	ivctx.Logf(ctx, "lottie: %dx%d, %d frames at %g fps, rendering frame %d", w, h, total, a.FPS(), frame)
-	img, err := a.Frame(ctx, float32(frame))
-	if err != nil {
-		return nil, err
+	pm, ok := okage.NewPixmap(uint32(w), uint32(h))
+	if !ok {
+		return nil, fmt.Errorf("lottie frame %dx%d: %w", w, h, ErrEmpty)
 	}
-	return img, nil
+	m := pm.AsMut()
+	s := lottie.AffineScale(float64(w) / float64(c.Width))
+	if err := lottie.RenderFrame(c, c.Frames[0]+float64(n), s, &m); err != nil {
+		return nil, fmt.Errorf("lottie frame %d: %w", n, err)
+	}
+	return pm.AsRGBA(), nil
 }
 
 // frameIndex returns the frame to render: the configured page when it names
@@ -213,56 +199,47 @@ var markers = [...]string{"fr", "ip", "op", "w", "h"}
 // allMarkers is the seen set with every marker in it.
 const allMarkers = 1<<len(markers) - 1
 
-// header reads the composition size out of the head of a lottie document,
-// reporting whether the document is one at all.
+// header reports whether the head of a document is the head of a lottie.
 //
 // buf may be cut short mid-document, in which case the walk stops where the
 // json does and answers with what it saw up to there. Only the top level is
 // read: a "w" belonging to a layer is stepped over rather than mistaken for
 // the composition's.
-func header(buf []byte) (int, int, bool) {
+func header(buf []byte) bool {
 	dec := json.NewDecoder(bytes.NewReader(buf))
 	if t, err := dec.Token(); err != nil || t != json.Delim('{') {
-		return 0, 0, false
+		return false
 	}
-	var w, h float64
 	var seen int
 	for dec.More() {
 		t, err := dec.Token()
 		if err != nil {
-			return 0, 0, false
+			return false
 		}
 		key, ok := t.(string)
 		if !ok {
-			return 0, 0, false
+			return false
 		}
 		i := slices.Index(markers[:], key)
 		if i == -1 {
 			if err := skip(dec); err != nil {
-				return 0, 0, false
+				return false
 			}
 			continue
 		}
 		// every identifying property is a number; one that is anything else
 		// belongs to some other format that happens to share the name
 		if t, err = dec.Token(); err != nil {
-			return 0, 0, false
+			return false
 		}
-		v, ok := t.(float64)
-		if !ok {
-			return 0, 0, false
-		}
-		switch key {
-		case "w":
-			w = v
-		case "h":
-			h = v
+		if _, ok := t.(float64); !ok {
+			return false
 		}
 		if seen |= 1 << i; seen == allMarkers {
-			return int(w), int(h), true
+			return true
 		}
 	}
-	return 0, 0, false
+	return false
 }
 
 // skip reads past the next value, descending through nested objects and

@@ -96,6 +96,10 @@ func (a *Args) animate(ctx context.Context, stdout io.Writer, enc *encoder.Entry
 	}
 }
 
+// slowProducer is how long the player can wait for a frame before the
+// producer, and not the drawing, is what made the frame late.
+const slowProducer = time.Millisecond
+
 // player draws an animation's frames to the terminal.
 type player struct {
 	w       io.Writer
@@ -116,11 +120,20 @@ type player struct {
 // by while the one before it was still being drawn is dropped instead of
 // played late, and the animation keeps to its own speed however many of them
 // that costs.
+//
+// A frame that is late because the player waited for the producer to make it
+// is drawn, and the rest of the pass moves back by the time it lost. Dropping
+// it saves nothing, because the producer makes each frame in turn, and the
+// frame after it is as late. The animation then plays slower than its own
+// speed, and shows every frame.
 func (p *player) play(ctx context.Context, anim *decoder.Anim, hold bool) (int, error) {
 	start, sched := time.Now(), time.Duration(0)
+	ready := start
 	var drawn int
 	p.dropped = 0
 	for frame, err := range anim.Frames(ctx) {
+		// how long the player waited for the producer to make this frame
+		waited := time.Since(ready)
 		switch {
 		case err != nil:
 			return drawn, err
@@ -133,10 +146,15 @@ func (p *player) play(ctx context.Context, anim *decoder.Anim, hold bool) (int, 
 		}
 		at := sched
 		sched += frame.Delay
-		switch {
+		switch late := time.Since(start) - sched; {
 		case drawn == 0: // the first frame is never late
-		case time.Since(start) >= sched: // its moment has been and gone
+		case late < 0: // its moment has not gone by
+		case waited >= slowProducer:
+			// the producer made it late, so it is drawn now
+			start = start.Add(late + frame.Delay)
+		default: // its moment has been and gone
 			p.dropped++
+			ready = time.Now()
 			continue
 		}
 		if !wait(ctx, at-time.Since(start)) {
@@ -146,6 +164,7 @@ func (p *player) play(ctx context.Context, anim *decoder.Anim, hold bool) (int, 
 			return drawn, err
 		}
 		drawn++
+		ready = time.Now()
 	}
 	if hold {
 		wait(ctx, sched-time.Since(start))

@@ -3,7 +3,6 @@ package lottie
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"image"
 	"os"
 	"path/filepath"
@@ -82,18 +81,6 @@ func TestDetect(t *testing.T) {
 				t.Errorf("expected mime %q, got %q", test.exp, got)
 			}
 		})
-	}
-}
-
-// TestHeaderSize checks the composition size is read from the document, since
-// it is what the render is scaled against.
-func TestHeaderSize(t *testing.T) {
-	w, h, ok := header([]byte(`{"v":"5.8.1","fr":60,"ip":0,"op":40,"w":800,"h":600}`))
-	if !ok {
-		t.Fatal("expected a lottie")
-	}
-	if w != 800 || h != 600 {
-		t.Errorf("expected 800x600, got %dx%d", w, h)
 	}
 }
 
@@ -211,42 +198,4 @@ func same(a, b image.Image) bool {
 		}
 	}
 	return true
-}
-
-// TestMain releases the renderer the way iv does once the tests are done, and
-// checks that what was released was the real one.
-//
-// The pipeline hands a close func its decoder's state -- a decoder handed nil
-// instead reports no error here and leaves a working renderer behind, which is
-// what the close in this package used to do.
-func TestMain(m *testing.M) {
-	code := m.Run()
-	if code == 0 {
-		code = checkClose()
-	}
-	os.Exit(code)
-}
-
-// checkClose builds the renderer through the pipeline, closes it, and checks
-// that it is gone: the webassembly runtime goes with it, so nothing decodes
-// afterwards.
-func checkClose() int {
-	ctx := context.Background()
-	pathName := filepath.Join("..", "..", "testdata", "lottie", "rocket.json")
-	if _, err := os.Stat(pathName); err != nil {
-		return 0
-	}
-	if _, _, err := decoder.DecodeFile(ctx, pathName); err != nil {
-		fmt.Fprintf(os.Stderr, "decode: %v\n", err)
-		return 1
-	}
-	if err := decoder.Close(ctx); err != nil {
-		fmt.Fprintf(os.Stderr, "decoder close: %v\n", err)
-		return 1
-	}
-	if _, _, err := decoder.DecodeFile(ctx, pathName); err == nil {
-		fmt.Fprintln(os.Stderr, "decoder close: the renderer still decodes, so it was never closed")
-		return 1
-	}
-	return 0
 }

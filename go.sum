@@ -139,8 +139,6 @@ github.com/tdewolff/parse/v2 v2.8.20 h1:eU+UStwuoeHnXdaSBIoEfNnj33URx24gJDdNViHH
 github.com/tdewolff/parse/v2 v2.8.20/go.mod h1:OemXEPll2+Sn7pQ6xFxC9cEm1wDnNt1hC2q3jIh+OoI=
 github.com/tdewolff/test v1.0.12 h1:7F21DqIajswxuche0geHdrUZRCWE4oko4b7bcmkkrxk=
 github.com/tdewolff/test v1.0.12/go.mod h1:XPuWBzvdUzhCuxWO1ojpXsyzsA5bFoS3tO/Q3kFuTG8=
-github.com/tetratelabs/wazero v1.12.0 h1:DuWcpNu/FzgEXgGBDp8J1Spc+CWOvvtvVyjKlaZopYU=
-github.com/tetratelabs/wazero v1.12.0/go.mod h1:LvKtzl2RqO4gyF27BiXU+nKAjcV8f38U+kP/q2vgxh0=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/ulikunitz/xz v0.5.17 h1:flR0y/x1hgM8EGV1AW3Xll6T413G0glV8UfBwR617V4=
 github.com/ulikunitz/xz v0.5.17/go.mod h1:H9Rt/W6/Qj27PGauhQc6nfCDy7vHpzsOThBSaYDoEhw=
@@ -166,8 +164,6 @@ github.com/xo/blitz/libblitz/windows-amd64 v0.1.8 h1:k6FrpQrsrSDxumHSrshumNMhH8L
 github.com/xo/blitz/libblitz/windows-amd64 v0.1.8/go.mod h1:jQtl878B0bo0jPFl9VqqM0/7wmGhEVsGaSwNpVMai0w=
 github.com/xo/blitz/libblitz/windows-arm64 v0.1.8 h1:VapRFfeE2w+xnIRN9fQAKK0OrE/PKN2FEKGMgnd8tmA=
 github.com/xo/blitz/libblitz/windows-arm64 v0.1.8/go.mod h1:vt+dqbn/4cIaAj7LbhioXv5ZadBk9PwyHo/YFXY3RzU=
-github.com/xo/lottie v0.1.0 h1:UZc+4XYpIDhX/IUEYvYYEEFl2RnjAdsv0X8lqHhKcTc=
-github.com/xo/lottie v0.1.0/go.mod h1:tNCKgE1JXoySUhOq0fLTy5ZTVBhNKnqJXoAvM0Y/kis=
 github.com/xo/magic v0.3.0 h1:zOuF97JCDfJvVwFetiL5U95+vEsBKUJdoqYdpPqYeZc=
 github.com/xo/magic v0.3.0/go.mod h1:tcl+oQVp1JN396Z0ZStdrv/flLY9U8bc3wQb75H8Mqk=
 github.com/xo/magic/libmagic/darwin_amd64/v5 v5.48.0 h1:iOrvVvVQFzaafGLvlNeWnauqMzVZ8qiEe5pmizgXyTQ=
@@ -186,8 +182,8 @@ github.com/xo/magic/libmagic/windows_amd64/v5 v5.48.0 h1:eAp4PvwbZWXfIHqetbyTXyJ
 github.com/xo/magic/libmagic/windows_amd64/v5 v5.48.0/go.mod h1:L27LWrQSyIPimM8F670C2azBmm3KKqlbkn+V5X/vcIU=
 github.com/xo/magic/libmagic/windows_arm64/v5 v5.48.0 h1:WAG2eJS7F3FEcqTib52GkEBfM0RiNM1k7agxqCETtko=
 github.com/xo/magic/libmagic/windows_arm64/v5 v5.48.0/go.mod h1:gvt6t+nQwVI5TadUpH/K4j+3g/PwXl/iuf5e0tEIz0o=
-github.com/xo/okage v0.4.0 h1:X0hiaXu2KlTWhFgwghBx+RUei3WUByWUhv2qYuqWAHU=
-github.com/xo/okage v0.4.0/go.mod h1:H4pR7XnUoRFCjXoo9Mx4lQPE9JeUu6OS3pbzMWEAOpY=
+github.com/xo/okage v0.6.1 h1:P9sjX8nBfqXh/l6IvWl1gUjU94sEM/L3cc1mx4RD870=
+github.com/xo/okage v0.6.1/go.mod h1:H4pR7XnUoRFCjXoo9Mx4lQPE9JeUu6OS3pbzMWEAOpY=
 github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18 h1:SHUjYUDTmfldf6LY6vzkX8Va9EVHb1k1PZSJ+l6+mYY=
 github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18/go.mod h1:MREUmRj7Fcm+0Gc/UImQNaZoq1nexrj0jkNBdo/ljnY=
 github.com/xo/transit v0.7.8 h1:/YhM1w3retsPtY0wYOvqZgvcrUxhlR0HIzxUlfHuxNk=
@@ -220,8 +216,8 @@ github.com/xo/transit/grammars/typescript v0.7.8 h1:oPHQIgJB3qTC/+zXECARif3m/z0z
 github.com/xo/transit/grammars/typescript v0.7.8/go.mod h1:isUXMXn8jNQprefiJv4RskqRwZeARAMKmqFM3iAf3cA=
 github.com/xo/transit/styles v0.7.8 h1:tnBWjUQ1KZcOPJdjEskB7ZaUYbQdjbcZJpau9LfuVyQ=
 github.com/xo/transit/styles v0.7.8/go.mod h1:VSvOlIHSFF048RVnU7zEGYO5TbgPt4d4IwGYqTa0C6g=
-github.com/xo/zuzu v0.5.0 h1:+sx4tlFcUXf3DB0+CMS0KE47QZ06KJr/72q+IZW776A=
-github.com/xo/zuzu v0.5.0/go.mod h1:yyQN9/k3jNCo5uBr6/gIZLde8BguHCdDK962K3RXrYw=
+github.com/xo/zuzu v0.7.1 h1:W7mtQMNIeDMlk8L5ACmHxjsyiyHDOyTW4uQ4MJnQYcw=
+github.com/xo/zuzu v0.7.1/go.mod h1:YEbZU9Z9yyMXgHbP3Je7Mc1gEwzLu4eQsYfatPgbx4s=
 github.com/xyproto/randomstring v1.0.5 h1:YtlWPoRdgMu3NZtP45drfy1GKoojuR7hmRcnhZqKjWU=
 github.com/xyproto/randomstring v1.0.5/go.mod h1:rgmS5DeNXLivK7YprL0pY+lTuhNQW3iGxZ18UQApw/E=
 github.com/yuin/goldmark v1.8.7 h1:XT/tNqCIbabh0ln675w4x3dv04kQBKi8NwYqi9IJaxI=

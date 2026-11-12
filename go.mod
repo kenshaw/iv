@@ -19,9 +19,8 @@ require (
 	github.com/tc-hib/winres v0.3.1
 	github.com/tdewolff/canvas v0.0.0-20260923214215-09804640d00c
 	github.com/xo/blitz v0.5.0
-	github.com/xo/lottie v0.1.0
 	github.com/xo/magic v0.3.0
-	github.com/xo/okage v0.4.0
+	github.com/xo/okage v0.6.1
 	github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18
 	github.com/xo/transit v0.7.8
 	github.com/xo/transit/grammars/bash v0.7.8
@@ -38,7 +37,7 @@ require (
 	github.com/xo/transit/grammars/sql v0.7.8
 	github.com/xo/transit/grammars/typescript v0.7.8
 	github.com/xo/transit/styles v0.7.8
-	github.com/xo/zuzu v0.5.0
+	github.com/xo/zuzu v0.7.1
 	golang.org/x/image v0.47.0
 	golang.org/x/sys v0.49.0
 	golang.org/x/term v0.47.0
@@ -81,7 +80,6 @@ require (
 	github.com/tdewolff/font v0.0.0-20261010204837-88a7f6b56918 // indirect
 	github.com/tdewolff/minify/v2 v2.24.25 // indirect
 	github.com/tdewolff/parse/v2 v2.8.20 // indirect
-	github.com/tetratelabs/wazero v1.12.0 // indirect
 	github.com/ulikunitz/xz v0.5.17 // indirect
 	github.com/xo/blitz/libblitz/freebsd-amd64 v0.1.8 // indirect
 	github.com/xo/blitz/libblitz/linux-amd64 v0.1.8 // indirect

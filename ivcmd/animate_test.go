@@ -68,6 +68,23 @@ func TestPlayDrops(t *testing.T) {
 	}
 }
 
+// TestPlaySlowProducer checks that an animation whose frames are made more
+// slowly than it plays draws every frame, and does not drop them. A dropped
+// frame was already made, so dropping it saves nothing, and a pass that
+// dropped every late frame showed only the first one.
+func TestPlaySlowProducer(t *testing.T) {
+	const frames = 6
+	p, _ := testPlayer(t, 0)
+	anim := testAnim(frames, 5*time.Millisecond)
+	anim.Frames = slowFrames(anim.Frames, 30*time.Millisecond)
+	switch n, err := p.play(t.Context(), anim, false); {
+	case err != nil:
+		t.Fatalf("expected no error, got: %v", err)
+	case n != frames:
+		t.Errorf("expected %d frames drawn, got %d with %d dropped", frames, n, p.dropped)
+	}
+}
+
 // TestPlayMax checks that an animation longer than a pass plays for is cut off
 // rather than holding the screen for the whole of its length.
 func TestPlayMax(t *testing.T) {
@@ -113,6 +130,24 @@ func testPlayer(t *testing.T, draw time.Duration) (*player, *bytes.Buffer) {
 		enc:  e,
 		name: "anim.gif",
 	}, buf
+}
+
+// slowFrames returns frames that each take d to make, after the first.
+func slowFrames(frames func(context.Context) iter.Seq2[decoder.Frame, error], d time.Duration) func(context.Context) iter.Seq2[decoder.Frame, error] {
+	return func(ctx context.Context) iter.Seq2[decoder.Frame, error] {
+		return func(yield func(decoder.Frame, error) bool) {
+			first := true
+			for frame, err := range frames(ctx) {
+				if !first {
+					time.Sleep(d)
+				}
+				first = false
+				if !yield(frame, err) {
+					return
+				}
+			}
+		}
+	}
 }
 
 // testAnim returns an animation of n identical frames.
