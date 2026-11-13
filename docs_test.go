@@ -296,6 +296,7 @@ func TestEveryDecisionReferenceExists(t *testing.T) {
 	// The repositories whose decisions a document here can cite.
 	repos := map[string]bool{
 		"dbmeta": true, "dbimp": true, "usql": true, "dburl": true, "tblfmt": true,
+		"okage": true,
 	}
 	var paths []string
 	err := filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {

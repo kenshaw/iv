@@ -20,7 +20,7 @@ require (
 	github.com/tdewolff/canvas v0.0.0-20260923214215-09804640d00c
 	github.com/xo/blitz v0.5.0
 	github.com/xo/magic v0.3.0
-	github.com/xo/okage v0.6.1
+	github.com/xo/okage v0.7.0
 	github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18
 	github.com/xo/transit v0.7.8
 	github.com/xo/transit/grammars/bash v0.7.8

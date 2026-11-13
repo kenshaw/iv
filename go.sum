@@ -182,8 +182,8 @@ github.com/xo/magic/libmagic/windows_amd64/v5 v5.48.0 h1:eAp4PvwbZWXfIHqetbyTXyJ
 github.com/xo/magic/libmagic/windows_amd64/v5 v5.48.0/go.mod h1:L27LWrQSyIPimM8F670C2azBmm3KKqlbkn+V5X/vcIU=
 github.com/xo/magic/libmagic/windows_arm64/v5 v5.48.0 h1:WAG2eJS7F3FEcqTib52GkEBfM0RiNM1k7agxqCETtko=
 github.com/xo/magic/libmagic/windows_arm64/v5 v5.48.0/go.mod h1:gvt6t+nQwVI5TadUpH/K4j+3g/PwXl/iuf5e0tEIz0o=
-github.com/xo/okage v0.6.1 h1:P9sjX8nBfqXh/l6IvWl1gUjU94sEM/L3cc1mx4RD870=
-github.com/xo/okage v0.6.1/go.mod h1:H4pR7XnUoRFCjXoo9Mx4lQPE9JeUu6OS3pbzMWEAOpY=
+github.com/xo/okage v0.7.0 h1:+DZ88ZSZxWbwfF6ohyLz2UTC9Emz1OpSdR4UEU/vkn8=
+github.com/xo/okage v0.7.0/go.mod h1:H4pR7XnUoRFCjXoo9Mx4lQPE9JeUu6OS3pbzMWEAOpY=
 github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18 h1:SHUjYUDTmfldf6LY6vzkX8Va9EVHb1k1PZSJ+l6+mYY=
 github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18/go.mod h1:MREUmRj7Fcm+0Gc/UImQNaZoq1nexrj0jkNBdo/ljnY=
 github.com/xo/transit v0.7.8 h1:/YhM1w3retsPtY0wYOvqZgvcrUxhlR0HIzxUlfHuxNk=

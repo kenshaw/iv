@@ -902,6 +902,12 @@ One frame at 1024x1024, as `iv -v` logs it:
 which okage draws in its slower pipeline. A frame at 60 fps is on screen for
 16.7 ms, so at full size the fire plays slower than its own speed (D19).
 
+On 2026-11-13, the maintainer of okage moved the general code of the decoder
+into okage v0.7.0 (okage D44). okage now detects a lottie, lists the
+animations of a dotLottie archive, and draws a frame at a size. `iv` keeps
+the mime types, the frame that a still shows, `--page`, `--fps` and the loop
+that plays the frames. The frames did not change.
+
 ## Open questions for Ken
 
 1. Windows builds under UCRT64 because mupdf needed it (D14). mupdf is gone
