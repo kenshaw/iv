@@ -15,7 +15,7 @@ and one command.
 These hold in every `xo` repository, for every coding agent (dbmeta D110,
 adopted here as D21).
 
-1. Stage changes for review. Commit and push only when Ken says so.
+1. Stage changes for review. Commit and push only when a maintainer says so.
 2. Load the `simple-english` skill before you write any text that a person
    reads: project documentation, a code comment, an error message or a commit
    message. Follow it for that text.
@@ -31,7 +31,7 @@ every other agent read the same rules. Edit this file, not that one.
 | If you are | Read |
 | --- | --- |
 | asking why something is the way it is | the decision index in `docs/PLAN.md` |
-| about to decide something that is not written down | the open questions at the end of `docs/PLAN.md`. Ask Ken |
+| about to decide something that is not written down | the open questions at the end of `docs/PLAN.md`. Ask a maintainer |
 | looking for work that is known and not done | `docs/BACKLOG.md` |
 | building `iv`, or installing its C libraries | the Building section of `README.md` |
 | adding or changing a decoder | the Layout section below, then D10 and a decoder of the same kind |
@@ -41,7 +41,7 @@ every other agent read the same rules. Edit this file, not that one.
 | changing how an image is scaled, composited or handed to an encoder | the package comment of `ivimg`, then D22 and D23 |
 | changing the libvips code | `vips/`, `decoder/vips`, `encoder/vips`, D5, D8 and D22 |
 | measuring a change for speed | the Performance section of `README.md`, and D26 |
-| changing animation | `ivcmd/animate.go`, `decoder/anim.go` and D19 |
+| changing animation | `ivcmd/animate.go`, `decoder/anim.go`, D19, D42 and D43 |
 | changing a workflow | D14 and D15, and the comments in `.github/workflows/` |
 | writing a document, a code comment, an error message or a commit message | the `simple-english` skill. Load it first |
 | writing or reviewing Go code | the `go-pedantry` skill. Load it first, then the Go conventions below |
@@ -190,7 +190,7 @@ section of `README.md`.
 
 A decision goes in `docs/PLAN.md` and nowhere else (dbmeta D111). Give it the
 next number and a heading such as `### D<n>. Title. Decided.` Use `Proposed`
-if Ken did not choose it. If it changes an earlier decision, write
+if a maintainer did not choose it. If it changes an earlier decision, write
 `Amends D5` in its heading and `Amended by D<n>` in the heading of the earlier
 one. Add its row to the index. `TestTheDecisionIndexIsComplete` prints the
 row when it is missing, and `TestAnAmendmentPointsBothWays` fails unless both

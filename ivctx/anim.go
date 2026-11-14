@@ -6,9 +6,8 @@ import (
 )
 
 // AnimateMax is how long a single pass of an animation plays for. An animation
-// shorter than this plays at its own length; a longer one is cut off here, and
-// a video is sampled across the whole of its length to fit in it rather than
-// being truncated to its first minute.
+// shorter than this plays at its own length, and a longer one is cut off here.
+// A video plays for its own length, and is not cut off (D43).
 const AnimateMax = time.Minute
 
 // Animated playback runs against the wall clock.
@@ -21,9 +20,8 @@ const AnimateMax = time.Minute
 // is dropped rather than played late.
 //
 // What an animation is played at is its own: a gif has a delay recorded with
-// each frame and a lottie a frame rate, and a video, which has neither in any
-// sense that survives being sampled, is given one by the decoder that samples
-// it.
+// each frame, and a lottie and a video a frame rate. A video plays at its
+// frame rate up to 30 frames a second (D43).
 
 // AnimateDelay returns how long one frame of an animation is displayed for:
 // the delay the animation gives it, or the one --fps forces when it was

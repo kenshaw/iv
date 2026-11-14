@@ -9,7 +9,7 @@ require (
 	github.com/jackmordaunt/icns/v4 v4.2.0
 	github.com/kenshaw/colors v0.2.4
 	github.com/kenshaw/fontimg v0.4.0
-	github.com/kenshaw/rasterm v0.1.23
+	github.com/kenshaw/rasterm v0.3.0
 	github.com/mholt/archives v0.1.5
 	github.com/oov/psd v0.0.0-20260818185439-a5d50ec0acac
 	github.com/sergeymakinen/go-bmp v1.0.0

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"math"
 	"regexp"
 	"strconv"
 	"time"
@@ -14,87 +15,55 @@ import (
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/internal/cmd"
 	"github.com/kenshaw/iv/ivctx"
-	"github.com/kenshaw/iv/ivimg"
 )
 
-// The rate a video is sampled and played back at.
-//
-// What plays is a sampling rather than a playback -- see [animate] -- and
-// there is nothing in one that twelve frames a second does not carry as well
-// as thirty. What the terminal gets out of the difference is a steadier
-// picture: every frame is a clear and an encode of a whole image, and the
-// fewer of those there are the less the screen flickers under them.
-const (
-	sampleFPS   = 12
-	sampleDelay = time.Second / sampleFPS
-)
+// maxFPS is the most frames a second that a video plays at (D43). A video
+// with a higher rate, such as 60 frames a second, is decoded at this rate. A
+// terminal does not draw more frames than this in a second, and the player
+// drops each frame that it cannot draw in time.
+const maxFPS = 30
 
-// How the frames are exported.
+// animate plays the video at its own speed, for its whole length (D43).
 //
-// A video sampled closely enough that most of it is played is read through
-// once, with ffmpeg picking the frames out as it goes -- one decode of the
-// file, which is as little work as sampling it can be done in.
-//
-// Past dense, that stops being true: an hour of video played in a minute is
-// one frame in every five seconds, and reading the four fifths of it that will
-// never be seen costs far more than seeking to the fifth that will. Those are
-// seeked to instead, several at a time, each its own ffmpeg decoding forward
-// from the keyframe it lands on. More than a handful of those only has them
-// competing for the cores ffmpeg is already threading itself across.
-const (
-	dense   = time.Second
-	workers = 4
-)
-
-// animate samples the video into the frames of an animation.
-//
-// The video is not played. A minute of it at [sampleFPS] is as much as a pass
-// shows, so a video longer than that is sampled at even intervals across the
-// whole of its length -- what plays is the shape of the thing from beginning
-// to end rather than its first minute at the right speed -- and a shorter one
-// is sampled densely enough to come out at its own length.
-//
-// The frames are exported while the animation is being displayed rather than
-// ahead of it, so the first frame is on screen after one seek instead of after
-// the whole video has been walked.
+// ffmpeg decodes the video once, from the start, at the frame rate of the
+// video up to [maxFPS], or at --fps, and scales each frame to the size that
+// it is shown at. It writes the frames as raw RGBA pixels, which need no
+// encode in ffmpeg and no decode in iv. The frames are made while the frames
+// before them are on screen, so the first frame shows after one decode.
 func animate(ctx context.Context, r io.Reader) (any, error) {
 	src, cleanup, err := cmd.Source(ctx, r, ivctx.FileExt(ivctx.PathName(ctx)))
 	if err != nil {
 		return nil, err
 	}
 	v, err := probe(ctx, src)
-	if err != nil {
+	switch {
+	case err != nil:
 		cleanup()
 		return nil, err
-	}
-	delay := ivctx.AnimateDelay(ctx, sampleDelay)
-	n := frameCount(v.Duration, delay)
-	if n == 0 {
+	case v.Duration <= 0:
 		cleanup()
 		return nil, errors.New("cannot animate a video of unknown length")
+	case v.Width <= 0 || v.Height <= 0:
+		cleanup()
+		return nil, errors.New("cannot animate a video of unknown size")
 	}
-	// the frames are exported at the size they are displayed at: ffmpeg
-	// scales as part of an export that is already running and already
-	// parallel, where scaling them afterwards would be work on the way to the
-	// screen
-	sample := sampling{
-		src:   src,
-		scale: scaleArg(ctx, v.Width, v.Height),
-		count: n,
-		step:  v.Duration / time.Duration(n),
-		delay: delay,
+	delay := ivctx.AnimateDelay(ctx, frameDelay(v.Rate))
+	n := frameCount(v.Duration, delay)
+	// ffmpeg turns a rotated video upright before the filters, so the size
+	// is that of the upright video
+	w, h := v.Width, v.Height
+	if v.Rotation%180 != 0 {
+		w, h = h, w
 	}
-	ivctx.Logf(ctx, "sampling %d frames every %v of %v at %v a frame (%s)", n, sample.step, v.Duration, delay, sample.scale)
-	export := seek
-	if sample.step < dense {
-		export = read
-	}
+	w, h = ivctx.Scale(ctx, w, h)
+	ivctx.Logf(ctx, "playing %d frames of %dx%d at %v a frame, for %v", n, w, h, delay, v.Duration)
 	return &decoder.Anim{
 		Frames: decoder.Produce(func(ctx context.Context, s *decoder.Sink) error {
-			return export(ctx, s, sample)
+			return read(ctx, s, src, w, h, n, delay)
 		}),
 		Count:    n,
-		Duration: time.Duration(n) * delay,
+		Duration: v.Duration,
+		Video:    true,
 		Close: func() error {
 			cleanup()
 			return nil
@@ -102,159 +71,90 @@ func animate(ctx context.Context, r io.Reader) (any, error) {
 	}, nil
 }
 
-// sampling is the set of frames taken from a video: where they come from, how
-// many there are, how far apart in the video they sit, and how long each is
-// displayed for.
-type sampling struct {
-	src   string
-	scale string
-	count int
-	step  time.Duration
-	delay time.Duration
+// frameDelay returns how long one frame is shown for a video of the frame
+// rate, at most [maxFPS] frames a second. A rate that is not known plays at
+// [maxFPS].
+func frameDelay(rate float64) time.Duration {
+	if rate <= 0 || rate > maxFPS {
+		rate = maxFPS
+	}
+	return time.Duration(float64(time.Second) / rate)
 }
 
-// frameCount returns how many frames are sampled from a video of the given
-// length: enough to fill its own running time at the frame delay, capped at
-// what [ivctx.AnimateMax] leaves room for. Returns 0 for a video whose length
-// could not be read, there being nothing to spread the sampling over.
+// frameCount returns how many frames a video of the length plays, at the
+// frame delay. It returns 0 when the length or the delay is not known.
 func frameCount(dur, delay time.Duration) int {
 	if dur <= 0 || delay <= 0 {
 		return 0
 	}
-	return max(1, min(int(dur/delay), int(ivctx.AnimateMax/delay)))
+	return max(1, int(dur/delay))
 }
 
-// read exports the frames by reading the video through once, ffmpeg picking
-// them out at the sampling rate as it goes and writing them down a pipe.
+// read decodes the video with ffmpeg, and sends each frame to the playback.
 //
-// The pipe is what paces the read: ffmpeg fills it while the frames already
-// through it are on screen, and is left waiting on it whenever it gets far
-// enough ahead -- so a video that decodes faster than it plays, which most
-// do, is read no faster than it is watched.
-func read(ctx context.Context, s *decoder.Sink, v sampling) error {
-	filter := fmt.Sprintf("fps=%f", float64(time.Second)/float64(v.step))
-	if v.scale != "" {
-		filter += "," + v.scale
-	}
+// The pipe paces the decode. ffmpeg fills it while the frames before are on
+// screen, and waits on it when it is far enough ahead. A frame is w x h raw
+// RGBA pixels, with nothing between the frames.
+func read(ctx context.Context, s *decoder.Sink, src string, w, h, n int, delay time.Duration) error {
+	filter := fmt.Sprintf("fps=%f,scale=%d:%d", float64(time.Second)/float64(delay), w, h)
 	return ffmpeg.Stream(
 		ctx,
 		func(r io.Reader) error {
-			// ffmpeg writes the frames one after another with nothing between
-			// them, and a read stops at the end of the png it read, which
-			// leaves the reader at the start of the next one. Each frame
-			// keeps its bytes, so the terminal gets the png as it is.
-			br := bufio.NewReader(r)
-			for range v.count {
-				img, err := ivimg.ReadPNG(br)
-				if err != nil {
+			br := bufio.NewReaderSize(r, 1<<20)
+			for range n {
+				img, err := readFrame(br, w, h)
+				switch {
+				case errors.Is(err, io.EOF):
+					// the length that ffprobe reports can be longer than
+					// the frames that the video has
+					return nil
+				case err != nil:
 					return err
 				}
-				if !s.Send(ctx, img, v.delay) {
+				if !s.Send(ctx, img, delay) {
 					return nil
 				}
 			}
 			return nil
 		},
 		"-hide_banner",
-		"-i", v.src,
+		"-loglevel", "error",
+		"-i", src,
+		"-an", "-sn",
 		"-vf", filter,
-		"-frames:v", strconv.Itoa(v.count),
-		"-f", "image2pipe",
-		"-c:v", "png",
+		"-frames:v", strconv.Itoa(n),
+		"-pix_fmt", "rgba",
+		"-f", "rawvideo",
 		"-",
 	)
 }
 
-// seek exports the frames by seeking to each of them, in order, several at a
-// time.
-//
-// The frames are handed out to be exported ahead of where the display has got
-// to, and collected back in the order they are played: a frame that took
-// longer to reach than the ones after it holds them at the end of the queue
-// rather than arriving out of sequence.
-func seek(ctx context.Context, s *decoder.Sink, v sampling) error {
-	type result struct {
-		img image.Image
-		err error
-	}
-	// a queue of pending frames, which is what bounds the export to workers
-	// running at once: the frame after the last of them cannot be handed out
-	// until room is made by one being displayed
-	queue := make(chan chan result, workers)
-	go func() {
-		defer close(queue)
-		for i := range v.count {
-			ch := make(chan result, 1)
-			select {
-			case queue <- ch:
-			case <-ctx.Done():
-				return
-			}
-			go func(at time.Duration) {
-				img, err := grab(ctx, v.src, v.scale, at)
-				ch <- result{img, err}
-			}(time.Duration(i) * v.step)
-		}
-	}()
-	for ch := range queue {
-		var res result
-		select {
-		case res = <-ch:
-		case <-ctx.Done():
-			return nil
-		}
-		if res.err != nil {
-			return res.err
-		}
-		if !s.Send(ctx, res.img, v.delay) {
-			return nil
-		}
-	}
-	return nil
-}
-
-// grab exports the single frame at the timecode.
-func grab(ctx context.Context, src, scale string, at time.Duration) (image.Image, error) {
-	// -ss ahead of -i seeks the input rather than reading up to the timecode,
-	// which is what makes a frame an hour in cost the same as the first
-	params := []string{"-hide_banner", "-ss", seconds(at), "-i", src, "-vframes", "1", "-q:v", "1"}
-	if scale != "" {
-		params = append(params, "-vf", scale)
-	}
-	buf, err := ffmpeg.Run(ctx, append(params, "-c:v", "png", "-f", "image2pipe", "-")...)
-	if err != nil {
+// readFrame reads one frame of w x h raw RGBA pixels from r. It returns
+// [io.EOF] when r ends before the frame.
+func readFrame(r io.Reader, w, h int) (*image.NRGBA, error) {
+	img := image.NewNRGBA(image.Rect(0, 0, w, h))
+	switch _, err := io.ReadFull(r, img.Pix); {
+	case errors.Is(err, io.ErrUnexpectedEOF):
+		return nil, io.EOF
+	case err != nil:
 		return nil, err
 	}
-	return ivimg.DecodePNG(buf)
-}
-
-// scaleArg returns the ffmpeg filter scaling a w x h video to the size it is
-// displayed at, and an empty string when it is displayed at its own size.
-func scaleArg(ctx context.Context, w, h int) string {
-	if w <= 0 || h <= 0 {
-		return ""
-	}
-	if dw, dh := ivctx.Scale(ctx, w, h); dw != w || dh != h {
-		return fmt.Sprintf("scale=%d:%d", dw, dh)
-	}
-	return ""
-}
-
-// seconds formats a timecode as the seconds ffmpeg takes for -ss. The MM:SS
-// form the snapshot uses cannot say where in a second a frame is, and at
-// thirty of them to the second that is the whole of the difference between one
-// frame and the next.
-func seconds(d time.Duration) string {
-	return strconv.FormatFloat(max(d, 0).Seconds(), 'f', 3, 64)
+	return img, nil
 }
 
 // video is what ffprobe reports about a video.
 type video struct {
 	Duration      time.Duration
 	Width, Height int
+	// Rate is the frame rate, or 0 when it is not known.
+	Rate float64
+	// Rotation is the rotation in degrees, which ffmpeg undoes when it
+	// decodes the video.
+	Rotation int
 }
 
-// probe reads the length and size of the video.
+// probe reads the length, the size, the frame rate and the rotation of the
+// video.
 //
 // A container carries the length in its format header and each stream may
 // carry one of its own, and neither is always there -- a stream copied from a
@@ -280,8 +180,10 @@ func probe(ctx context.Context, src string) (video, error) {
 		Duration: duration(buf),
 		Width:    number(widthRE, buf),
 		Height:   number(heightRE, buf),
+		Rate:     frameRate(buf),
+		Rotation: rotation(buf),
 	}
-	ivctx.Logf(ctx, "ffprobe: %dx%d, %v", v.Width, v.Height, v.Duration)
+	ivctx.Logf(ctx, "ffprobe: %dx%d, %v, %g fps, rotation %d", v.Width, v.Height, v.Duration, v.Rate, v.Rotation)
 	return v, nil
 }
 
@@ -294,6 +196,38 @@ func duration(buf []byte) time.Duration {
 		}
 	}
 	return 0
+}
+
+// frameRate returns the frame rate in ffprobe's output: the average rate,
+// or the base rate when the average is not known. ffprobe writes a rate as a
+// fraction, such as 24000/1001, and 0/0 when it is not known.
+func frameRate(buf []byte) float64 {
+	for _, re := range []*regexp.Regexp{avgRateRE, rateRE} {
+		m := re.FindSubmatch(buf)
+		if m == nil {
+			continue
+		}
+		num, err1 := strconv.ParseFloat(string(m[1]), 64)
+		den, err2 := strconv.ParseFloat(string(m[2]), 64)
+		if err1 == nil && err2 == nil && num > 0 && den > 0 {
+			return num / den
+		}
+	}
+	return 0
+}
+
+// rotation returns the rotation in ffprobe's output, in degrees from 0 to
+// 359, or 0 when there is none.
+func rotation(buf []byte) int {
+	m := rotationRE.FindSubmatch(buf)
+	if m == nil {
+		return 0
+	}
+	f, err := strconv.ParseFloat(string(m[1]), 64)
+	if err != nil {
+		return 0
+	}
+	return ((int(math.Round(f)) % 360) + 360) % 360
 }
 
 // number returns the value of the first field the regexp matches.
@@ -313,4 +247,9 @@ func number(re *regexp.Regexp, buf []byte) int {
 var (
 	widthRE  = regexp.MustCompile(`(?m)^width=(\d+)$`)
 	heightRE = regexp.MustCompile(`(?m)^height=(\d+)$`)
+	// the rates are fractions, and the rotation is a number of degrees that
+	// can be negative or have a fraction
+	avgRateRE  = regexp.MustCompile(`(?m)^avg_frame_rate=(\d+)/(\d+)$`)
+	rateRE     = regexp.MustCompile(`(?m)^r_frame_rate=(\d+)/(\d+)$`)
+	rotationRE = regexp.MustCompile(`(?m)^rotation=(-?[\d.]+)$`)
 )

@@ -11,6 +11,7 @@ import (
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/encoder"
 	"github.com/kenshaw/iv/ivctx"
+	"github.com/kenshaw/rasterm"
 )
 
 // benchWidth and benchHeight are the display size of the benchmarks, in
@@ -124,7 +125,8 @@ func BenchmarkRender(b *testing.B) {
 }
 
 // benchContext returns the context of a benchmark. It holds the default
-// configuration of the command, with the display size of the benchmarks.
+// configuration of the command, with the display size of the benchmarks, and
+// the terminal that TERM_GRAPHICS selects.
 //
 // The decoders are not closed at the end of a benchmark. A closed decoder
 // cannot start again, and the benchmarks after it need the same engines.
@@ -132,6 +134,13 @@ func benchContext(b *testing.B) context.Context {
 	b.Helper()
 	c := ivctx.New()
 	c.Width, c.Height = benchWidth, benchHeight
+	// no output asks the terminal, so that the benchmark does not depend on
+	// the terminal that runs it
+	t, _, err := rasterm.Detect(b.Context(), rasterm.WithOutput(nil))
+	if err != nil {
+		b.Fatalf("expected no error, got: %v", err)
+	}
+	c.Terminal = t
 	return ivctx.WithConfig(context.Background(), c)
 }
 

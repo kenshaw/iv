@@ -18,7 +18,7 @@ the pagination itself, which needs no file to exercise.
 | `blitz`       | `blitz`       | Markdown and html documents                                   |
 | `bmp`         | `bmp`         |                                                               |
 | `calibre`     | `calibre`     | One book as epub, mobi, azw3 and fb2; needs `ebook-convert`   |
-| `ffmpeg`      | `ffmpeg`      | Same clip as mkv and mp4                                      |
+| `ffmpeg`      | `ffmpeg`      | One clip as mkv and mp4, and a test pattern, plain and turned |
 | `fontimg`     | `fontimg`     | Static, variable, and monospace fonts                         |
 | `gif`         | `gif`         | Still and animated                                            |
 | `gxps`        | `gxps`        | XPS documents; needs `xpstopng`                               |
@@ -150,6 +150,20 @@ but a `.doc` and a `.ppt` are only `application/x-ole-storage` -- the
   9.14 to epub, azw3 and fb2, with the title "iv sample". `sample.mobi` is the
   epub converted with `--mobi-file-type both`, because calibre cannot read
   back the MOBI 6 file that it writes from the html, which has no guide.
+- `ffmpeg/testsrc2.mp4` -- the `testsrc2` test pattern of ffmpeg n9.0.2, 10
+  seconds at 640x360 and 24 frames a second. `testsrc2-rotated.mp4` is its
+  first 2 seconds, with a rotation of 90 degrees in the display matrix, as a
+  phone stores a video that it recorded upright. ffmpeg plays it upright at
+  360x640, and `TestAnimateRotated` in `decoder/ffmpeg` checks that. They were
+  made with these commands:
+
+  ```sh
+  ffmpeg -f lavfi -i testsrc2=size=640x360:rate=24 -t 10 -c:v libx264 \
+    -crf 28 -preset slow -pix_fmt yuv420p -movflags +faststart testsrc2.mp4
+  ffmpeg -display_rotation 90 -i testsrc2.mp4 -t 2 -c copy \
+    -movflags +faststart testsrc2-rotated.mp4
+  ```
+
 - `psd/` -- generated with ImageMagick: `alpha.psd` from `png/tux.png`,
   `cmyk.psd` from `png/rose.png` in the CMYK colorspace, and `deep16.psd` from
   `png/rose.png` at 16 bits. oov/psd cannot read `deep16.psd`, so it covers

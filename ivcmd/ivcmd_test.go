@@ -12,6 +12,8 @@ import (
 
 	"github.com/kenshaw/colors"
 	"github.com/kenshaw/iv/decoder"
+	"github.com/kenshaw/iv/ivctx"
+	"github.com/kenshaw/rasterm"
 )
 
 func TestTargets(t *testing.T) {
@@ -143,6 +145,39 @@ func TestEncoderSelection(t *testing.T) {
 			}
 			if e.Name != test.exp {
 				t.Errorf("expected %q, got %q", test.exp, e.Name)
+			}
+		})
+	}
+}
+
+// TestDetect checks that the protocol that TERM_GRAPHICS selects goes in the
+// configuration, and that half blocks and none are no graphics, because iv
+// does not draw an image as text (D1).
+func TestDetect(t *testing.T) {
+	// outside of tmux, so that rasterm does not ask tmux
+	t.Setenv("TMUX", "")
+	t.Setenv("TMUX_PANE", "")
+	for _, test := range []struct {
+		env string
+		exp rasterm.Protocol
+	}{
+		{"kitty", rasterm.Kitty},
+		{"iterm", rasterm.ITerm},
+		{"sixel", rasterm.Sixel},
+		{"halfblock", rasterm.None},
+		{"none", rasterm.None},
+	} {
+		t.Run(test.env, func(t *testing.T) {
+			t.Setenv("TERM_GRAPHICS", test.env)
+			c := ivctx.New()
+			err := new(Args).detect(t.Context(), c, new(bytes.Buffer))
+			switch {
+			case test.exp == rasterm.None && !errors.Is(err, rasterm.ErrTermGraphicsNotAvailable):
+				t.Errorf("expected %v, got: %v", rasterm.ErrTermGraphicsNotAvailable, err)
+			case test.exp != rasterm.None && err != nil:
+				t.Fatalf("expected no error, got: %v", err)
+			case c.Terminal.Protocol != test.exp:
+				t.Errorf("expected %s, got %s", test.exp, c.Terminal.Protocol)
 			}
 		})
 	}

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/kenshaw/colors"
+	"github.com/kenshaw/rasterm"
 	"github.com/tdewolff/canvas"
 	"github.com/xo/ox"
 )
@@ -59,6 +60,11 @@ type Config struct {
 	// command line. A minimum that was given is a hard floor (D37).
 	MinWidthSet  bool
 	MinHeightSet bool
+
+	// Terminal is what [rasterm.Detect] found about the terminal that iv
+	// draws to. Its Protocol is [rasterm.None] when iv writes a file, or when
+	// the terminal has no graphics (D42).
+	Terminal rasterm.Terminal
 
 	// Logger is the verbose logger. Always non-nil after [Config.Init].
 	Logger func(string, ...any)

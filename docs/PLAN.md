@@ -1,7 +1,7 @@
 # Plan
 
 This document holds the plan for `iv`, then every decision that shapes it,
-then the open questions for Ken.
+then the open questions for the maintainers.
 
 ## Purpose
 
@@ -40,7 +40,8 @@ The state below is the working tree of 2026-10-15, after D22 to D33.
   runs `pdftoppm` where libvips has no pdf loader, and `binwalk` runs
   `binwalk`.
 - `iv` plays an animation from a gif, a lottie file or a video, with limits
-  (D19).
+  (D19). A video plays at its own speed and for its own length, and kitty and
+  Ghostty show each frame in one Kitty image (D42, D43).
 - CI builds, tests and lints on Linux amd64 and arm64, macOS and Windows
   (D14, D29). A release builds for the same 64-bit platforms (D15, D32).
 - `go test ./...` passes, and fails when a command or a file that a test
@@ -49,9 +50,9 @@ The state below is the working tree of 2026-10-15, after D22 to D33.
 
 ## Direction
 
-No document states a direction beyond the work in
-[`BACKLOG.md`](BACKLOG.md). Ask Ken before you start a new format or a new
-feature that is not in that list.
+No document states a direction beyond the work in [`BACKLOG.md`](BACKLOG.md).
+Ask a maintainer before you start a new format or a new feature that is not in
+that list.
 
 ## Decisions
 
@@ -60,17 +61,18 @@ append only. A decision is never edited to change its conclusion. When a later
 decision changes one, the older entry keeps its text, and its heading names
 the decision that changed it.
 
-Each heading carries a status after the title. `Decided` means that the
-history shows that Ken chose it. `Proposed` means that the code follows it
-and nothing shows that Ken chose it, so ask him. After the status, `Amends Dn`
-or `Amended by Dn` names a decision that this one changes or that changes it.
+Each heading carries a status after the title. `Decided` means that the history
+shows that a maintainer chose it. `Proposed` means that the code follows it and
+nothing shows that a maintainer chose it, so ask a maintainer. After the
+status, `Amends Dn` or `Amended by Dn` names a decision that this one changes
+or that changes it.
 
 D1 to D20 were written on 2026-09-27 from the history of the repository, from
 `3b94bb5` (2024-02-02) to `d2151b1` (2026-09-18), and from the closed issues
 and pull requests on GitHub. Most commit messages are short, so a reason
 usually comes from a code comment, a workflow comment, the README or a comment
-by Ken on GitHub. If none of these gives a reason, the entry says "Reason not
-recorded".
+by a maintainer on GitHub. If none of these gives a reason, the entry says
+"Reason not recorded".
 
 A reference to a decision of another repository names that repository, as in
 dbmeta D110. A bare number, as in D3, names a decision in this document.
@@ -95,7 +97,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D16](#d16-markdown-html-and-web-pages-render-with-xoblitz-decided-amended-by-d38) | Markdown, HTML and web pages render with xo/blitz | Decided. Amended by D38 |
 | [D17](#d17-mime-detection-uses-libmagic-through-xomagic-decided-amends-d6) | Mime detection uses libmagic through xo/magic | Decided. Amends D6 |
 | [D18](#d18-mermaid-renders-in-process-with-xomermaid-on-wazero-decided-amends-d7-amended-by-d36) | Mermaid renders in process with xo/mermaid on wazero | Decided. Amends D7. Amended by D36 |
-| [D19](#d19-iv-plays-one-animation-to-the-terminal-for-at-most-one-minute-decided) | iv plays one animation to the terminal, for at most one minute | Decided |
+| [D19](#d19-iv-plays-one-animation-to-the-terminal-for-at-most-one-minute-decided-amended-by-d42-amended-by-d43) | iv plays one animation to the terminal, for at most one minute | Decided. Amended by D42. Amended by D43 |
 | [D20](#d20-the-go-directive-follows-the-newest-release-of-go-decided) | The go directive follows the newest release of Go | Decided |
 | [D21](#d21-iv-is-set-up-for-coding-agents-as-every-xo-repository-is-decided) | iv is set up for coding agents as every xo repository is | Decided |
 | [D22](#d22-an-image-reaches-the-encoder-in-the-form-that-it-already-has-decided-amended-by-d28-amended-by-d33) | An image reaches the encoder in the form that it already has | Decided. Amended by D28. Amended by D33 |
@@ -118,6 +120,8 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D39](#d39-blitz-colors-the-code-blocks-of-markdown-with-transit-decided) | blitz colors the code blocks of Markdown with transit | Decided |
 | [D40](#d40-zuzu-draws-an-emoji-in-color-decided) | zuzu draws an emoji in color | Decided |
 | [D41](#d41-a-lottie-draws-with-the-lottie-package-of-okage-decided) | A lottie draws with the lottie package of okage | Decided |
+| [D42](#d42-a-kitty-terminal-that-can-play-an-animation-plays-it-itself-decided-amends-d19-amended-by-d43) | A Kitty terminal that can play an animation plays it itself | Decided. Amends D19. Amended by D43 |
+| [D43](#d43-a-video-plays-at-its-own-speed-and-a-kitty-image-shows-each-frame-decided-amends-d19-amends-d42) | A video plays at its own speed, and a Kitty image shows each frame | Decided. Amends D19. Amends D42 |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -126,17 +130,18 @@ which writes Sixel, iTerm and Kitty graphics. `encoder/rasterm` does the same
 today. If the terminal has none of the three, `iv` stops with the error that
 `rasterm` returns.
 
-Ken closed pull request 4, "Added ascii support and auto width", on
-2025-08-23. He wrote that `iv` is an image viewer for terminals that support
-terminal graphics, and that he will not add support for terminals that do
-not. In issue 3 he said that Kitty detection belongs in `rasterm`, and that
-the `TERM_GRAPHICS` environment variable selects a protocol.
+A maintainer closed pull request 4, "Added ascii support and auto width", on
+2025-08-23, with the comment that `iv` is an image viewer for terminals that
+support terminal graphics, and that `iv` will not support terminals that do
+not. Issue 3 says that Kitty detection belongs in `rasterm`, and that the
+`TERM_GRAPHICS` environment variable selects a protocol.
 
 ### D2. Speed is not a goal. Decided.
 
-Issue 1, "iv is very slow", was closed on 2024-02-18. Ken wrote that he has no
-intention to make `iv` run faster. He named two causes: Go is slow to decode
-and encode images, and Sixel is slower than the other protocols.
+Issue 1, "iv is very slow", was closed on 2024-02-18, with the comment that
+there is no intention to make `iv` run faster. The comment names two causes:
+Go is slow to decode and encode images, and Sixel is slower than the other
+protocols.
 
 ### D3. SVG renders with xo/resvg. Decided. Amended by D35.
 
@@ -187,14 +192,14 @@ skipped without a message. The audio card is the exception. Without
 with `github.com/cshum/vipsgen`. The commit gives no reason. The README gives
 one result: `vipsgen` generates its bindings against libvips 8.18, so `iv`
 needs libvips 8.18 or later. `1b24400` (2026-06-23) later set the `Unlimited`
-and `Memory` load options of `vipsgen`. Ken wrote on issue 5 that the new
-`vipsgen` can override the memory security limits of libvips.
+and `Memory` load options of `vipsgen`. A maintainer wrote on issue 5 that the
+new `vipsgen` can override the memory security limits of libvips.
 
-Ken asked on 2026-11-09 to move to `github.com/cshum/vipsgen/v2`. In v2, an
-option is a pointer when libvips takes a zero that differs from its default,
-and a nil pointer means that the option is not set. v1 dropped an option of
-zero. The nearest kernel is 0, so `Image.Resize` in `vips/` scaled small
-images with lanczos3 where `ivimg.Nearest` asked for nearest neighbor.
+A maintainer asked on 2026-11-09 to move to `github.com/cshum/vipsgen/v2`. In
+v2, an option is a pointer when libvips takes a zero that differs from its
+default, and a nil pointer means that the option is not set. v1 dropped an
+option of zero. The nearest kernel is 0, so `Image.Resize` in `vips/` scaled
+small images with lanczos3 where `ivimg.Nearest` asked for nearest neighbor.
 `TestResizeNearest` fails when that happens again.
 
 ### D9. iv is cgo code. Decided.
@@ -218,11 +223,11 @@ a Go toolchain on its own cannot build `iv`.
 - `ivctx` holds the configuration, which travels on the context.
 - `ivcmd` holds the command, and `main.go` only runs it.
 
-`5abc5a3` added `RegisterBuiltin` on the same day. It marks a format that is
-in the `image.Decode` registry of Go, so that a container such as a comic
-archive can render it. `bc0c9bf` (2026-09-12) reworked the pipeline for
-scaling, which closed issue 2, "Add resize feature". Ken wrote on issue 2 that
-a Claude agent did this work.
+`5abc5a3` added `RegisterBuiltin` on the same day. It marks a format that is in
+the `image.Decode` registry of Go, so that a container such as a comic archive
+can render it. `bc0c9bf` (2026-09-12) reworked the pipeline for scaling, which
+closed issue 2, "Add resize feature". A maintainer wrote on issue 2 that a
+Claude agent did this work.
 
 ### D11. Test data has one folder per decoder, and test.sh renders all of it. Decided.
 
@@ -238,13 +243,13 @@ string in `testdata/` through a built `iv`.
 ### D12. A test skips when its tool, its library support or its file is missing. Proposed. Amended by D27.
 
 The tests call `t.Skip` when an external command is not in `$PATH`, when
-libmagic is not available, when a test file is missing, when the network is
-not available (`blitz.ErrFetch`), and when this build of libvips cannot read
-or write a format (`ErrUnsupportedFormat`). `19c8f46` gives one case: the
-libvips of MSYS2 has no pdf loader. The rule holds in every test that needs
-one of these. Nothing shows that Ken chose it as a rule, so ask him.
+libmagic is not available, when a test file is missing, when the network is not
+available (`blitz.ErrFetch`), and when this build of libvips cannot read or
+write a format (`ErrUnsupportedFormat`). `19c8f46` gives one case: the libvips
+of MSYS2 has no pdf loader. The rule holds in every test that needs one of
+these. Nothing shows that a maintainer chose it as a rule, so ask a maintainer.
 
-Ken did not make it a rule. D27 replaces it: a test fails.
+A maintainer did not make it a rule. D27 replaces it: a test fails.
 
 ### D13. Test data is checked out with no line ending conversion. Decided.
 
@@ -306,7 +311,7 @@ under `iv/wazero`. The README gives the reason: the renderer needs no browser
 and no Node. It also gives the cost: the renderer is a reimplementation, so
 the output is like mermaid and not the same, and icon packs do not work.
 
-### D19. iv plays one animation to the terminal, for at most one minute. Decided.
+### D19. iv plays one animation to the terminal, for at most one minute. Decided. Amended by D42. Amended by D43.
 
 `e3d2ea5` (2026-09-18) added `--animate` for a gif, a lottie file and a video,
 and `d2151b1` changed how the frame rate is chosen. The README gives the
@@ -322,15 +327,15 @@ rules:
 An animated WebP or APNG does not play. No text gives a reason, and
 [`BACKLOG.md`](BACKLOG.md) holds the item.
 
-On 2026-11-13, Ken found that `--animate` showed only the first frame of a
-lottie. A frame of okage v0.6.0 took longer to draw than its time on screen,
-so every frame after the first came late, and the player dropped each one. A
-dropped frame saves time only when the drawing is slow and the next frame is
-ready. The decoder makes each frame in turn, so a frame that the decoder made
-late is followed by another late frame. The player now measures how long it
-waited for each frame. When it waited 1 ms or more, it draws the late frame
-and moves the rest of the pass back by the time lost. `fire.lottie` at
-1024x1024 showed 1 of its 65 frames, and now shows all 65 in 2.3 s, where
+On 2026-11-13, a maintainer found that `--animate` showed only the first frame
+of a lottie. A frame of okage v0.6.0 took longer to draw than its time on
+screen, so every frame after the first came late, and the player dropped each
+one. A dropped frame saves time only when the drawing is slow and the next
+frame is ready. The decoder makes each frame in turn, so a frame that the
+decoder made late is followed by another late frame. The player now measures
+how long it waited for each frame. When it waited 1 ms or more, it draws the
+late frame and moves the rest of the pass back by the time lost. `fire.lottie`
+at 1024x1024 showed 1 of its 65 frames, and now shows all 65 in 2.3 s, where
 the animation is 1.08 s long. `TestPlaySlowProducer` covers it.
 
 ### D20. The go directive follows the newest release of Go. Decided.
@@ -338,17 +343,17 @@ the animation is 1.08 s long. `TestPlaySlowProducer` covers it.
 The `go` directive in `go.mod` went from 1.21.6 in `3b94bb5` to 1.27.1 in
 `2a02ec6`, and it moved with each release of Go in the commits that update
 the dependencies. The README asks for Go 1.27 or later. The pattern holds
-across the whole history. Ken made it a rule on 2026-10-15.
+across the whole history. A maintainer made it a rule on 2026-10-15.
 
 ### D21. iv is set up for coding agents as every xo repository is. Decided.
 
-Ken decided on 2026-09-27 that every `xo` repository is set up for coding
-agents the same way (dbmeta D110), and asked for the same setup here. `iv` is
-a small library in this sense, so its decisions stay in this document and are
-not split into one file each (dbmeta D111).
+A maintainer decided on 2026-09-27 that every `xo` repository is set up for
+coding agents the same way (dbmeta D110), and asked for the same setup here.
+`iv` is a small library in this sense, so its decisions stay in this document
+and are not split into one file each (dbmeta D111).
 
-On 2026-10-15 Ken said that every `kenshaw` repository follows dbmeta D110
-too, and not only `iv`.
+On 2026-10-15 a maintainer said that every `kenshaw` repository follows dbmeta
+D110 too, and not only `iv`.
 
 The setup is this:
 
@@ -380,9 +385,9 @@ that this document does not hold.
 
 ### D22. An image reaches the encoder in the form that it already has. Decided. Amended by D28. Amended by D33.
 
-Ken asked on 2026-10-15 for this pipeline, after `rasterm` v0.1.18 began to
-send the bytes that an image holds without an encode. The `ivimg` package
-holds it, and every still and every animation frame goes through it the
+A maintainer asked on 2026-10-15 for this pipeline, after `rasterm` v0.1.18
+began to send the bytes that an image holds without an encode. The `ivimg`
+package holds it, and every still and every animation frame goes through it the
 same way:
 
 - A PNG or a JPEG keeps the bytes of its file. The `png` and `jpeg` decoders
@@ -450,10 +455,10 @@ reads an animated PNG can play it, where iv shows its first frame. Each of
 these is decoded and encoded again, as before D22. The reviews of D22 named
 the three cases.
 
-Ken decided on 2026-10-15, and asked for the orientation to be applied. A JPEG
-whose orientation is not 1 is turned the right way up when it is decoded
-(`ivimg.orient`), so it shows as the camera meant, and the turned image is new
-pixels with no bytes.
+A maintainer decided on 2026-10-15, and asked for the orientation to be
+applied. A JPEG whose orientation is not 1 is turned the right way up when it
+is decoded (`ivimg.orient`), so it shows as the camera meant, and the turned
+image is new pixels with no bytes.
 
 ffmpeg wrote its snapshots and frames with the `apng` muxer, which writes an
 animated PNG of one frame. They are now plain PNGs, written with the `png`
@@ -465,7 +470,7 @@ codec and the `image2pipe` muxer, so that they keep their bytes.
 `3a1e7b4` (2026-09-13), which changed the `qr` decoder to draw black on white
 with the quiet zone of `go-qrcode`, and gave no reason. From then on nothing
 read the two settings. The first form of this decision removed the flags, and
-Ken asked on 2026-10-15 for them to be restored for QR codes.
+a maintainer asked on 2026-10-15 for them to be restored for QR codes.
 
 `--fg` is the color of the modules, and black by default. `--bg` is the
 background, and a transparent background, the default, draws white, because a
@@ -478,27 +483,26 @@ byte for byte. `TestDecodeColors` covers them.
 
 `--mermaid-bg` did nothing. The background was composited when the mime type
 was `text/plain`, and the pipeline only saw the mime type of the svg that the
-mermaid decoder hands back. The renderer draws its own background, so the
-color now goes to it as the `background` theme variable. The flag has no
-default, so each theme keeps its own background, and the default theme is
-white as before. By hand, `--mermaid-bg red` gave a red background and
-`--mermaid-theme dark` the dark background of the theme. Ken decided on
-2026-10-15.
+mermaid decoder hands back. The renderer draws its own background, so the color
+now goes to it as the `background` theme variable. The flag has no default, so
+each theme keeps its own background, and the default theme is white as before.
+By hand, `--mermaid-bg red` gave a red background and `--mermaid-theme dark`
+the dark background of the theme. A maintainer decided on 2026-10-15.
 
 ### D26. Benchmarks compare the releases, and the README holds the numbers. Decided.
 
-Ken asked on 2026-10-15 for benchmarks of the decoding, compared with the
-earlier releases, in the README. `ivcmd/bench_test.go` holds
-`BenchmarkDecode` and `BenchmarkRender`. The second runs the `render` method
-of the command, from the file to the terminal graphics in `io.Discard`, with
-the protocol that `TERM_GRAPHICS` selects. The method has the same signature
-from v0.17.0, so the same file runs against each release. The Performance
-section of `README.md` holds the results and the commands that made them.
+A maintainer asked on 2026-10-15 for benchmarks of the decoding, compared with
+the earlier releases, in the README. `ivcmd/bench_test.go` holds
+`BenchmarkDecode` and `BenchmarkRender`. The second runs the `render` method of
+the command, from the file to the terminal graphics in `io.Discard`, with the
+protocol that `TERM_GRAPHICS` selects. The method has the same signature from
+v0.17.0, so the same file runs against each release. The Performance section of
+`README.md` holds the results and the commands that made them.
 
 ### D27. A test fails when what it needs is missing. Decided. Amends D12. Amended by D34.
 
-Ken decided on 2026-10-15 that a test fails, and does not skip, when an
-external command, libmagic, a test file or a libvips format is missing. A
+A maintainer decided on 2026-10-15 that a test fails, and does not skip, when
+an external command, libmagic, a test file or a libvips format is missing. A
 test that skips says nothing about the decoder that it was meant to test.
 
 Two tests could not pass that way, and both changed:
@@ -518,15 +522,15 @@ Windows package. CI installs every other command on every runner.
 
 ### D28. mupdf is removed, and calibre, libgxps, oov/psd and poppler take its formats. Decided. Amends D22.
 
-Ken decided on 2026-10-15 to remove `github.com/gen2brain/go-fitz`, which
-linked a static mupdf, from a module of 258 MB. It decoded EPUB, MOBI, XPS,
-FictionBook and Photoshop files. Its libjpeg was the second libjpeg in the
+A maintainer decided on 2026-10-15 to remove `github.com/gen2brain/go-fitz`,
+which linked a static mupdf, from a module of 258 MB. It decoded EPUB, MOBI,
+XPS, FictionBook and Photoshop files. Its libjpeg was the second libjpeg in the
 binary that broke the JPEG encoder of libvips (D22): with fitz linked, a save
-failed with "Wrong JPEG library version", and without it the save works. It
-was also why Windows builds under UCRT64 (D14), and why 32-bit targets needed
-a stub.
+failed with "Wrong JPEG library version", and without it the save works. It was
+also why Windows builds under UCRT64 (D14), and why 32-bit targets needed a
+stub.
 
-Each format went to the replacement that Ken chose:
+Each format went to the replacement that a maintainer chose:
 
 - EPUB, MOBI, AZW and FictionBook go to the `calibre` decoder, which converts
   a book to pdf with `ebook-convert`. The pdf then renders with libvips, so
@@ -545,60 +549,61 @@ Each format went to the replacement that Ken chose:
 
 ### D29. golangci-lint checks the code in CI, with the rules of the xo repositories. Decided.
 
-Ken decided on 2026-10-15 to add the configuration of the xo repositories and
-run it in CI. `.golangci.yml` sets `default: all`, and disables each linter
-that makes idiomatic Go worse here, with its reason beside it. A real defect
-got a code change: a context stored in `decoder.Sink`, a `context.Background`
-in the command, an error left unchecked, and a hand-written filter that
-`slices.DeleteFunc` replaces. The Lint job pins a release of golangci-lint.
-v2.14.0 found 0 issues, and v2.15.0 found 0 issues on 2026-10-20.
+A maintainer decided on 2026-10-15 to add the configuration of the xo
+repositories and run it in CI. `.golangci.yml` sets `default: all`, and
+disables each linter that makes idiomatic Go worse here, with its reason beside
+it. A real defect got a code change: a context stored in `decoder.Sink`, a
+`context.Background` in the command, an error left unchecked, and a
+hand-written filter that `slices.DeleteFunc` replaces. The Lint job pins a
+release of golangci-lint. v2.14.0 found 0 issues, and v2.15.0 found 0 issues on
+2026-10-20.
 
 ### D30. A PNG or a JPEG decodes its pixels only when they are needed. Decided.
 
-Ken decided on 2026-10-15. `ivimg.DecodePNG` and `ivimg.DecodeJPEG` read the
-size and the color model from the header, and decode the pixels when a step
-or an encoder asks for them. A terminal that gets the bytes of the file never
-decodes them: the render of `png/precision.png` for Kitty went from 20.8 ms
-to 2.2 ms. A file with a good header and bad data now fails when the pixels
+A maintainer decided on 2026-10-15. `ivimg.DecodePNG` and `ivimg.DecodeJPEG`
+read the size and the color model from the header, and decode the pixels when a
+step or an encoder asks for them. A terminal that gets the bytes of the file
+never decodes them: the render of `png/precision.png` for Kitty went from 20.8
+ms to 2.2 ms. A file with a good header and bad data now fails when the pixels
 are asked for. The image keeps the error, and the scaler, the compositor and
 the encoder entries return it.
 
 ### D31. The code follows go-pedantry where the two disagreed. Decided.
 
-Ken decided on 2026-10-15 that the skill wins. Each receiver has one or two
-letters, and an error message does not start with "unable to". A context is
-passed, and never stored in a struct.
+A maintainer decided on 2026-10-15 that the skill wins. Each receiver has one
+or two letters, and an error message does not start with "unable to". A context
+is passed, and never stored in a struct.
 
 ### D32. iv is built for 64-bit targets only, and has no static build. Decided.
 
-Ken decided on 2026-10-15. `13ec599` had removed the 32-bit ARM release, and
-the README still described 32-bit targets. The README section and the 32-bit
-ARM path of `build.sh` are removed, and the stub of go-fitz went with D28. The
-static Linux build was commented out of the release, and `-s` of `build.sh`
-is removed.
+A maintainer decided on 2026-10-15. `13ec599` had removed the 32-bit ARM
+release, and the README still described 32-bit targets. The README section and
+the 32-bit ARM path of `build.sh` are removed, and the stub of go-fitz went
+with D28. The static Linux build was commented out of the release, and `-s` of
+`build.sh` is removed.
 
 ### D33. Kitty gets raw pixels compressed with zlib when they compress well. Decided. Amends D22.
 
-Ken chose the design on 2026-10-15, from measurements of each file that Kitty
-gets as raw pixels in iv, and the rasterm session built it as rasterm D18 and
-D19. iv requires rasterm v0.1.20. For raw pixels of over 64 KiB, the Kitty
-encoder writes one zlib stream at level 1, and checks after each 64 KiB that
-the output so far is under 25% of the input so far. At the first check that
-fails, it sends the pixels raw. A PNG is still sent as its bytes.
+A maintainer chose the design on 2026-10-15, from measurements of each file
+that Kitty gets as raw pixels in iv, and the rasterm session built it as
+rasterm D18 and D19. iv requires rasterm v0.1.20. For raw pixels of over 64
+KiB, the Kitty encoder writes one zlib stream at level 1, and checks after each
+64 KiB that the output so far is under 25% of the input so far. At the first
+check that fails, it sends the pixels raw. A PNG is still sent as its bytes.
 
 The first form checked only the first 64 KiB, which is the top rows of an
 image. A photo with a flat top then compressed whole, at 11 ms where raw took
-1.35 ms. Ken chose on 2026-10-15 to check after each 64 KiB. In iv, a page of
-markdown now goes to Kitty as 186 KB in place of 8 MB of raw RGBA, and a
-photo stays raw.
+1.35 ms. A maintainer chose on 2026-10-15 to check after each 64 KiB. In iv, a
+page of markdown now goes to Kitty as 186 KB in place of 8 MB of raw RGBA, and
+a photo stays raw.
 
 rasterm v0.1.19 flushed the zlib stream at each check, and Ghostty 1.3.1 then
-closed itself on `gxps/example.xps` at 1390x1966, over ssh. Each flush wrote
-a stored block of 1 byte and an empty one after each block of 65535 bytes.
-Python's zlib and Zig 0.16 inflate that stream, so the fault is in the
-inflater of that Ghostty, likely an older Zig. The same pixels in one stream
-with no flush, raw, and as a PNG all worked. rasterm v0.1.20 checks without a
-flush, so the stream is one plain stream of all the pixels, and Ken confirmed
+closed itself on `gxps/example.xps` at 1390x1966, over ssh. Each flush wrote a
+stored block of 1 byte and an empty one after each block of 65535 bytes.
+Python's zlib and Zig 0.16 inflate that stream, so the fault is in the inflater
+of that Ghostty, likely an older Zig. The same pixels in one stream with no
+flush, raw, and as a PNG all worked. rasterm v0.1.20 checks without a flush, so
+the stream is one plain stream of all the pixels, and a maintainer confirmed
 that it works in Ghostty.
 
 ### D34. A test file that crashes a command on one system is not decoded there. Decided. Amends D27.
@@ -609,7 +614,7 @@ about 5 CI runs, on 476d042 and on the tag v0.19.3, and passed when the job
 ran again. It never crashed on Linux. The epub, mobi and azw3 files convert on
 macOS every time.
 
-Ken decided on 2026-10-28 that CI does not decode that file on macOS.
+A maintainer decided on 2026-10-28 that CI does not decode that file on macOS.
 `untestedFiles` in `ivcmd/decode_test.go` names each such file with its
 reason. The test still checks the mime type and the decoder of the file, and
 skips only the decode.
@@ -625,21 +630,21 @@ names each case for each system:
 
 ### D35. SVG renders with okage, a port of resvg to Go. Decided. Amends D3.
 
-okage v0.1.0 is a port of resvg 0.49.0 and of tiny-skia to Go, with no cgo.
-On 2026-11-10, the svg decoder moved from xo/resvg to okage, at the request
-of Ken, to see whether the slowdown is acceptable. Ken decided the same day
-to keep okage. The decoder took the name `okage`, in `decoder/okage`, and its
-test files moved to `testdata/okage` (D11).
+okage v0.1.0 is a port of resvg 0.49.0 and of tiny-skia to Go, with no cgo. On
+2026-11-10, the svg decoder moved from xo/resvg to okage, at the request of a
+maintainer, to see whether the slowdown is acceptable. A maintainer decided the
+same day to keep okage. The decoder took the name `okage`, in `decoder/okage`,
+and its test files moved to `testdata/okage` (D11).
 
 Three things changed:
 
 - okage reads no configuration of fontconfig. Its `svg.Renderer` loads the
   fonts of the system folders and of the home folder on its first render. It
   sets each css generic family, sans-serif too, to the first of its candidate
-  families that is installed, and uses the family of serif for a font that
-  is not installed. The lists of candidates were in `iv`, and moved to okage
-  v0.2.0 at the request of Ken, so that the decoder only makes a renderer and
-  calls it.
+  families that is installed, and uses the family of serif for a font that is
+  not installed. The lists of candidates were in `iv`, and moved to okage
+  v0.2.0 at the request of a maintainer, so that the decoder only makes a
+  renderer and calls it.
 - xo/resvg loaded every font of the system when the package started, for
   `resvg.Default`. Each run of `iv` paid about 30 ms for it, whatever the
   file. okage loads the fonts only when an svg is decoded, in about 78 ms for
@@ -683,13 +688,14 @@ time.
 
 zuzu (`github.com/xo/zuzu`) is a chart library in Go, with no cgo and no
 WebAssembly. It reads DOT and Mermaid, and draws them to an `*image.RGBA`
-through okage. On 2026-11-11, Ken decided that one decoder named `zuzu`
-replaces the `graphviz` and `mermaid` decoders, as `resvg` became `okage`
-(D35). `testdata/graphviz` and `testdata/mermaid` merged into `testdata/zuzu`.
-The decoder came with zuzu v0.2.0 and okage v0.4.0. zuzu v0.2.1 fixed a
-flowchart that it cut off at the bottom, and centered the labels of a pie.
+through okage. On 2026-11-11, a maintainer decided that one decoder named
+`zuzu` replaces the `graphviz` and `mermaid` decoders, as `resvg` became
+`okage` (D35). `testdata/graphviz` and `testdata/mermaid` merged into
+`testdata/zuzu`. The decoder came with zuzu v0.2.0 and okage v0.4.0. zuzu
+v0.2.1 fixed a flowchart that it cut off at the bottom, and centered the labels
+of a pie.
 
-Ken made two more decisions on the same day:
+A maintainer made two more decisions on the same day:
 
 - `iv` bundles the four icon packs of zuzu: fa, mdi, carbon and k8s. The
   binary grew by 4 MB, from 111.9 MB to 115.9 MB.
@@ -712,18 +718,18 @@ that is not text is a template of Microsoft Word, and does not match. The
 extension also sets the dialect, and `zuzu.Sniff` decides only for a source
 with no extension, such as one read from standard input.
 
-On 2026-11-11, Ken asked for the test data to hold the most complex examples
-of Mermaid, and also examples that zuzu does not draw, as targets for fixes
-in zuzu. `testdata/zuzu/broken` holds those. `TestDecodeBroken` fails when
-zuzu draws one of them, so that the file moves to `testdata/zuzu`.
+On 2026-11-11, a maintainer asked for the test data to hold the most complex
+examples of Mermaid, and also examples that zuzu does not draw, as targets for
+fixes in zuzu. `testdata/zuzu/broken` holds those. `TestDecodeBroken` fails
+when zuzu draws one of them, so that the file moves to `testdata/zuzu`.
 
 `--mermaid-theme dark` sets the dark mode of zuzu, and each other theme sets
 the light mode. An unknown theme is an error that names it, as before.
 `--mermaid-bg` sets the background through `zuzu.WithBackground` (D25). Both
 flags change a Mermaid diagram only, and not a DOT graph.
 
-Ken decided that the output of zuzu does not have to match the output of
-graphviz or xo/mermaid. A difference in layout, size, color or font is not a
+A maintainer decided that the output of zuzu does not have to match the output
+of graphviz or xo/mermaid. A difference in layout, size, color or font is not a
 defect. A defect is a part of a diagram that zuzu draws wrongly or does not
 draw, such as a node outside the image or two labels that overlap. Such a
 defect is an issue for zuzu.
@@ -780,10 +786,10 @@ them. A 1000x2 banner therefore stays 1000x2, and does not grow to 32000x64.
 
 That rule ignored a minimum that the user gave. `iv --min-width=1000` left a
 pie chart of 367x344 at its own size, because it was already taller than the
-default minimum height of 64. On 2026-11-11, Ken decided that a minimum given
-on the command line is forced, whatever the other minimum is. `iv` grows the
-image until it reaches each minimum that was given. The default of a minimum
-that was not given does not count.
+default minimum height of 64. On 2026-11-11, a maintainer decided that a
+minimum given on the command line is forced, whatever the other minimum is.
+`iv` grows the image until it reaches each minimum that was given. The default
+of a minimum that was not given does not count.
 
 The `set:` option of the `ox` struct tag records whether a flag was given. It
 sets `MinWidthSet` and `MinHeightSet` of `ivctx.Config`.
@@ -794,14 +800,14 @@ image does not grow past the terminal. The modes `shrink`, `width` and
 
 ### D38. A tall document is drawn whole and cut into pages. Decided. Amends D16.
 
-Before, `blitz` drew a Markdown or HTML document up to 4000 CSS pixels and
-cut off the rest. `iv` then shrank the whole image to fit the terminal, so a
-long document was too small to read. On 2026-11-12, Ken decided that `iv`
+Before, `blitz` drew a Markdown or HTML document up to 4000 CSS pixels and cut
+off the rest. `iv` then shrank the whole image to fit the terminal, so a long
+document was too small to read. On 2026-11-12, a maintainer decided that `iv`
 draws the whole document and cuts the image into pages itself. A page is as
-tall as the display height allows at the scale that fits the display width,
-so each page fills the width of the terminal. `iv` cuts at that fixed height,
-and does not look for a gap between lines. A document that fits the display
-is not cut. `-p N` selects a page, as it does for a pdf.
+tall as the display height allows at the scale that fits the display width, so
+each page fills the width of the terminal. `iv` cuts at that fixed height, and
+does not look for a gap between lines. A document that fits the display is not
+cut. `-p N` selects a page, as it does for a pdf.
 
 `ivctx.PageHeight` computes the height of a page. It returns 0, and nothing
 is cut, when no display height is set. This is the case for `--out` without
@@ -811,7 +817,7 @@ The renderer of blitz draws at most 65532 pixel rows. It keeps the height in
 16 bits and rounds it up to a tile of 4 rows. Before blitz v0.4.5, a taller
 render failed with a wrong size or panicked, and since then it is an error
 that names the limit. At scale 2, that is 32766 CSS pixels and 600 MB of
-pixels. Ken chose
+pixels. A maintainer chose
 to draw a document at scale 2, and to draw it again at scale 1 when it is
 taller than that. At scale 1, the same rows hold 65532 CSS pixels. Only a
 document taller than that is cut off, with a warning. The README of usql is
@@ -822,7 +828,7 @@ display of 1600x900.
 
 blitz v0.5.0 added a hook for syntax highlighting. It calls a function for
 each fenced code block of a Markdown render, and the function returns the
-code as html. On 2026-11-12, Ken decided that `iv` fills the hook with
+code as html. On 2026-11-12, a maintainer decided that `iv` fills the hook with
 transit (`github.com/xo/transit`), a port of tree-sitter to Go with no cgo.
 `decoder/blitz/highlight.go` parses each block with the grammar of its
 language, runs the highlight query of the grammar, and colors each capture
@@ -834,15 +840,15 @@ JavaScript, JSON, Python, Ruby, Rust, SQL and TypeScript. They cover the code
 blocks of most READMEs. The binary grew by 17.7 MB, from 117.9 MB to
 135.6 MB. A block in another language keeps its plain look.
 
-transit also has a grammar for each of 13 dialects of SQL. All 33 grammars
-with a highlight query make the binary 163.1 MB, and the dialects are most of
-the difference: neo4j alone is 4.4 MB. Ken decided that `iv` bundles only the
-generic `sql` grammar, and that a block of a dialect is colored with it. The
-names of cql, duckdb, mysql, oracle, postgres, sqlite3, sqlserver, surrealdb,
-trino and usql, and their common spellings, such as `postgresql` and `tsql`,
-map to `sql`. clickhouse, neo4j and ydb are not mapped, and their blocks keep
-the plain look. An HTML document
-is not highlighted, because the hook works on Markdown only.
+transit also has a grammar for each of 13 dialects of SQL. All 33 grammars with
+a highlight query make the binary 163.1 MB, and the dialects are most of the
+difference: neo4j alone is 4.4 MB. A maintainer decided that `iv` bundles only
+the generic `sql` grammar, and that a block of a dialect is colored with it.
+The names of cql, duckdb, mysql, oracle, postgres, sqlite3, sqlserver,
+surrealdb, trino and usql, and their common spellings, such as `postgresql` and
+`tsql`, map to `sql`. clickhouse, neo4j and ydb are not mapped, and their
+blocks keep the plain look. An HTML document is not highlighted, because the
+hook works on Markdown only.
 
 The highlight query of C++ joins the queries of C and C++, and that of
 TypeScript joins the queries of TypeScript and JavaScript, in the order of
@@ -858,18 +864,18 @@ character with `zuzu.ErrNoGlyph`. zuzu v0.6.0 added the package
 `github.com/xo/zuzu/text/emoji`, which holds the font Noto Color Emoji. A
 render that gets the font through `zuzu.WithEmoji` draws an emoji in color.
 
-On 2026-11-12, Ken decided that `iv` passes the font. The binary grew by
-10.7 MB, from 138.0 MB to 148.7 MB. `testdata/zuzu/emoji.mmd` is a flowchart
+On 2026-11-12, a maintainer decided that `iv` passes the font. The binary grew
+by 10.7 MB, from 138.0 MB to 148.7 MB. `testdata/zuzu/emoji.mmd` is a flowchart
 with an emoji in each label, and `TestDecodeEmoji` fails when zuzu reports an
 emoji that no font has.
 
 ### D41. A lottie draws with the lottie package of okage. Decided.
 
-`iv` drew a lottie with `github.com/xo/lottie`, which runs the ThorVG engine
-as WebAssembly. okage v0.6.0 added the package `github.com/xo/okage/lottie`, a
+`iv` drew a lottie with `github.com/xo/lottie`, which runs the ThorVG engine as
+WebAssembly. okage v0.6.0 added the package `github.com/xo/okage/lottie`, a
 port of the crate velato to Go, which draws as ThorVG does where velato
-differs. On 2026-11-12, Ken decided that `iv` draws a lottie with it. The
-decoder parses the document once, and draws each frame on a new pixmap of
+differs. On 2026-11-12, a maintainer decided that `iv` draws a lottie with it.
+The decoder parses the document once, and draws each frame on a new pixmap of
 okage, at the size that the frame is shown at.
 
 The pictures match those of ThorVG. Frames 1, 10 and 20 of the three files
@@ -908,7 +914,129 @@ animations of a dotLottie archive, and draws a frame at a size. `iv` keeps
 the mime types, the frame that a still shows, `--page`, `--fps` and the loop
 that plays the frames. The frames did not change.
 
-## Open questions for Ken
+### D42. A Kitty terminal that can play an animation plays it itself. Decided. Amends D19. Amended by D43.
+
+rasterm v0.2.0 changed its API (rasterm D26, rasterm D27), and added Kitty
+animation (rasterm D25, rasterm D28). On 2026-11-14, a maintainer asked to move
+`iv` to it, and to change the encoding and the animation to match.
+
+`iv` calls `rasterm.Detect` once, before the first image, when it draws to the
+terminal. Detect asks the terminal which protocols it supports, so the
+protocol is right over SSH too. `ivctx.Config.Terminal` keeps the answer, and
+the terminal encoder reads it from there. These rules apply:
+
+- `iv` reads no input, so it drops the keys that the user types while Detect
+  waits for the answers.
+- When `TERM_GRAPHICS=halfblock` selects half blocks, `iv` stops with
+  `rasterm.ErrTermGraphicsNotAvailable`. Half blocks draw an image as text,
+  and `iv` does not do that (D1).
+- When the ioctl of the terminal gives no size in pixels, the size of a cell
+  that the terminal reports to Detect sets the display size.
+
+On a terminal that plays a Kitty animation, `--animate` sends the frames as
+one animation. `iv` sends each frame once, as the decoder makes it, and the
+terminal keeps the time. No frame is dropped, and `--loop` sends nothing
+after the first pass. kitty 0.50.0 and later report that they play
+animations. Older kitty and Ghostty 1.4.0 and later play them and do not
+report it, so `iv` also takes the name kitty, and the name ghostty with
+version 1.4 or later. Another terminal with the Kitty protocol, such as
+WezTerm or Konsole, shows only the first frame. There, and for Sixel and
+iTerm, `iv` draws one image for each frame, as D19 describes.
+
+The terminal stores every frame of an animation. Ghostty keeps 320 MB of images
+for a screen by default, and kitty 320 MiB. The other images on the screen
+count too, and a frame that does not fit fails with no message, because rasterm
+sends `q=2`. When the frames need more than 256 MiB, at 4 bytes for each pixel
+of the first frame, `iv` draws one image for each frame. The first limit was
+320 MiB, which is 335.5 MB. In Ghostty, the last frames of
+`testdata/ffmpeg/sample_960x540.mp4`, 331.8 MB in all, did not play. rasterm
+D25 says that video must stay one image for each frame, because a stream has no
+end. A video in `iv` is sampled to at most 720 frames (D19), so it has an end,
+and the same limit applies to it.
+
+A pass ends as it did before: at the start of the last frame, or after one
+minute. With `--loop`, the terminal plays the frames until the playback is
+interrupted. An interrupt stops the animation on the frame that shows.
+
+In kitty 0.50.0, with a display of 2619x1220, `iv` sent the 6 frames of
+`animated.gif` in 0.8 ms. It sent the 65 frames of `fire.lottie` at 1024x1024
+in 2.2 s, as fast as okage drew them (D41). The first pass plays at that
+speed. Each pass after it plays at the speed of the animation, 1.08 s, where
+the player of D19 drew each pass in about 2.3 s. Ghostty and tmux were not
+tested.
+
+`iv` draws one image for each frame on the other terminals. On Kitty, it
+deletes the images of the terminal before each frame. In tmux, the delete now
+goes through the passthrough of tmux, which dropped it before.
+
+On 2026-11-14, a maintainer found that `rocket.json` plays differently in
+Ghostty 1.4.0. Its 40 frames draw the cycle of the rocket twice, and one image
+for each frame showed both cycles. As one Kitty animation in Ghostty, it showed
+one. The frames are the same in both cases, because okage draws frames 0 to 39
+for each. The cause in Ghostty is not known. A maintainer asked for
+`--animate-mode` to compare the two in one build: `auto` chooses as above,
+`kitty` always sends one Kitty animation with no check of the name or of the
+size, and `frames` always draws one image for each frame.
+
+A maintainer then asked that `iv` use one Kitty image for any animation, and
+make a frame only when the player needs it. The protocol does not report which
+frame the terminal shows, so an animation that the terminal plays must store
+every frame. rasterm v0.3.0 added `KittyStream` for this (rasterm D29). The
+image stays stopped, and it holds two frames. For each frame, rasterm writes
+the picture into the frame that is not shown, and then shows it. The player of
+D19 keeps the time, and drops a late frame as before. So `--animate-mode` has
+four values:
+
+- `auto` sends one Kitty animation to a terminal that plays it, when the
+  frames fit, and uses the stream when they do not. Any other terminal gets
+  one image for each frame.
+- `kitty` always sends one Kitty animation, with no check of the size.
+- `stream` always uses the stream.
+- `frames` always draws one image for each frame.
+
+In kitty 0.50.0, the stream drew the 40 frames of `rocket.json` in 0.65 s.
+With `auto`, `fire.lottie` at 2619x1220 used the stream and drew all 65
+frames, and `sample_960x540.mp4` at 2000x1125 drew 156 of 160 frames. The
+stream was not tested in Ghostty.
+
+### D43. A video plays at its own speed, and a Kitty image shows each frame. Decided. Amends D19. Amends D42.
+
+On 2026-11-14, a maintainer found that a long video played too fast. That was
+the sampling of D19: a video longer than a minute was cut into 720 frames,
+spread over its length, and played in one minute. A 3 minute test video played
+one frame for each 250 ms of video, in 59.9 s, in v0.21.1 and with D42 alike. A
+maintainer asked that a video play at its own speed and length, and said that
+dropped frames are fine.
+
+The `ffmpeg` decoder now decodes a video once, from the start. It uses the
+frame rate that ffprobe reports, up to 30 frames a second, or `--fps`.
+ffmpeg scales each frame to the size that it is shown at, and writes it as
+raw RGBA pixels. A raw frame needs no encode in ffmpeg and no decode in
+`iv`, and Kitty sends it as it is. ffmpeg turns a rotated video upright, so
+`iv` reads the rotation from ffprobe and swaps the width and the height for
+90 and 270 degrees. The seek mode of D19 for long videos is gone.
+
+`decoder.Anim` has a `Video` field. For a video, the player of D19 has two
+changes. A pass is as long as the video, with no limit of one minute. The
+player drops each late frame, also one that the decoder made late, so that
+the video keeps its length. For any animation, the clock now starts at the
+first frame, so the time that ffmpeg takes to start makes no frame late.
+
+A maintainer also found that `rocket.json` plays too fast in Ghostty 1.4.0 when
+the terminal plays it (D42), and asked that the stream be the default. So
+`--animate-mode auto` now uses the `KittyStream` of rasterm v0.3.0 on a
+terminal that plays Kitty animations, and one image for each frame on any other
+terminal. The terminal never stores more than two frames, so the size limit of
+D42 is gone. `--animate-mode kitty` still sends one animation that the terminal
+plays. The cause in Ghostty is not known, and rasterm keeps it in its backlog.
+
+In kitty 0.50.0, `sample_960x540.mp4`, which is 13.3 s at 29.97 frames a
+second, played its 400 frames in 13.36 s with none dropped, at 960x540 and
+at 2000x1125. A test video with a rotation of 90 degrees played upright at
+360x640, 49 frames in 2.0 s. `testdata/ffmpeg` holds two videos for these
+tests, `testsrc2.mp4` and `testsrc2-rotated.mp4`.
+
+## Open questions for the maintainers
 
 1. Windows builds under UCRT64 because mupdf needed it (D14). mupdf is gone
    (D28). Does Windows still need UCRT64? Nothing has tested MINGW64.

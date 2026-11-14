@@ -10,12 +10,12 @@ imports it, for Claude Code.
 [`docs/PLAN.md`](docs/PLAN.md) holds the plan and every decision this project
 made. The index at the top lists each decision with its status. Read the
 status, because some decisions amend an earlier one. The open questions for
-Ken are at the end.
+the maintainers are at the end.
 
 [`docs/BACKLOG.md`](docs/BACKLOG.md) holds the work that is known and not
 done.
 
-Do not decide an open question on your own. Ask Ken.
+Do not decide an open question on your own. Ask a maintainer.
 
 ## Build dependencies
 

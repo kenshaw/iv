@@ -40,6 +40,12 @@ type Anim struct {
 	Count int
 	// Duration is how long a pass runs for, 0 when not known.
 	Duration time.Duration
+	// Video is true when the frames are a video, which plays at its own
+	// speed (D43). A pass is as long as the video, with no
+	// [ivctx.AnimateMax], and the player drops each frame that comes late,
+	// also when the decoder made it late, so that the video keeps its own
+	// length.
+	Video bool
 	// Close releases whatever produced the frames -- a spooled copy of the
 	// source, a loaded animation -- once the playback has finished with it.
 	// Nil when there is nothing to release.

@@ -9,7 +9,7 @@ import (
 )
 
 // Raw returns img in the form that the terminal encoder hands to rasterm for
-// the protocol typ. The measures behind each choice are in the Performance
+// the protocol p. The measures behind each choice are in the Performance
 // section of the README.
 //
 // For the Kitty protocol:
@@ -38,8 +38,8 @@ import (
 // The pixels are converted only when the encoder asks for them, and the
 // wrappers unwrap to img, so that an encoder that falls back to the pixels
 // finds them.
-func Raw(typ rasterm.TermType, img image.Image) image.Image {
-	switch typ {
+func Raw(p rasterm.Protocol, img image.Image) image.Image {
+	switch p {
 	case rasterm.Kitty:
 		return kittyRaw(img)
 	case rasterm.ITerm:

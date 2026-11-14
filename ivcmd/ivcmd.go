@@ -56,6 +56,7 @@ type Args struct {
 	Animate         bool               `ox:"play the animation in an animated file,short:a"`
 	Loop            bool               `ox:"repeat the animation until interrupted - implies --animate,short:l"`
 	FPS             uint               `ox:"animation frames per second - 0 takes it from the animation,name:fps"`
+	AnimateMode     string             `ox:"animation playback - auto/kitty/stream/frames - any but auto implies --animate,default:auto"`
 	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
 	MermaidTheme    string             `ox:"mermaid theme - default/dark/forest/neutral/modern"`
 	MermaidBg       *colors.Color      `ox:"mermaid background - the theme background when not set"`
@@ -141,14 +142,25 @@ func (a *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []str
 	if a.List {
 		return List(stdout)
 	}
-	// there is nothing to repeat, or to set a frame rate for, but an animation
-	a.Animate = a.Animate || a.Loop || a.FPS != 0
+	mode, err := animateMode(a.AnimateMode)
+	if err != nil {
+		return err
+	}
+	a.AnimateMode = mode
+	// there is nothing to repeat, set a frame rate for, or play in a mode,
+	// but an animation
+	a.Animate = a.Animate || a.Loop || a.FPS != 0 || mode != animateAuto
 	enc, err := a.encoder()
 	if err != nil {
 		return err
 	}
 	c := a.Config(stderr)
 	ctx = ivctx.WithConfig(ctx, c)
+	if enc.Term {
+		if err := a.detect(ctx, c, stdout); err != nil {
+			return err
+		}
+	}
 	// a decoder holding an engine -- lottie, blitz -- releases it
 	// here, and a failure to is worth saying rather than dropping
 	defer func() {
@@ -194,8 +206,8 @@ func (a *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []str
 	return nil
 }
 
-// encoder returns the encoder to use, verifying that terminal graphics are
-// available when writing to a terminal.
+// encoder returns the encoder to use. [Args.detect] checks later that the
+// terminal has graphics, for a terminal encoder.
 func (a *Args) encoder() (*encoder.Entry, error) {
 	switch {
 	case a.Encoder != "":
@@ -212,14 +224,36 @@ func (a *Args) encoder() (*encoder.Entry, error) {
 		}
 		return e, nil
 	}
-	if !rasterm.Available() {
-		return nil, rasterm.ErrTermGraphicsNotAvailable
-	}
 	e, ok := encoder.Get(DefaultEncoder)
 	if !ok {
 		return nil, fmt.Errorf("%q: %w", DefaultEncoder, encoder.ErrNotRegistered)
 	}
 	return e, nil
+}
+
+// detect asks the terminal which graphics protocol it supports, and keeps
+// the answer in the configuration, for the terminal encoder (D42). It asks
+// once, before the first image, because the terminal answers on standard
+// input, and an answer that comes during an encode would show as text.
+//
+// rasterm reads the keys that the user types while it waits for the answers.
+// iv reads no input, so they are dropped.
+func (a *Args) detect(ctx context.Context, c *ivctx.Config, stdout io.Writer) error {
+	// a writer that is not a file is not a terminal, and rasterm then reads
+	// only the environment
+	out, _ := stdout.(*os.File)
+	t, _, err := rasterm.Detect(ctx, rasterm.WithOutput(out))
+	if err != nil {
+		return fmt.Errorf("detect terminal: %w", err)
+	}
+	ivctx.Logf(ctx, "terminal: %s from %s, name: %q %q, cell: %dx%d, kitty animation: %t, tmux: %t",
+		t.Protocol, t.Source, t.Name, t.Version, t.Cell.X, t.Cell.Y, t.KittyAnimation, t.Tmux)
+	// half blocks draw an image as text, which iv does not do (D1)
+	if t.Protocol == rasterm.None || t.Protocol == rasterm.Halfblock {
+		return rasterm.ErrTermGraphicsNotAvailable
+	}
+	c.Terminal = t
+	return nil
 }
 
 // resolveDisplay fills in the display size from the terminal when none was
@@ -242,6 +276,11 @@ func (a *Args) resolveDisplay(ctx context.Context, c *ivctx.Config, stdout io.Wr
 	t, ok := ivctx.TermSize(f)
 	if !ok {
 		return
+	}
+	// a terminal that does not give its size in pixels to the ioctl can
+	// still answer the query of rasterm for the size of a cell
+	if cell := c.Terminal.Cell; !t.Exact && cell.X > 0 && cell.Y > 0 {
+		t.Width, t.Height, t.Exact = t.Cols*cell.X, t.Rows*cell.Y, true
 	}
 	// the name printed above the image and the prompt that follows it both
 	// want a line, and an image sized to the last pixel of the screen scrolls

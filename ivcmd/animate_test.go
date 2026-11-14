@@ -3,6 +3,7 @@ package ivcmd
 import (
 	"bytes"
 	"context"
+	"errors"
 	"image"
 	"io"
 	"iter"
@@ -13,6 +14,7 @@ import (
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/encoder"
 	"github.com/kenshaw/iv/ivctx"
+	"github.com/kenshaw/rasterm"
 )
 
 // TestPlay checks that a pass draws every frame of an animation it can keep up
@@ -85,6 +87,44 @@ func TestPlaySlowProducer(t *testing.T) {
 	}
 }
 
+// TestPlayVideo checks that a video keeps its own length: a frame that the
+// decoder made late is dropped, where any other animation draws it (D43).
+func TestPlayVideo(t *testing.T) {
+	const frames = 6
+	p, _ := testPlayer(t, 0)
+	anim := testAnim(frames, 5*time.Millisecond)
+	anim.Video = true
+	anim.Frames = slowFrames(anim.Frames, 30*time.Millisecond)
+	switch n, err := p.play(t.Context(), anim, false); {
+	case err != nil:
+		t.Fatalf("expected no error, got: %v", err)
+	case p.dropped == 0:
+		t.Error("expected late frames dropped")
+	case n+p.dropped != frames:
+		t.Errorf("expected %d frames accounted for, got %d drawn and %d dropped", frames, n, p.dropped)
+	}
+}
+
+// TestPlayFirstFrame checks that the clock starts with the first frame, so
+// that a decoder that is slow to start, as ffmpeg is, makes no frame late.
+func TestPlayFirstFrame(t *testing.T) {
+	const frames = 4
+	p, _ := testPlayer(t, 0)
+	anim := testAnim(frames, 50*time.Millisecond)
+	anim.Video = true
+	next := anim.Frames
+	anim.Frames = func(ctx context.Context) iter.Seq2[decoder.Frame, error] {
+		time.Sleep(100 * time.Millisecond)
+		return next(ctx)
+	}
+	switch n, err := p.play(t.Context(), anim, false); {
+	case err != nil:
+		t.Fatalf("expected no error, got: %v", err)
+	case n != frames:
+		t.Errorf("expected %d frames drawn, got %d with %d dropped", frames, n, p.dropped)
+	}
+}
+
 // TestPlayMax checks that an animation longer than a pass plays for is cut off
 // rather than holding the screen for the whole of its length.
 func TestPlayMax(t *testing.T) {
@@ -110,6 +150,165 @@ func TestPlayInterrupted(t *testing.T) {
 		t.Fatalf("expected no error, got: %v", err)
 	case n != 0:
 		t.Errorf("expected no frames drawn, got %d", n)
+	}
+}
+
+// TestKittyPlays checks which terminals get the frames as one Kitty
+// animation: the ones that report it, kitty, and Ghostty 1.4.0 and later.
+func TestKittyPlays(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		term rasterm.Terminal
+		exp  bool
+	}{
+		{"reported", rasterm.Terminal{Protocol: rasterm.Kitty, KittyAnimation: true}, true},
+		{"kitty", rasterm.Terminal{Protocol: rasterm.Kitty, Name: "kitty", Version: "0.42.2"}, true},
+		{"ghostty", rasterm.Terminal{Protocol: rasterm.Kitty, Name: "ghostty", Version: "1.4.0"}, true},
+		{"ghostty dev", rasterm.Terminal{Protocol: rasterm.Kitty, Name: "ghostty", Version: "1.4.0-dev+0e1a2b3"}, true},
+		{"ghostty 2", rasterm.Terminal{Protocol: rasterm.Kitty, Name: "ghostty", Version: "2.0.1"}, true},
+		{"old ghostty", rasterm.Terminal{Protocol: rasterm.Kitty, Name: "ghostty", Version: "1.3.1"}, false},
+		{"ghostty with no version", rasterm.Terminal{Protocol: rasterm.Kitty, Name: "ghostty"}, false},
+		{"wezterm", rasterm.Terminal{Protocol: rasterm.Kitty, Name: "WezTerm"}, false},
+		{"forced", rasterm.Terminal{Protocol: rasterm.Kitty}, false},
+		{"iterm", rasterm.Terminal{Protocol: rasterm.ITerm, Name: "kitty", KittyAnimation: true}, false},
+		{"none", rasterm.Terminal{}, false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if ok := kittyPlays(test.term); ok != test.exp {
+				t.Errorf("expected %t, got %t", test.exp, ok)
+			}
+		})
+	}
+}
+
+// TestPlayKitty checks that an animation goes to a Kitty terminal as one
+// animation: the root frame, each other frame once, and the end, which plays
+// the frames once. rasterm sends a frame in chunks, and a=f,f= starts the
+// first chunk of each frame.
+func TestPlayKitty(t *testing.T) {
+	a, buf := &Args{}, new(bytes.Buffer)
+	if err := a.playKitty(t.Context(), buf, rasterm.KittyEncoder{}, testAnim(3, 10*time.Millisecond), "anim.gif"); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	s := buf.String()
+	switch {
+	case !strings.HasPrefix(s, "anim.gif:\n"):
+		t.Error("expected the name written above the animation")
+	case strings.Count(s, "a=T,") != 1:
+		t.Errorf("expected 1 root frame, got %d", strings.Count(s, "a=T,"))
+	case strings.Count(s, "a=f,f=") != 2:
+		t.Errorf("expected 2 frames, got %d", strings.Count(s, "a=f,f="))
+	case !strings.Contains(s, ",s=3,v=2\x1b"):
+		t.Error("expected the frames played once")
+	case strings.Contains(s, ",s=1\x1b"):
+		t.Error("expected the animation not stopped")
+	}
+}
+
+// TestPlayKittyLoop checks that --loop has the terminal play the frames
+// until the playback is interrupted, and that the interrupt stops the
+// animation on the frame that shows.
+func TestPlayKittyLoop(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
+	defer cancel()
+	a, buf := &Args{Loop: true}, new(bytes.Buffer)
+	if err := a.playKitty(ctx, buf, rasterm.KittyEncoder{}, testAnim(3, time.Millisecond), ""); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	s := buf.String()
+	end, stop := strings.Index(s, ",s=3,v=1\x1b"), strings.Index(s, ",s=1\x1b")
+	switch {
+	case end < 0:
+		t.Error("expected the frames played until interrupted")
+	case stop < end:
+		t.Error("expected the animation stopped after the interrupt")
+	}
+}
+
+// TestPlayKittyMax checks that an animation longer than a pass plays for is
+// cut off, as [player.play] cuts it off.
+func TestPlayKittyMax(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
+	defer cancel()
+	a, buf := &Args{}, new(bytes.Buffer)
+	if err := a.playKitty(ctx, buf, rasterm.KittyEncoder{}, testAnim(3, ivctx.AnimateMax/2+time.Second), ""); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	// the third frame starts after the end of the pass
+	if n := strings.Count(buf.String(), "a=f,f="); n != 1 {
+		t.Errorf("expected 1 frame after the root frame, got %d", n)
+	}
+}
+
+// TestPlayStream checks that the stream draws the frames into one Kitty
+// image: the name and the image once, then each frame written into the frame
+// that is not shown, and shown, with nothing cleared.
+func TestPlayStream(t *testing.T) {
+	buf := new(bytes.Buffer)
+	p := &player{w: buf, name: "anim.gif", stream: true, kitty: rasterm.KittyEncoder{}}
+	switch n, err := p.play(t.Context(), testAnim(3, 20*time.Millisecond), false); {
+	case err != nil:
+		t.Fatalf("expected no error, got: %v", err)
+	case n != 3:
+		t.Errorf("expected 3 frames drawn, got %d", n)
+	}
+	s := buf.String()
+	switch {
+	case !strings.HasPrefix(s, "anim.gif:\n") || strings.Count(s, "anim.gif:") != 1:
+		t.Error("expected the name written once, above the image")
+	case strings.Count(s, "a=T,") != 1:
+		t.Errorf("expected 1 image, got %d", strings.Count(s, "a=T,"))
+	case strings.Count(s, "a=f,f=") != 2:
+		t.Errorf("expected 2 frames written, got %d", strings.Count(s, "a=f,f="))
+	case !strings.Contains(s, ",c=2\x1b") || !strings.Contains(s, ",r=1,X=1,"):
+		t.Error("expected the second frame shown, then the first frame written again and shown")
+	case strings.Contains(s, cursorHome), strings.Contains(s, kittyDelete):
+		t.Error("expected nothing cleared")
+	}
+}
+
+// TestAnimateMode checks the values of --animate-mode: case and space do not
+// matter, empty is auto, and any other value is an error.
+func TestAnimateMode(t *testing.T) {
+	for _, test := range []struct {
+		s, exp string
+	}{
+		{"", animateAuto},
+		{"auto", animateAuto},
+		{" Kitty ", animateKitty},
+		{"FRAMES", animateFrames},
+		{"stream", animateStream},
+	} {
+		got, err := animateMode(test.s)
+		switch {
+		case err != nil:
+			t.Errorf("%q: expected no error, got: %v", test.s, err)
+		case got != test.exp:
+			t.Errorf("%q: expected %q, got %q", test.s, test.exp, got)
+		}
+	}
+	if _, err := animateMode("sixel"); !errors.Is(err, ErrUnknownAnimateMode) {
+		t.Errorf("expected %v, got: %v", ErrUnknownAnimateMode, err)
+	}
+}
+
+// TestDeleteImages checks that only Kitty deletes the images before a frame,
+// and that the delete goes through the passthrough of tmux in tmux.
+func TestDeleteImages(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		term rasterm.Terminal
+		exp  string
+	}{
+		{"kitty", rasterm.Terminal{Protocol: rasterm.Kitty}, kittyDelete},
+		{"tmux", rasterm.Terminal{Protocol: rasterm.Kitty, Tmux: true}, "\x1bPtmux;\x1b\x1b_Ga=d\x1b\x1b\\\x1b\\"},
+		{"sixel", rasterm.Terminal{Protocol: rasterm.Sixel}, ""},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if got := deleteImages(test.term); got != test.exp {
+				t.Errorf("expected %q, got %q", test.exp, got)
+			}
+		})
 	}
 }
 
