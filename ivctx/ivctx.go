@@ -13,7 +13,6 @@ import (
 
 	"github.com/kenshaw/colors"
 	"github.com/kenshaw/rasterm"
-	"github.com/tdewolff/canvas"
 	"github.com/xo/ox"
 )
 
@@ -38,8 +37,8 @@ type Config struct {
 	Bg              *colors.Color
 	Border          uint
 	FontSize        uint
-	FontStyle       canvas.FontStyle
-	FontVariant     canvas.FontVariant
+	FontWeight      uint
+	FontItalic      bool
 	FontFg          *colors.Color
 	FontBg          *colors.Color
 	FontDPI         uint

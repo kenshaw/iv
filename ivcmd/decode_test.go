@@ -64,6 +64,9 @@ func TestDecodeFile(t *testing.T) {
 		// and libmagic reads the file as html. The extension decides
 		{"dot after comments", "zuzu/psg.gv", "text/html", "zuzu", ""},
 		{"ttf", "fontimg/Ubuntu-R.ttf", "font/ttf", "fontimg", ""},
+		{"woff", "fontimg/NotoMono-Regular.woff", "font/woff", "fontimg", ""},
+		{"woff2", "fontimg/NotoMono-Regular.woff2", "font/woff2", "fontimg", ""},
+		{"woff2 collection", "fontimg/IBMPlexSans.woff2", "font/woff2", "fontimg", ""},
 		{"jxl", "vips/precision.jxl", "image/jxl", "vips", ""},
 		{"heic", "vips/cyberpunk.heic", "image/heic", "vips", ""},
 		{"pdf", "vips/file-sample_150kB.pdf", "application/pdf", "vips-pdf", ""},
@@ -112,7 +115,7 @@ func TestDecodeFile(t *testing.T) {
 		{"lottie", "lottie/rocket.json", "video/lottie+json", "lottie", ""},
 		{"lottie lot", "lottie/star.lot", "video/lottie+json", "lottie", ""},
 		{"dotlottie", "lottie/fire.lottie", "application/zip", "lottie", ""},
-		{"binwalk", "binwalk/icon.afdesign", "application/octet-stream", "binwalk", "binwalk"},
+		{"binwalk", "binwalk/icon.afdesign", "application/octet-stream", "binwalk", ""},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			pathName := filepath.Join("..", "testdata", filepath.FromSlash(test.file))
@@ -647,7 +650,6 @@ var untested = map[string]map[string]string{
 	"windows": {
 		"soffice":       "LibreOffice has no MSYS2 package",
 		"ebook-convert": "calibre has no MSYS2 package",
-		"binwalk":       "binwalk has no Windows package",
 	},
 }
 

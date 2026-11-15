@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kenshaw/iv/internal/font"
 	"github.com/kenshaw/iv/ivctx"
-	"github.com/tdewolff/canvas"
 	"github.com/xo/okage/svg"
 )
 
@@ -27,7 +27,7 @@ import (
 func TestSerifIsLatin(t *testing.T) {
 	var name string
 	for _, candidate := range svg.SerifCandidates {
-		if _, ok := canvas.FindSystemFont(candidate, canvas.FontRegular); ok {
+		if font.Installed(candidate) {
 			name = candidate
 			break
 		}

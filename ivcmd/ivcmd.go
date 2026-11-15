@@ -23,7 +23,6 @@ import (
 	"github.com/kenshaw/iv/ivctx"
 	"github.com/kenshaw/iv/ivimg"
 	"github.com/kenshaw/rasterm"
-	"github.com/tdewolff/canvas"
 	// registers the color type of ox, which the color flags use
 	_ "github.com/xo/ox/color"
 )
@@ -33,42 +32,42 @@ const DefaultEncoder = "rasterm"
 
 // Args are the iv command arguments.
 type Args struct {
-	Verbose         bool               `ox:"enable verbose,short:v"`
-	Quiet           bool               `ox:"enable quiet,short:q"`
-	Mode            *ivctx.Mode        `ox:"scaling mode,short:m,default:best-fit"`
-	Width           uint               `ox:"display width in pixels - 0 takes it from the terminal,short:W"`
-	Height          uint               `ox:"display height in pixels - 0 takes it from the terminal,short:H"`
-	MinWidth        uint               `ox:"minimum width in pixels,short:w,default:64,set:MinWidthSet"`
-	MinHeight       uint               `ox:"minimum height in pixels,short:h,default:64,set:MinHeightSet"`
-	DPI             uint               `ox:"image dpi,default:300,name:dpi"`
-	Page            uint               `ox:"page to display,short:p"`
-	Fg              *colors.Color      `ox:"qr code foreground color,default:black"`
-	Bg              *colors.Color      `ox:"background color,default:transparent"`
-	Border          uint               `ox:"qr code border width in pixels,default:40"`
-	FontSize        uint               `ox:"font preview size,default:48"`
-	FontStyle       canvas.FontStyle   `ox:"font preview style"`
-	FontVariant     canvas.FontVariant `ox:"font preview variant"`
-	FontFg          *colors.Color      `ox:"font preview foreground color,default:black"`
-	FontBg          *colors.Color      `ox:"font preview background color,default:white"`
-	FontDPI         uint               `ox:"font preview dpi,default:100,name:font-dpi"`
-	FontMargin      uint               `ox:"font preview margin,default:5"`
-	TimeCode        time.Duration      `ox:"video time code,short:t"`
-	Animate         bool               `ox:"play the animation in an animated file,short:a"`
-	Loop            bool               `ox:"repeat the animation until interrupted - implies --animate,short:l"`
-	FPS             uint               `ox:"animation frames per second - 0 takes it from the animation,name:fps"`
-	AnimateMode     string             `ox:"animation playback - auto/kitty/stream/frames - any but auto implies --animate,default:auto"`
-	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
-	MermaidTheme    string             `ox:"mermaid theme - default/dark/forest/neutral/modern"`
-	MermaidBg       *colors.Color      `ox:"mermaid background - the theme background when not set"`
-	ZuzuData        string             `ox:"directory that a vega spec reads its data from - empty is the directory of the spec"`
-	BlitzDark       bool               `ox:"render documents and pages dark"`
-	PDFPage         string             `ox:"pdf page size - fit/a4/letter,default:fit,name:pdf-page"`
-	PDFMargin       uint               `ox:"pdf page margin in points,default:36,name:pdf-margin"`
-	Password        string             `ox:"password for encrypted documents"`
-	ForceMime       string             `ox:"force mime type"`
-	Out             string             `ox:"write to file instead of the terminal,short:o"`
-	Encoder         string             `ox:"output encoder"`
-	List            bool               `ox:"list registered decoders and encoders"`
+	Verbose         bool          `ox:"enable verbose,short:v"`
+	Quiet           bool          `ox:"enable quiet,short:q"`
+	Mode            *ivctx.Mode   `ox:"scaling mode,short:m,default:best-fit"`
+	Width           uint          `ox:"display width in pixels - 0 takes it from the terminal,short:W"`
+	Height          uint          `ox:"display height in pixels - 0 takes it from the terminal,short:H"`
+	MinWidth        uint          `ox:"minimum width in pixels,short:w,default:64,set:MinWidthSet"`
+	MinHeight       uint          `ox:"minimum height in pixels,short:h,default:64,set:MinHeightSet"`
+	DPI             uint          `ox:"image dpi,default:300,name:dpi"`
+	Page            uint          `ox:"page to display,short:p"`
+	Fg              *colors.Color `ox:"qr code foreground color,default:black"`
+	Bg              *colors.Color `ox:"background color,default:transparent"`
+	Border          uint          `ox:"qr code border width in pixels,default:40"`
+	FontSize        uint          `ox:"font preview size,default:48"`
+	FontWeight      uint          `ox:"font preview weight from 1 to 1000 - 0 is the weight of the face"`
+	FontItalic      bool          `ox:"font preview in italic"`
+	FontFg          *colors.Color `ox:"font preview foreground color,default:black"`
+	FontBg          *colors.Color `ox:"font preview background color,default:white"`
+	FontDPI         uint          `ox:"font preview dpi,default:100,name:font-dpi"`
+	FontMargin      uint          `ox:"font preview margin,default:5"`
+	TimeCode        time.Duration `ox:"video time code,short:t"`
+	Animate         bool          `ox:"play the animation in an animated file,short:a"`
+	Loop            bool          `ox:"repeat the animation until interrupted - implies --animate,short:l"`
+	FPS             uint          `ox:"animation frames per second - 0 takes it from the animation,name:fps"`
+	AnimateMode     string        `ox:"animation playback - auto/kitty/stream/frames - any but auto implies --animate,default:auto"`
+	VipsConcurrency uint          `ox:"vips concurrency,default:$NUMCPU"`
+	MermaidTheme    string        `ox:"mermaid theme - default/dark/forest/neutral/modern"`
+	MermaidBg       *colors.Color `ox:"mermaid background - the theme background when not set"`
+	ZuzuData        string        `ox:"directory that a vega spec reads its data from - empty is the directory of the spec"`
+	BlitzDark       bool          `ox:"render documents and pages dark"`
+	PDFPage         string        `ox:"pdf page size - fit/a4/letter,default:fit,name:pdf-page"`
+	PDFMargin       uint          `ox:"pdf page margin in points,default:36,name:pdf-margin"`
+	Password        string        `ox:"password for encrypted documents"`
+	ForceMime       string        `ox:"force mime type"`
+	Out             string        `ox:"write to file instead of the terminal,short:o"`
+	Encoder         string        `ox:"output encoder"`
+	List            bool          `ox:"list registered decoders and encoders"`
 
 	// ox sets these when the flag is given on the command line
 	MinWidthSet  bool
@@ -96,8 +95,8 @@ func (a *Args) Config(stderr io.Writer) *ivctx.Config {
 		Bg:              a.Bg,
 		Border:          a.Border,
 		FontSize:        a.FontSize,
-		FontStyle:       a.FontStyle,
-		FontVariant:     a.FontVariant,
+		FontWeight:      a.FontWeight,
+		FontItalic:      a.FontItalic,
 		FontFg:          a.FontFg,
 		FontBg:          a.FontBg,
 		FontDPI:         a.FontDPI,

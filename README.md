@@ -194,7 +194,6 @@ Six decoders shell out. Without the command, the file fails to render with
 | `xpstopng`      | XPS documents (libgxps)                              |
 | `pdftoppm`      | pdf pages, where libvips has no pdf loader (poppler) |
 | `ffmpeg`        | video snapshots, and the waveform on an audio card   |
-| `binwalk`       | images embedded in otherwise unrecognized files      |
 
 An audio card is the exception: it is drawn without a waveform rather than not
 at all.
@@ -454,9 +453,21 @@ one when it is not. `-t` picks the moment a video is snapshotted at, and
 
 | Format                                                          | Extensions                                          | Decoder   |
 | --------------------------------------------------------------- | --------------------------------------------------- | --------- |
-| Font specimen previews                                          | `ttf` `ttc` `otf` `woff` `woff2` `sfnt` `eot` `pfb` | `fontimg` |
+| Font specimen previews                                          | `ttf` `ttc` `otf` `otc` `woff` `woff2` `sfnt` `eot` | `fontimg` |
 | Icons in a Windows PE                                           | `exe` `dll` `mui`                                   | `winres`  |
 | vCard contacts, as a business card with a QR code of the record | `vcf` `vcard`                                       | `vcard`   |
+
+A font preview names the family, the style and the version of the font, then
+shows its own sample text, when it has one, the alphabet and the digits, a
+line of emoji when the font draws them in color, and pangrams at growing
+sizes. A font of emoji, such as Noto Color Emoji, shows its emoji at growing
+sizes, under its name in the font of the system. [okage][] draws it, and reads TrueType, OpenType, collections,
+WOFF, WOFF2 and EOT, except an EOT that MicroType Express compresses. In a
+collection, `-p N` selects the face. `--font-weight N`, from 1 to 1000, and
+`--font-italic` draw the font in another weight or in italic, and set the
+axes of a variable font.
+
+[okage]: https://github.com/xo/okage
 
 ### Arguments that are not files
 
@@ -469,9 +480,13 @@ one when it is not. `-t` picks the moment a video is snapshotted at, and
 
 ### Anything else
 
-A file nothing above recognizes is handed to `binwalk`, which renders an image
-found inside it -- the Affinity formats (`afdesign`, `afphoto`, `afpub`) among
-them. *Needs `binwalk`.*
+A file nothing above recognizes is searched for an image embedded in it, as
+the `binwalk` command does, with the walker of [magic][]. The Affinity
+formats (`afdesign`, `afphoto`, `afpub`) are among them. The walker also
+searches the files of an archive that it finds, and `-p N` selects among the
+images that it finds. No command is needed.
+
+[magic]: https://github.com/xo/magic
 
 ### Output
 

@@ -156,8 +156,8 @@ golangci-lint run ./...
 CI runs `go test -race -v ./...` on Linux amd64 and arm64, macOS and Windows
 (D14). It runs `golangci-lint run ./...` with the release that the Lint job
 in `.github/workflows/test.yml` pins (D29). The tests need every decoder
-command: `ffmpeg`, `soffice`, `ebook-convert`, `xpstopng`, `pdftoppm` and
-`binwalk` (D27).
+command: `ffmpeg`, `soffice`, `ebook-convert`, `xpstopng` and `pdftoppm`
+(D27).
 
 If you changed a decoder, an encoder or the pipeline, also run the smoke test:
 

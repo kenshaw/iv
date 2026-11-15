@@ -33,12 +33,11 @@ The state below is the working tree of 2026-10-15, after D22 to D33.
   (D5, D8, D22). blitz renders Markdown, HTML and web pages (D16). zuzu
   draws DOT graphs and Mermaid diagrams in Go (D36). oov/psd decodes
   Photoshop files (D28).
-- Seven decoders run an external command that must be in `$PATH` (D7,
-  D28):
+- Six decoders run an external command that must be in `$PATH` (D7, D28):
   `ffmpeg` and `tag` run `ffmpeg` and `ffprobe`, `libreoffice` runs
-  `soffice`, `calibre` runs `ebook-convert`, `gxps` runs `xpstopng`, `poppler`
-  runs `pdftoppm` where libvips has no pdf loader, and `binwalk` runs
-  `binwalk`.
+  `soffice`, `calibre` runs `ebook-convert`, `gxps` runs `xpstopng`, and
+  `poppler` runs `pdftoppm` where libvips has no pdf loader. The `binwalk`
+  decoder runs no command (D47).
 - `iv` plays an animation from a gif, a lottie file or a video, with limits
   (D19). A video plays at its own speed and for its own length, and kitty and
   Ghostty show each frame in one Kitty image (D42, D43).
@@ -85,7 +84,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D4](#d4-the-command-line-is-parsed-with-xoox-decided) | The command line is parsed with xo/ox | Decided |
 | [D5](#d5-libvips-decodes-the-formats-that-no-go-package-covers-decided-amended-by-d8) | libvips decodes the formats that no Go package covers | Decided. Amended by D8 |
 | [D6](#d6-iv-selects-a-decoder-by-the-mime-type-of-the-content-decided-amended-by-d17) | iv selects a decoder by the mime type of the content | Decided. Amended by D17 |
-| [D7](#d7-an-external-command-is-found-in-path-when-a-decoder-first-uses-it-decided-amended-by-d18) | An external command is found in $PATH when a decoder first uses it | Decided. Amended by D18 |
+| [D7](#d7-an-external-command-is-found-in-path-when-a-decoder-first-uses-it-decided-amended-by-d18-amended-by-d47) | An external command is found in $PATH when a decoder first uses it | Decided. Amended by D18. Amended by D47 |
 | [D8](#d8-the-libvips-binding-is-cshumvipsgen-decided-amends-d5) | The libvips binding is cshum/vipsgen | Decided. Amends D5 |
 | [D9](#d9-iv-is-cgo-code-decided) | iv is cgo code | Decided |
 | [D10](#d10-decoders-and-encoders-register-themselves-and-one-pipeline-runs-them-decided) | Decoders and encoders register themselves, and one pipeline runs them | Decided |
@@ -125,6 +124,8 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D44](#d44-zuzu-draws-a-vega-spec-and-reads-its-data-only-under-its-directory-decided-amended-by-d45-amended-by-d46) | zuzu draws a Vega spec, and reads its data only under its directory | Decided. Amended by D45. Amended by D46 |
 | [D45](#d45---zuzu-data-sets-the-directory-that-a-vega-spec-reads-its-data-from-decided-amends-d44) | --zuzu-data sets the directory that a Vega spec reads its data from | Decided. Amends D44 |
 | [D46](#d46-zuzu-draws-a-vega-lite-spec-as-it-draws-a-vega-spec-decided-amends-d44) | zuzu draws a Vega-Lite spec as it draws a Vega spec | Decided. Amends D44 |
+| [D47](#d47-the-binwalk-decoder-uses-the-walker-of-xomagic-decided-amends-d7) | The binwalk decoder uses the walker of xo/magic | Decided. Amends D7 |
+| [D48](#d48-okage-draws-font-previews-and-measures-the-text-of-the-cards-decided) | okage draws font previews, and measures the text of the cards | Decided |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -176,7 +177,7 @@ file extension to a switch on the mime type that
 `application/octet-stream` as a font when the extension is a font extension.
 Both came from issue 5, where `mimetype` did not detect a TTF file.
 
-### D7. An external command is found in $PATH when a decoder first uses it. Decided. Amended by D18.
+### D7. An external command is found in $PATH when a decoder first uses it. Decided. Amended by D18. Amended by D47.
 
 `4298105` (2025-01-30) runs `soffice` for office documents. `930d808`
 (2025-01-30), "Switching to ffmpeg command for videos", replaced the
@@ -801,6 +802,10 @@ zuzu v0.7.1 fixed the one defect that the nine files showed. In
 other. zuzu now stacks the texts of an area in one column when one of them is
 wider than its cell.
 
+zuzu v0.7.2 came with okage v0.8.0 on 2026-11-15. It embeds IBM Plex Sans as
+one collection in WOFF2 (zuzu D34), 958 KB smaller, and fixes marks, axes
+and colors of Vega and Vega-Lite. Every test of `iv` passed with it.
+
 ### D37. A minimum size given on the command line is a hard floor. Decided.
 
 `--min-width` and `--min-height` default to 64. With the defaults, `iv` grows
@@ -1111,6 +1116,101 @@ and draws it with the Vega-Lite dialect of zuzu. A Vega-Lite spec reads its
 data by url with the same loader as a Vega spec (D44), and `--zuzu-data`
 sets its root too (D45). `testdata/zuzu/sales.vl.json` is the chart of
 `sales.vg.json` in Vega-Lite, and reads the same data.
+
+### D47. The binwalk decoder uses the walker of xo/magic. Decided. Amends D7.
+
+The `binwalk` decoder ran the `binwalk` command with `--extract` into a
+temporary folder, and kept the extracted files that a builtin decoder reads
+(D7). Linux CI built binwalk 3 with `cargo`, because binwalk 2 of Ubuntu
+could not extract the image in `testdata/binwalk/icon.afdesign`, and Windows
+had no package of it.
+
+On 2026-11-15, a maintainer asked to move to the walker of xo/magic, a port
+of binwalk 3 to Go. `iv` first required its untagged commit `665c775`, then
+magic v0.6.0, the first release with the walker, and then v0.6.1. The decoder now walks
+the file in memory with `walk.WalkBytes`, and needs no command and no
+temporary folder:
+
+- It keeps a match of png, jpeg, gif or bmp, and a RIFF that holds a WebP,
+  when a builtin decoder reads its extension. A WAVE is a RIFF too, so the
+  description decides.
+- It walks to depth 1, so it also finds an image in a file of an archive
+  that it finds, as `--extract` does. It does not walk into an image match,
+  because the walker carves an image as a file of its own, and would find
+  it again. It unpacks at most 256 MiB from one match.
+- Each image is named by its offset in hex, with 8 digits, and by the name
+  of the file that holds it, so the names sort in the order of the file. The
+  name of a member comes from the file, so it is cleaned into a path that
+  stays in the file set.
+- It imports `walk/format/all`, and the stream decoders of
+  `compress/xz` and `compress/zstd`, which are modules of their own. The
+  walker unpacks xz, lzma and zstd only with them, as the binwalk command
+  does.
+
+`icon.afdesign` gives the same png, at offset 0x1D279, and the same output,
+byte for byte. The walker and its stream decoders add 1.03 MB to the release
+build, from 106.64 MB to 107.67 MB. CI no longer installs binwalk.
+
+magic v0.6.0 missed an xz stream when the bytes before it were at least the
+bytes from its start to the end of the input, where binwalk 3.1.0 finds it.
+The walker had copied a fault of binwalk after 3.1.0, which is reported as
+ReFirmLabs/binwalk#982. magic v0.6.1 fixed it, and `TestDecodeXZ` puts its
+stream after 256 bytes.
+
+### D48. okage draws font previews, and measures the text of the cards. Decided.
+
+The `fontimg` decoder drew a specimen of a font with
+`github.com/kenshaw/fontimg`, on tdewolff/canvas and tdewolff/font.
+`internal/font` used canvas too, to find the font of the contact and audio
+cards and to measure their text. On
+2026-11-15, a maintainer asked to move to okage. The maintainers of okage
+agreed that the specimen is part of `iv`, and okage added what it lacked:
+`FontDatabase.LoadFontData` reads WOFF, WOFF2 and EOT, and
+`FontDatabase.FaceName` reads the strings of the name table (okage D45).
+`iv` requires okage v0.8.0, the first release with them.
+
+The decoder loads the font into a font database of its own, so the text
+draws in that font alone, and a character that it lacks draws its `.notdef`
+glyph. It keeps the specimen of `fontimg`:
+
+- The first line names the typographic family, the typographic subfamily
+  (name ID 17) or else the subfamily (2), and the version (5), up to a
+  semicolon, after which a font often puts the data of its build. `fontimg`
+  named the family of name ID 1, so `Figtree-Italic[wght].ttf` was "Figtree
+  Light, Regular Italic", and is now "Figtree, Light Italic".
+- The alphabet, the digits and four pangrams at growing sizes follow. In
+  `fontimg`, the sample text of a font (19) took the place of all of them,
+  so IBM Plex Sans showed only its sample text. A maintainer asked that each
+  font show its characters at each size, so the sample text is now one more
+  line, after the first.
+- A face that draws a line of emoji in color gets that line after the
+  characters. A font of emoji, which draws no lowercase letter, gets its
+  first line in the font of the cards (`internal/font`), and the line of
+  emoji at the sizes of the pangrams. A line that no font draws is left
+  out. Noto Color Emoji of zuzu tests it, so its 10.7 MB are not test data.
+- A size is in points and the margin in millimetres, at `--font-dpi`, as
+  in `fontimg`. Each test font comes out within one pixel of its old size.
+
+`--font-style` and `--font-variant` took the bare integers of canvas, and
+`--font-style` changed nothing. `--font-weight`, from 1 to 1000, and
+`--font-italic` replace them. They select the weight and the style that okage
+shapes with, and set the axes `wght`, `ital` and `slnt` of a variable font.
+The default is the weight and the style of the face, so in a collection,
+`--page` selects the face. When `--font-weight` is given, the first line
+names it.
+
+`internal/font` loads the fonts of the system once, with
+`FontDatabase.LoadOSFonts`, as the renderer of okage loads them, and measures
+a string with `svg.ShapeText` in the family and the weight that the card
+names. `iv` first copied the function of the renderer that loads them. The
+maintainers of okage exported it in v0.9.0 (okage D46), and `iv` uses it. Each contact and audio card in `testdata` draws
+the same pixels as before. tdewolff/canvas, tdewolff/font and
+kenshaw/fontimg left `go.mod`, and the release build went from 107.67 MB to
+99.81 MB. `testdata/fontimg` has a WOFF and a WOFF2 of Noto Mono, which draw
+the same pixels as its TrueType, and IBM Plex Sans from zuzu, six faces in
+one collection in WOFF2. Each of its faces draws the same pixels as the same
+face of the collection that `woff2_decompress` gives. `pfb` left the extensions, because nothing
+read it.
 
 ## Open questions for the maintainers
 

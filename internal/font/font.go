@@ -1,5 +1,5 @@
 // Package font resolves the font iv's generated cards are set in, and
-// measures text in it.
+// measures text in it with okage (D48).
 //
 // Measurement and rendering have to agree: the family named in an svg is the
 // one measured here, so fitting a line to a box is arithmetic rather than
@@ -7,10 +7,11 @@
 package font
 
 import (
+	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/tdewolff/canvas"
+	"github.com/xo/okage/svg"
 )
 
 // families are the families the card is set in, in order of preference. The
@@ -26,10 +27,11 @@ var families = []string{
 	"FreeSans",
 }
 
-// face is the resolved card font.
+// face is the resolved card font: its family, and the fonts of the system,
+// which okage shapes the text with to measure it.
 type face struct {
-	family        string
-	regular, bold *canvas.Font
+	family string
+	db     *svg.FontDatabase
 }
 
 // resolve finds the first of [families] installed, once. Returns nil when
@@ -37,18 +39,34 @@ type face struct {
 // only the generic family.
 var resolve = sync.OnceValue(func() *face {
 	for _, family := range families {
-		regular, err := canvas.LoadSystemFont(family, canvas.FontRegular)
-		if err != nil {
-			continue
+		if Installed(family) {
+			return &face{family: family, db: systemFonts()}
 		}
-		bold, err := canvas.LoadSystemFont(family, canvas.FontBold)
-		if err != nil {
-			bold = regular
-		}
-		return &face{family: family, regular: regular, bold: bold}
 	}
 	return nil
 })
+
+// Database returns the fonts of the system, which the family of [Family]
+// draws with. It loads them on its first call.
+func Database() *svg.FontDatabase {
+	return systemFonts()
+}
+
+// systemFonts loads the fonts of the system, once.
+var systemFonts = sync.OnceValue(func() *svg.FontDatabase {
+	// the fonts that the svg.Renderer of okage loads, so that the text is
+	// measured in the font that it is drawn in
+	db := svg.NewFontDatabase()
+	db.LoadOSFonts()
+	return db
+})
+
+// Installed returns true when a font of the system has the family.
+func Installed(family string) bool {
+	query := svg.FontQuery{Families: []svg.FontFamily{{Kind: svg.FontFamilyNamed, Name: family}}}
+	_, ok := systemFonts().Query(query)
+	return ok
+}
 
 // Family returns the font stack the svg names. The generic stays last so
 // a system without any of the families still gets something proportional.
@@ -59,9 +77,6 @@ func Family() string {
 	return "sans-serif"
 }
 
-// mmPerPt converts the millimetres canvas measures in back to points.
-const mmPerPt = 25.4 / 72.0
-
 // Fallback advances, as a multiple of the font size. Only used when no font
 // could be loaded to measure with: deliberate overestimates of a sans-serif's
 // average, so a line is trimmed early rather than running past the card.
@@ -71,24 +86,26 @@ const (
 )
 
 // Measure returns the width s renders to at the size, in the svg's units.
-// Canvas sizes a face in points and answers in millimetres, and one svg user
-// unit is one point's worth of em at the same number, so the conversions
-// cancel and what comes back is directly comparable to a width in the card's
-// geometry.
+// okage shapes s as a <text> element of the card does, in the same family
+// and weight, so the width is the width that the card draws.
 func Measure(s string, size int, bold bool) float64 {
+	adv := regAdv
+	if bold {
+		adv = boldAdv
+	}
 	f := resolve()
 	if f == nil {
-		adv := regAdv
-		if bold {
-			adv = boldAdv
-		}
 		return float64(len([]rune(s))) * float64(size) * adv
 	}
-	font := f.regular
+	style := svg.TextStyle{Family: strconv.Quote(f.family), Size: float32(size), Weight: 400}
 	if bold {
-		font = f.bold
+		style.Weight = 700
 	}
-	return font.Face(float64(size), canvas.Black).TextWidth(s) / mmPerPt
+	run, err := svg.ShapeText(s, style, svg.WithFontDatabase(f.db))
+	if err != nil {
+		return float64(len([]rune(s))) * float64(size) * adv
+	}
+	return float64(run.Width())
 }
 
 // Fit truncates s to what fits in width at the given size, appending an

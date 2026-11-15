@@ -67,14 +67,6 @@ jobs:
             libgxps-utils \
             poppler-utils
 
-      # binwalk 2 of ubuntu cannot extract the image in
-      # testdata/binwalk/icon.afdesign, and binwalk 3, the rust rewrite, can
-      - name: Install binwalk 3 (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          cargo install --locked binwalk
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-
       - name: Install build dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -86,7 +78,7 @@ jobs:
       - name: Install decoder commands (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install --quiet ffmpeg binwalk libgxps poppler
+          brew install --quiet ffmpeg libgxps poppler
           brew install --quiet --cask libreoffice calibre
           # libgxps is keg-only, because it conflicts with ghostscript, so
           # xpstopng is not linked into the path

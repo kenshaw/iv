@@ -37,8 +37,8 @@ golangci-lint run ./...
 ```
 
 The tests fail when a decoder command is missing, so install `ffmpeg`,
-`soffice` (LibreOffice), `ebook-convert` (calibre), `xpstopng` (libgxps),
-`pdftoppm` (poppler) and `binwalk` first. The Optional tools section of
+`soffice` (LibreOffice), `ebook-convert` (calibre), `xpstopng` (libgxps) and
+`pdftoppm` (poppler) first. The Optional tools section of
 [`README.md`](README.md#optional-tools) says what each one is for.
 
 If you changed a decoder, an encoder or the pipeline, also run the smoke test.

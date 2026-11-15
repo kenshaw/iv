@@ -19,7 +19,7 @@ the pagination itself, which needs no file to exercise.
 | `bmp`         | `bmp`         |                                                               |
 | `calibre`     | `calibre`     | One book as epub, mobi, azw3 and fb2; needs `ebook-convert`   |
 | `ffmpeg`      | `ffmpeg`      | One clip as mkv and mp4, and a test pattern, plain and turned |
-| `fontimg`     | `fontimg`     | Static, variable, and monospace fonts                         |
+| `fontimg`     | `fontimg`     | Static, variable and monospace fonts, WOFF, WOFF2, collection |
 | `gif`         | `gif`         | Still and animated                                            |
 | `gxps`        | `gxps`        | XPS documents; needs `xpstopng`                               |
 | `icns`        | `icns`        | Apple icon image, eight resolutions from 32 to 1024           |
@@ -145,7 +145,20 @@ but a `.doc` and a `.ppt` are only `application/x-ole-storage` -- the
   `scripts/fetch-noto-emoji.sh` in [xo/lottie][]. Copyright Google Inc.,
   licensed [CC BY 4.0][cc-by-4].
 - `winres/go-winres.exe` -- built from [go-winres][].
-- `fontimg/` -- Figtree, Noto Mono, and Ubuntu.
+- `fontimg/` -- Figtree, Noto Mono, and Ubuntu. `NotoMono-Regular.woff` and
+  `NotoMono-Regular.woff2` are `NotoMono-Regular.ttf` saved as WOFF and as
+  WOFF2 by fontTools 4.68.0 (`TTFont.flavor`), which the SIL Open Font License
+  of Noto Mono allows. `TestDecode` in `decoder/fontimg` checks that each one
+  draws the same pixels as the TrueType.
+- `fontimg/IBMPlexSans.woff2` -- the six faces of IBM Plex Sans 3.005 as one
+  collection in WOFF2, from `text/fonts` of [zuzu][], which made it as its
+  D34 says: `TTCollection` of fontTools joins the six TrueType files, and
+  `woff2_compress` of the Google WOFF2 tools compresses the collection.
+  Copyright IBM Corp., under the SIL Open Font License 1.1, in
+  `fontimg/LICENSE-ibm-plex.txt`. `TestCollection` in `decoder/fontimg`
+  checks that `-p` selects each face. fontTools 4.68.0 cannot read a
+  collection in WOFF2, and `woff2_decompress` and okage give the same
+  faces.
 - `calibre/` -- `blitz/sample.html`, converted with `ebook-convert` of calibre
   9.14 to epub, azw3 and fb2, with the title "iv sample". `sample.mobi` is the
   epub converted with `--mobi-file-type both`, because calibre cannot read
@@ -386,3 +399,4 @@ so between them they cover both what these formats need to represent.
 [noto-emoji]: https://github.com/googlefonts/noto-emoji
 [xo/lottie]: https://github.com/xo/lottie
 [cc-by-4]: https://creativecommons.org/licenses/by/4.0/
+[zuzu]: https://github.com/xo/zuzu

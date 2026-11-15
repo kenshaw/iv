@@ -82,12 +82,6 @@ linters:
         text: "context-as-argument"
         linters:
           - revive
-      # binwalk walks the folder that its own command wrote, in a temporary
-      # folder of iv
-      - path: decoder/binwalk/binwalk\.go
-        text: "G122"
-        linters:
-          - gosec
       # TestRegisterPanics checks the panic for an odd number of pairs
       - path: decoder/decoder_test\.go
         text: "SA5012"
