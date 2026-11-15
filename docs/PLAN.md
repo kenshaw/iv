@@ -303,6 +303,26 @@ changed only tests and `.gitignore`. `62ded31` moved to magic v0.2.1. A
 comment in `decoder/mime.go` gives one limit: the text analysis of libmagic
 read out of bounds and stopped the process on the mermaid and dot test files.
 
+On 2026-11-15, the database of libmagic was 10.8 MB of the 117.5 MB release
+build of `iv`. A maintainer asked the maintainers of xo/magic to compress
+it. magic v0.4.0 embeds it compressed with zstd, in 345,182 bytes, and
+expands it into C memory in `magic.New`. The release build went from 117.48
+MB to 107.04 MB. `magic.New` takes about 1.7 ms in place of 0.27 ms, and `iv`
+calls it once.
+
+magic v0.4.1 fixed a crash on Linux in every earlier release. Its Linux
+archives were compiled against the `regex.h` of musl, so a program built with
+glibc could crash in libmagic, or get a wrong description. v0.4.1 bundles its
+own regex engine. `iv` moved to it the same day.
+
+magic v0.5.0 is a port of libmagic to pure Go, with a new API (magic D39).
+It needs no cgo, no C compiler and no libmagic, and gives the output of
+libmagic 5.48. One call of `magic.Detect` returns the mime type and the
+description, and it is safe from many goroutines, so `decoder/mime.go` keeps
+no handle and no lock. Each of the 156 test files got the same mime type as
+with v0.4.1. The release build went from 107.10 MB to 106.64 MB. A test can no
+longer fail because libmagic is missing.
+
 ### D18. Mermaid renders in process with xo/mermaid on wazero. Decided. Amends D7. Amended by D36.
 
 `dbb6c69` (2025-08-28) rendered mermaid with the `mmdc` command, and `cab5f7e`

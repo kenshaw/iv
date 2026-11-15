@@ -69,7 +69,7 @@ dbmeta D110. A bare number, as in D3, names a decision of this repository, in
 - `decoder/` holds the decoder registry and the pipeline (D10). A decoder
   returns an image, a set of images, or a new input for the pipeline. The
   pipeline stops after `maxDepth` hand-offs. `mime.go` sniffs the mime type
-  with libmagic (D17).
+  with xo/magic, a port of libmagic to Go (D17).
 - `decoder/<name>/` holds one decoder. It registers itself from `init` with
   `decoder.Register`, or with `decoder.RegisterBuiltin` for a format in the
   `image.Decode` registry of Go. `decoder/png` is the smallest example.
@@ -129,8 +129,8 @@ These are the conventions that the code follows today.
   name or a `//go:build` line, as `decoder/blitz/link_windows.go` and
   `ivctx/term_unix.go` do.
 - A test is in the package that it tests, not in an `_test` package.
-- A test fails when an external command, libmagic, a test file or a libvips
-  format is missing (D27). It does not skip. Three maps in
+- A test fails when an external command, a test file or a libvips format is
+  missing (D27). It does not skip. Three maps in
   `ivcmd/decode_test.go` name the exceptions, each with its reason, for each
   operating system: `untested` for a command that CI does not install,
   `unsupported` for a libvips operation that the libvips of CI does not have,

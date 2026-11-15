@@ -19,7 +19,7 @@ require (
 	github.com/tc-hib/winres v0.3.1
 	github.com/tdewolff/canvas v0.0.0-20260923214215-09804640d00c
 	github.com/xo/blitz v0.5.0
-	github.com/xo/magic v0.3.0
+	github.com/xo/magic v0.5.0
 	github.com/xo/okage v0.7.1
 	github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18
 	github.com/xo/transit v0.7.8
@@ -91,14 +91,6 @@ require (
 	github.com/xo/blitz/libblitz/macos-arm64 v0.1.8 // indirect
 	github.com/xo/blitz/libblitz/windows-amd64 v0.1.8 // indirect
 	github.com/xo/blitz/libblitz/windows-arm64 v0.1.8 // indirect
-	github.com/xo/magic/libmagic/darwin_amd64/v5 v5.48.0 // indirect
-	github.com/xo/magic/libmagic/darwin_arm64/v5 v5.48.0 // indirect
-	github.com/xo/magic/libmagic/freebsd_amd64/v5 v5.48.0 // indirect
-	github.com/xo/magic/libmagic/linux_amd64/v5 v5.48.0 // indirect
-	github.com/xo/magic/libmagic/linux_arm/v5 v5.48.0 // indirect
-	github.com/xo/magic/libmagic/linux_arm64/v5 v5.48.0 // indirect
-	github.com/xo/magic/libmagic/windows_amd64/v5 v5.48.0 // indirect
-	github.com/xo/magic/libmagic/windows_arm64/v5 v5.48.0 // indirect
 	github.com/yuin/goldmark v1.8.7 // indirect
 	go4.org v0.0.0-20261028031214-ed6929a230fe // indirect
 	golang.org/x/net v0.62.0 // indirect

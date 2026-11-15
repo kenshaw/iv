@@ -50,22 +50,21 @@ func Detect(ctx context.Context, rs io.ReadSeeker) (string, error) {
 	if n == 0 && err != nil {
 		return "", err
 	}
-	buf = buf[:n]
-	var mime string
-	if v, err := DescribeMime(buf); err != nil {
-		ivctx.Logf(ctx, "libmagic mime: %v", err)
-	} else {
-		mime = normalizeMime(v)
+	// one walk gives the mime type and the description
+	r, err := magic.Detect(ctx, buf[:n])
+	if err != nil {
+		ivctx.Logf(ctx, "libmagic: %v", err)
 	}
+	mime := normalizeMime(r.MIME)
 	if !isUnidentified(mime) {
 		return mime, nil
 	}
 	// libmagic has no mime type for this, but it may still recognize what it
 	// is: a font reports as application/octet-stream and describes itself as
 	// TrueType Font data
-	if desc, err := Describe(buf); err == nil && desc != "" {
-		ivctx.Logf(ctx, "libmagic: %s", desc)
-		if v, ok := lookupDescription(desc); ok {
+	if r.Description != "" {
+		ivctx.Logf(ctx, "libmagic: %s", r.Description)
+		if v, ok := lookupDescription(r.Description); ok {
 			return v, nil
 		}
 	}
@@ -84,39 +83,14 @@ func normalizeMime(mime string) string {
 	return strings.ToLower(strings.TrimSpace(mime))
 }
 
-var (
-	magicMu   sync.Mutex
-	magicOnce sync.Once
-	magicDB   *magic.Magic
-	errMagic  error
-)
-
-// Describe returns libmagic's textual description of the buffer.
-func Describe(buf []byte) (string, error) {
-	return withMagic(func(m *magic.Magic) (string, error) {
-		return m.Buffer(buf)
-	})
-}
-
-// DescribeMime returns libmagic's mime type for the buffer.
-func DescribeMime(buf []byte) (string, error) {
-	return withMagic(func(m *magic.Magic) (string, error) {
-		return m.BufferWith(magic.MimeType, buf)
-	})
-}
-
-// withMagic runs fn against the shared libmagic handle.
-func withMagic(fn func(*magic.Magic) (string, error)) (string, error) {
-	magicOnce.Do(func() {
-		magicDB, errMagic = magic.New(magic.None)
-	})
-	if errMagic != nil {
-		return "", errMagic
+// Describe returns the description of the buffer that libmagic gives, as the
+// file command prints it.
+func Describe(ctx context.Context, buf []byte) (string, error) {
+	r, err := magic.Detect(ctx, buf)
+	if err != nil {
+		return "", err
 	}
-	// a magic_t cookie is not safe for concurrent use
-	magicMu.Lock()
-	defer magicMu.Unlock()
-	return fn(magicDB)
+	return r.Description, nil
 }
 
 // descriptions maps libmagic description patterns to mime types.

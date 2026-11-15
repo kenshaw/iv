@@ -159,7 +159,7 @@ func TestDescribe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
-	desc, err := Describe(buf)
+	desc, err := Describe(t.Context(), buf)
 	if err != nil {
 		t.Fatalf("libmagic unavailable: %v", err)
 	}
@@ -176,7 +176,7 @@ func TestDetectFallsBackToDescription(t *testing.T) {
 	if err != nil {
 		t.Fatalf("no font test data: %v", err)
 	}
-	if _, err := Describe(buf); err != nil {
+	if _, err := Describe(t.Context(), buf); err != nil {
 		t.Fatalf("libmagic unavailable: %v", err)
 	}
 	RegisterMimeType("font/ttf", `^TrueType Font data`, `^OpenType font data`)
