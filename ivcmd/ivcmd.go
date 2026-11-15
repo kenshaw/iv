@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -367,7 +368,8 @@ func Targets(ctx context.Context, cliargs ...string) ([]Target, []error) {
 
 // expand expands a single command line argument into render targets.
 func expand(ctx context.Context, name string) ([]Target, error) {
-	switch fi, err := os.Stat(name); {
+	fi, err := os.Stat(name)
+	switch {
 	case err == nil && fi.IsDir():
 		entries, err := os.ReadDir(name)
 		if err != nil {
@@ -393,7 +395,12 @@ func expand(ctx context.Context, name string) ([]Target, error) {
 	if len(decoder.MatchString(ctx, name)) != 0 {
 		return []Target{{Name: name, IsString: true}}, nil
 	}
-	return nil, fmt.Errorf("open %q: %w", name, decoder.ErrNotSupported)
+	// the error of the stat says why the file cannot be opened, such as that
+	// it does not exist. Its own "stat" and name repeat what is said already
+	if pe := (*fs.PathError)(nil); errors.As(err, &pe) {
+		err = pe.Err
+	}
+	return nil, fmt.Errorf("open %q: %w", name, err)
 }
 
 // List writes the registered decoders and encoders to w.

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -101,6 +102,23 @@ func TestTargets(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestTargetsMissingFile checks that a file that does not exist, and that no
+// string decoder claims, is reported as missing, and not as a format that
+// is not supported.
+func TestTargetsMissingFile(t *testing.T) {
+	name := filepath.Join(t.TempDir(), "arial.ttf")
+	_, errs := Targets(t.Context(), name)
+	switch {
+	case len(errs) != 1:
+		t.Fatalf("expected 1 error, got %v", errs)
+	case !errors.Is(errs[0], fs.ErrNotExist):
+		t.Errorf("expected %v, got: %v", fs.ErrNotExist, errs[0])
+	case errors.Is(errs[0], decoder.ErrNotSupported):
+		t.Errorf("expected no %v, got: %v", decoder.ErrNotSupported, errs[0])
+	}
+	t.Log(errs[0])
 }
 
 func TestTargetsCollectsErrorsAndTargets(t *testing.T) {
