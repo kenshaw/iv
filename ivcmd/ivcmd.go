@@ -60,6 +60,7 @@ type Args struct {
 	VipsConcurrency uint               `ox:"vips concurrency,default:$NUMCPU"`
 	MermaidTheme    string             `ox:"mermaid theme - default/dark/forest/neutral/modern"`
 	MermaidBg       *colors.Color      `ox:"mermaid background - the theme background when not set"`
+	ZuzuData        string             `ox:"directory that a vega spec reads its data from - empty is the directory of the spec"`
 	BlitzDark       bool               `ox:"render documents and pages dark"`
 	PDFPage         string             `ox:"pdf page size - fit/a4/letter,default:fit,name:pdf-page"`
 	PDFMargin       uint               `ox:"pdf page margin in points,default:36,name:pdf-margin"`
@@ -107,6 +108,7 @@ func (a *Args) Config(stderr io.Writer) *ivctx.Config {
 		VipsConcurrency: a.VipsConcurrency,
 		MermaidTheme:    a.MermaidTheme,
 		MermaidBg:       a.MermaidBg,
+		ZuzuData:        a.ZuzuData,
 		BlitzDark:       a.BlitzDark,
 		PDFPage:         a.PDFPage,
 		PDFMargin:       a.PDFMargin,

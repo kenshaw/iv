@@ -1,0 +1,43 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "Sales by region and quarter, stacked, read from data/sales.csv.",
+  "width": 360,
+  "height": 200,
+  "padding": 8,
+  "title": {"text": "Sales by region"},
+  "data": [
+    {
+      "name": "sales",
+      "url": "data/sales.csv",
+      "format": {"type": "csv", "parse": {"sales": "number"}},
+      "transform": [
+        {"type": "stack", "groupby": ["region"], "field": "sales", "sort": {"field": "quarter"}}
+      ]
+    }
+  ],
+  "scales": [
+    {"name": "x", "type": "band", "domain": {"data": "sales", "field": "region"}, "range": "width", "padding": 0.2},
+    {"name": "y", "type": "linear", "domain": {"data": "sales", "field": "y1"}, "range": "height", "nice": true},
+    {"name": "color", "type": "ordinal", "domain": {"data": "sales", "field": "quarter"}, "range": "category"}
+  ],
+  "axes": [
+    {"orient": "left", "scale": "y", "grid": true, "title": "Sales"},
+    {"orient": "bottom", "scale": "x"}
+  ],
+  "legends": [{"fill": "color", "title": "Quarter"}],
+  "marks": [
+    {
+      "type": "rect",
+      "from": {"data": "sales"},
+      "encode": {
+        "enter": {
+          "x": {"scale": "x", "field": "region"},
+          "width": {"scale": "x", "band": 1},
+          "y": {"scale": "y", "field": "y0"},
+          "y2": {"scale": "y", "field": "y1"},
+          "fill": {"scale": "color", "field": "quarter"}
+        }
+      }
+    }
+  ]
+}

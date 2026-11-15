@@ -190,6 +190,7 @@ func TestConfig(t *testing.T) {
 		Page:      3,
 		Bg:        &bg,
 		ForceMime: "image/png",
+		ZuzuData:  "charts",
 	}
 	var buf bytes.Buffer
 	c := args.Config(&buf)
@@ -200,6 +201,8 @@ func TestConfig(t *testing.T) {
 		t.Error("expected the colors to carry over")
 	case c.ForceMime != "image/png":
 		t.Errorf("expected the forced mime to carry over, got %q", c.ForceMime)
+	case c.ZuzuData != "charts":
+		t.Errorf("expected the zuzu data directory to carry over, got %q", c.ZuzuData)
 	}
 	c.Logger("hello %s", "world")
 	if got := buf.String(); got != "hello world\n" {

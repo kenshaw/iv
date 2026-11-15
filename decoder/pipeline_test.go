@@ -7,6 +7,8 @@ import (
 	"image"
 	"image/color"
 	"io"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -229,6 +231,32 @@ func TestDecodeFiles(t *testing.T) {
 				t.Errorf("expected width %d, got %d", test.exp, got)
 			}
 		})
+	}
+}
+
+// TestDecodeFileOnDisk checks that a file that DecodeFile opens is marked as
+// a file on disk, and that a file of a set inside it is not, so that a
+// decoder does not read the files next to a name in an archive (D44).
+func TestDecodeFileOnDisk(t *testing.T) {
+	defer cleanup(t, "p-disk", "p-disk-leaf")
+	var files []string
+	Register("p-disk", Extension("disk"), Decoder(func(ctx context.Context, _ io.Reader) (any, error) {
+		files = append(files, ivctx.File(ctx))
+		return FS(fstest.MapFS{"a.disk-leaf": &fstest.MapFile{Data: []byte("1")}}, "a.disk-leaf"), nil
+	}))
+	Register("p-disk-leaf", Extension("disk-leaf"), Decoder(func(ctx context.Context, _ io.Reader) (any, error) {
+		files = append(files, ivctx.File(ctx))
+		return solid(1, 1), nil
+	}))
+	name := filepath.Join(t.TempDir(), "set.disk")
+	if err := os.WriteFile(name, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := DecodeFile(context.Background(), name); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if len(files) != 2 || files[0] != name || files[1] != "" {
+		t.Errorf("expected [%q \"\"], got %q", name, files)
 	}
 }
 

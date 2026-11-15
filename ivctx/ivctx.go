@@ -50,6 +50,7 @@ type Config struct {
 	VipsConcurrency uint
 	MermaidTheme    string
 	MermaidBg       *colors.Color
+	ZuzuData        string
 	BlitzDark       bool
 	PDFPage         string
 	PDFMargin       uint
@@ -124,6 +125,7 @@ type contextKey int
 const (
 	configKey contextKey = iota
 	pathNameKey
+	fileKey
 	mimeKey
 )
 
@@ -152,6 +154,21 @@ func WithPathName(ctx context.Context, pathName string) context.Context {
 // PathName returns the path name of the target being decoded.
 func PathName(ctx context.Context) string {
 	s, _ := ctx.Value(pathNameKey).(string)
+	return s
+}
+
+// WithFile adds the path of the file on disk that is being decoded to the
+// context. An empty path says that the input is not a file on disk, such as
+// a file in an archive.
+func WithFile(ctx context.Context, path string) context.Context {
+	return context.WithValue(ctx, fileKey, path)
+}
+
+// File returns the path of the file on disk that is being decoded, or "" when
+// the input is not a file on disk (D44). Unlike [PathName], it is never the
+// name of a file in an archive, so a decoder can read the files next to it.
+func File(ctx context.Context) string {
+	s, _ := ctx.Value(fileKey).(string)
 	return s
 }
 

@@ -8,6 +8,7 @@ import (
 	"image/color"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -50,6 +51,161 @@ func TestDetect(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestDetectVega checks that a file whose name ends in .vg.json is claimed as
+// a Vega spec, and in .vl.json as a Vega-Lite spec, and that a json file with
+// another name is not, even with the $schema of Vega.
+func TestDetectVega(t *testing.T) {
+	const spec = `{"$schema": "https://vega.github.io/schema/vega/v5.json"}`
+	for _, test := range []struct {
+		name string
+		exp  string
+	}{
+		{"chart.vg.json", vegaMime},
+		{"dir/CHART.VG.JSON", vegaMime},
+		{"chart.vl.json", vegaLiteMime},
+		{"dir/CHART.VL.JSON", vegaLiteMime},
+		{"chart.json", ""},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := detect(ivctx.WithPathName(context.Background(), test.name), strings.NewReader(spec))
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			if got != test.exp {
+				t.Errorf("expected mime %q, got %q", test.exp, got)
+			}
+		})
+	}
+}
+
+// TestDecodeVega draws the Vega and the Vega-Lite spec in testdata/zuzu,
+// which read their data from data/sales.csv, a directory under them (D44,
+// D46).
+func TestDecodeVega(t *testing.T) {
+	for _, name := range vegaSpecs {
+		t.Run(name, func(t *testing.T) {
+			img, err := decodeSpec(t, filepath.Join("..", "..", "testdata", "zuzu", name), true, "")
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			if b := img.Bounds(); b.Dx() <= 0 || b.Dy() <= 0 {
+				t.Errorf("expected a drawn image, got %v", b)
+			}
+		})
+	}
+}
+
+// vegaSpecs are the Vega and the Vega-Lite spec in testdata/zuzu. Each reads
+// its data with "url": "data/sales.csv".
+var vegaSpecs = []string{"sales.vg.json", "sales.vl.json"}
+
+// TestVegaData checks that a Vega spec reads data only from its directory and
+// the directories under it (D44), or from the directory of --zuzu-data and
+// the directories under it (D45). A path that leaves the directory, by .. or
+// by a symbolic link, and a url with a scheme are refused. Without
+// --zuzu-data, any url of a spec that is not a file on disk is refused. A
+// Vega-Lite spec reads its data the same way (D46).
+func TestVegaData(t *testing.T) {
+	for _, spec := range vegaSpecs {
+		t.Run(spec, func(t *testing.T) {
+			testVegaData(t, spec)
+		})
+	}
+}
+
+// testVegaData runs the cases of [TestVegaData] for the spec in
+// testdata/zuzu.
+func testVegaData(t *testing.T, spec string) {
+	t.Helper()
+	dir := t.TempDir()
+	csv, err := os.ReadFile(filepath.Join("..", "..", "testdata", "zuzu", "data", "sales.csv"))
+	if err != nil {
+		t.Fatalf("no test data: %v", err)
+	}
+	src, err := os.ReadFile(filepath.Join("..", "..", "testdata", "zuzu", spec))
+	if err != nil {
+		t.Fatalf("no test data: %v", err)
+	}
+	specDir := filepath.Join(dir, "spec")
+	for _, name := range []string{filepath.Join(specDir, "data", "in.csv"), filepath.Join(dir, "outside.csv")} {
+		if err := os.MkdirAll(filepath.Dir(name), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(name, csv, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	dataDir := filepath.Join(specDir, "data")
+	type vegaTest struct {
+		name string
+		url  string
+		file bool
+		data string
+		exp  bool
+	}
+	tests := []vegaTest{
+		{"subdirectory", "data/in.csv", true, "", true},
+		{"leading slash", "/data/in.csv", true, "", true},
+		{"parent", "../outside.csv", true, "", false},
+		{"scheme", "https://example.com/sales.csv", true, "", false},
+		{"not a file", "data/in.csv", false, "", false},
+		{"zuzu data", "in.csv", true, dataDir, true},
+		{"zuzu data parent", "../data/in.csv", true, dataDir, false},
+		{"zuzu data not a file", "in.csv", false, dataDir, true},
+		{"zuzu data missing", "in.csv", true, filepath.Join(dir, "missing"), false},
+	}
+	// windows needs a privilege to make a symbolic link
+	if runtime.GOOS != "windows" {
+		if err := os.Symlink(filepath.Join("..", "outside.csv"), filepath.Join(specDir, "link.csv")); err != nil {
+			t.Fatal(err)
+		}
+		tests = append(tests, vegaTest{"link out", "link.csv", true, "", false})
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			name := filepath.Join(specDir, strings.ReplaceAll(test.name, " ", "-")+filepath.Ext(strings.TrimSuffix(spec, ".json"))+".json")
+			spec := bytes.Replace(src, []byte(`"url": "data/sales.csv"`), []byte(`"url": "`+test.url+`"`), 1)
+			if err := os.WriteFile(name, spec, 0o644); err != nil {
+				t.Fatal(err)
+			}
+			_, err := decodeSpec(t, name, test.file, test.data)
+			switch {
+			case test.exp && err != nil:
+				t.Errorf("expected no error, got: %v", err)
+			case !test.exp && err == nil:
+				t.Errorf("expected %q refused", test.url)
+			case !test.file && test.data == "" && !errors.Is(err, zuzu.ErrNoLoader):
+				t.Errorf("expected %v, got: %v", zuzu.ErrNoLoader, err)
+			}
+		})
+	}
+}
+
+// decodeSpec draws the Vega spec at name, with data as --zuzu-data. When file
+// is false, the spec is not a file on disk, as a file in an archive is not.
+func decodeSpec(t *testing.T, name string, file bool, data string) (*image.RGBA, error) {
+	t.Helper()
+	buf, err := os.ReadFile(name)
+	if err != nil {
+		t.Fatalf("no test data: %v", err)
+	}
+	ctx := testContext(t)
+	ivctx.Get(ctx).ZuzuData = data
+	ctx = ivctx.WithPathName(ctx, name)
+	if file {
+		ctx = ivctx.WithFile(ctx, name)
+	}
+	res, err := decode(ctx, bytes.NewReader(buf))
+	if err != nil {
+		return nil, err
+	}
+	img, ok := res.(*image.RGBA)
+	if !ok {
+		t.Fatalf("expected an *image.RGBA, got %T", res)
+	}
+	return img, nil
 }
 
 // TestDecode draws every graph and diagram in testdata/zuzu as an image.

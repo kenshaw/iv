@@ -36,7 +36,7 @@ the pagination itself, which needs no file to exercise.
 |               | `blitz-url`   |                                                               |
 | `tag`         | `tag`         | Silent audio carrying embedded cover art                      |
 | `tiff`        | `tiff`        | One file per compression the Go encoder supports              |
-| `zuzu`        | `zuzu`        | DOT graphs and Mermaid diagrams, and ones zuzu cannot draw    |
+| `zuzu`        | `zuzu`        | DOT graphs, Mermaid diagrams, and Vega charts with their data |
 | `vcard`       | `vcard`       | Contacts, drawn as a business card with a scannable code      |
 | `vips`        | `vips`        | heic/heif/jxl, plus a plain and a password protected pdf      |
 | `winres`      | `winres`      | Windows PE with embedded icons                                |
@@ -314,6 +314,13 @@ Three of them also test how the decoder finds DOT. `psg.gv` starts with
 comment lines that fill the first 512 bytes, and libmagic types it as
 `text/html`. `grid.gv` and `Genetic_Programming.gv` put the `{` of the graph
 on the line after `graph`. In all three, the extension decides.
+
+`sales.vg.json` is a Vega spec of a stacked bar chart, written for these
+tests, and `sales.vl.json` is the same chart in Vega-Lite. Each reads its
+data from `data/sales.csv` by url, which covers the loader that reads only
+the directory of the spec and the directories under it (D44, D46).
+`TestDecodeVega` in `decoder/zuzu` draws both, and `TestVegaData` copies each
+spec and the data to a temporary directory to test what the loader refuses.
 
 ### Derived files
 

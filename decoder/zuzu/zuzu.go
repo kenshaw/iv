@@ -1,7 +1,8 @@
-// Package zuzu supplies a DOT graph and Mermaid diagram decoder for iv.
+// Package zuzu supplies a DOT graph, Mermaid diagram, and Vega and Vega-Lite
+// chart decoder for iv.
 //
-// zuzu draws a graph or a diagram in Go, with no external command and no
-// WebAssembly (D36).
+// zuzu draws a graph, a diagram or a chart in Go, with no external command
+// and no WebAssembly (D36, D44, D46).
 //
 // See: https://github.com/xo/zuzu
 package zuzu
@@ -12,6 +13,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -26,14 +29,24 @@ import (
 	"github.com/xo/zuzu/theme"
 )
 
-// The mime types of the two dialects.
+// The mime types of the dialects.
 const (
-	dotMime     = "text/vnd.graphviz"
-	mermaidMime = "text/vnd.mermaid"
+	dotMime      = "text/vnd.graphviz"
+	mermaidMime  = "text/vnd.mermaid"
+	vegaMime     = "application/vnd.vega+json"
+	vegaLiteMime = "application/vnd.vegalite+json"
 )
 
-// exts are the extensions of the two dialects.
+// exts are the extensions of DOT and Mermaid.
 var exts = []string{"gv", "dot", "mmd", "mermaid"}
+
+// The endings of the names of a Vega and a Vega-Lite spec. Their extension
+// is json, which says nothing about what the json is, so the whole ending
+// decides.
+const (
+	vegaExt     = ".vg.json"
+	vegaLiteExt = ".vl.json"
+)
 
 // peek is how many leading bytes are sniffed. zuzu needs no more than this.
 const peek = 512
@@ -50,8 +63,8 @@ var ErrUnknownTheme = errors.New("unknown theme")
 func init() {
 	decoder.Register(
 		"zuzu",
-		decoder.Desc("DOT graphs and Mermaid diagrams"),
-		decoder.MimeType(dotMime, mermaidMime),
+		decoder.Desc("DOT graphs, Mermaid diagrams, and Vega and Vega-Lite charts"),
+		decoder.MimeType(dotMime, mermaidMime, vegaMime, vegaLiteMime),
 		// the detector does not claim a diagram with front matter, or a graph
 		// whose first 512 bytes are comments, so the extension routes it.
 		// libmagic types such a file as any kind of text, even text/html. A
@@ -65,7 +78,9 @@ func init() {
 	)
 }
 
-// detect sniffs the reader for a DOT graph or a Mermaid diagram.
+// detect sniffs the reader for a DOT graph or a Mermaid diagram, and claims
+// a file whose name ends in .vg.json as a Vega spec, and in .vl.json as a
+// Vega-Lite spec.
 //
 // It does not claim a source whose first line is ---. zuzu reads that line as
 // the front matter of a Mermaid diagram, but a Markdown or a YAML file starts
@@ -74,7 +89,13 @@ func init() {
 //
 // A short read is not an error here. A stream that cannot be read is not a
 // diagram, and the sniffer says so.
-func detect(_ context.Context, r io.Reader) (string, error) {
+func detect(ctx context.Context, r io.Reader) (string, error) {
+	switch d, _ := specDialect(ivctx.PathName(ctx), ""); d {
+	case zuzu.Vega:
+		return vegaMime, nil
+	case zuzu.VegaLite:
+		return vegaLiteMime, nil
+	}
 	buf, _ := bufio.NewReaderSize(r, peek).Peek(peek)
 	switch d, _ := zuzu.Sniff(buf); d {
 	case zuzu.DOT:
@@ -87,7 +108,7 @@ func detect(_ context.Context, r io.Reader) (string, error) {
 	return "", nil
 }
 
-// decode draws the graph or the diagram as an image.
+// decode draws the graph, the diagram or the chart as an image.
 func decode(ctx context.Context, r io.Reader) (any, error) {
 	buf, err := io.ReadAll(r)
 	if err != nil {
@@ -107,7 +128,17 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 		// it, an emoji draws nothing
 		zuzu.WithEmoji(emoji.Font()),
 	}
-	if dialect == zuzu.Mermaid {
+	switch dialect {
+	case zuzu.Vega, zuzu.VegaLite:
+		root, err := dataRoot(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if root != nil {
+			defer root.Close()
+			opts = append(opts, zuzu.WithLoader(zuzu.FSLoader(root.FS())))
+		}
+	case zuzu.Mermaid:
 		c := ivctx.Get(ctx)
 		mode, err := themeMode(c.MermaidTheme)
 		if err != nil {
@@ -131,11 +162,15 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 	return img, nil
 }
 
-// dialectOf returns the dialect of a source. The extension decides, and
-// without one, the content does. A source that reached this decoder and is
-// not DOT came by the mime type of mermaid.
+// dialectOf returns the dialect of a source. The name decides, and without
+// one, the mime type or the content does. A source that reached this decoder
+// and is not Vega or DOT came by the mime type of mermaid.
 func dialectOf(ctx context.Context, buf []byte) zuzu.Dialect {
-	switch ivctx.FileExt(ivctx.PathName(ctx)) {
+	name := ivctx.PathName(ctx)
+	if d, ok := specDialect(name, ivctx.Mime(ctx)); ok {
+		return d
+	}
+	switch ivctx.FileExt(name) {
 	case "gv", "dot":
 		return zuzu.DOT
 	case "mmd", "mermaid":
@@ -145,6 +180,45 @@ func dialectOf(ctx context.Context, buf []byte) zuzu.Dialect {
 		return zuzu.DOT
 	}
 	return zuzu.Mermaid
+}
+
+// specDialect returns the dialect of a Vega or a Vega-Lite spec, from the
+// ending of its name, in any case, or from its mime type. It returns false
+// for any other source.
+func specDialect(name, mime string) (zuzu.Dialect, bool) {
+	name = strings.ToLower(name)
+	switch {
+	case strings.HasSuffix(name, vegaExt), mime == vegaMime:
+		return zuzu.Vega, true
+	case strings.HasSuffix(name, vegaLiteExt), mime == vegaLiteMime:
+		return zuzu.VegaLite, true
+	}
+	return 0, false
+}
+
+// dataRoot opens the root of the data that a Vega or a Vega-Lite spec names
+// by url (D44, D45, D46). The root is the directory that --zuzu-data names, or the directory
+// of the spec when it names none. zuzu reads a url as a path under the root,
+// and the root refuses a path that leaves it, by .. or by a symbolic link, so
+// a spec reads only the files in the root and the directories under it. A
+// url with a scheme, such as https:, is an error.
+//
+// Without --zuzu-data, it returns nil when the spec is not a file on disk,
+// such as a file in an archive. The spec then reads no data by url.
+func dataRoot(ctx context.Context) (*os.Root, error) {
+	dir := ivctx.Get(ctx).ZuzuData
+	if dir == "" {
+		name := ivctx.File(ctx)
+		if name == "" {
+			return nil, nil
+		}
+		dir = filepath.Dir(name)
+	}
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return nil, fmt.Errorf("vega data %q: %w", dir, err)
+	}
+	return root, nil
 }
 
 // themeMode returns the mode of zuzu for a --mermaid-theme. zuzu has a light

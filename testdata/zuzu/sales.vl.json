@@ -1,0 +1,14 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "Sales by region and quarter, stacked, read from data/sales.csv.",
+  "title": "Sales by region",
+  "width": 360,
+  "height": 200,
+  "data": {"url": "data/sales.csv", "format": {"type": "csv"}},
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "region", "type": "nominal", "sort": null},
+    "y": {"field": "sales", "type": "quantitative", "aggregate": "sum", "title": "Sales"},
+    "color": {"field": "quarter", "type": "nominal", "title": "Quarter"}
+  }
+}

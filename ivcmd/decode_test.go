@@ -101,6 +101,10 @@ func TestDecodeFile(t *testing.T) {
 		{"mermaid flowchart", "zuzu/flowchart.mmd", "text/vnd.mermaid", "zuzu", ""},
 		// a diagram with front matter routes on its extension
 		{"mermaid front matter", "zuzu/sankey.mmd", "text/plain", "zuzu", ""},
+		// a vega spec routes on the end of its name, and reads its data from
+		// a directory under it
+		{"vega", "zuzu/sales.vg.json", "application/vnd.vega+json", "zuzu", ""},
+		{"vega lite", "zuzu/sales.vl.json", "application/vnd.vegalite+json", "zuzu", ""},
 		{"video", "ffmpeg/sample_960x540.mp4", "video/mp4", "ffmpeg", "ffmpeg"},
 		{"cbz", "archives/science-preview.cbz", "application/zip", "archives", ""},
 		{"cbr", "archives/science-preview.cbr", "application/vnd.rar", "archives", ""},

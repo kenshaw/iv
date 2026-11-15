@@ -122,6 +122,9 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D41](#d41-a-lottie-draws-with-the-lottie-package-of-okage-decided) | A lottie draws with the lottie package of okage | Decided |
 | [D42](#d42-a-kitty-terminal-that-can-play-an-animation-plays-it-itself-decided-amends-d19-amended-by-d43) | A Kitty terminal that can play an animation plays it itself | Decided. Amends D19. Amended by D43 |
 | [D43](#d43-a-video-plays-at-its-own-speed-and-a-kitty-image-shows-each-frame-decided-amends-d19-amends-d42) | A video plays at its own speed, and a Kitty image shows each frame | Decided. Amends D19. Amends D42 |
+| [D44](#d44-zuzu-draws-a-vega-spec-and-reads-its-data-only-under-its-directory-decided-amended-by-d45-amended-by-d46) | zuzu draws a Vega spec, and reads its data only under its directory | Decided. Amended by D45. Amended by D46 |
+| [D45](#d45---zuzu-data-sets-the-directory-that-a-vega-spec-reads-its-data-from-decided-amends-d44) | --zuzu-data sets the directory that a Vega spec reads its data from | Decided. Amends D44 |
+| [D46](#d46-zuzu-draws-a-vega-lite-spec-as-it-draws-a-vega-spec-decided-amends-d44) | zuzu draws a Vega-Lite spec as it draws a Vega spec | Decided. Amends D44 |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -1035,6 +1038,59 @@ second, played its 400 frames in 13.36 s with none dropped, at 960x540 and
 at 2000x1125. A test video with a rotation of 90 degrees played upright at
 360x640, 49 frames in 2.0 s. `testdata/ffmpeg` holds two videos for these
 tests, `testsrc2.mp4` and `testsrc2-rotated.mp4`.
+
+### D44. zuzu draws a Vega spec, and reads its data only under its directory. Decided. Amended by D45. Amended by D46.
+
+On 2026-11-15, a maintainer asked that `iv` draw a Vega spec with zuzu, and
+that the spec read its data only from the directory of the spec and the
+directories under it.
+
+The `zuzu` decoder claims a file whose name ends in `.vg.json`, in any case,
+with the mime type `application/vnd.vega+json`. The extension of such a file
+is `json`, which says nothing, so the whole ending of the name decides. A
+json file with another name is not claimed, even with the `$schema` of Vega.
+`--force-mime application/vnd.vega+json` draws a spec with another name.
+
+zuzu reads no file of its own (zuzu D25). A spec names its data by url, and
+the program gives zuzu a loader. `iv` opens the directory of the spec with
+`os.Root`, and gives zuzu `zuzu.FSLoader(root.FS())`. The root refuses a path
+that leaves the directory, through `..` or through a symbolic link that
+points out of it. `FSLoader` refuses a url with a scheme, such as `https:`,
+and reads a leading `/` as the directory of the spec.
+
+Only a file on disk gets a loader. The path name of a file in an archive is
+a name in the archive, and the directory of that name could be any directory
+on disk. So the pipeline marks the file that `DecodeFile` opens with
+`ivctx.WithFile`, and clears the mark for a file of a set. A spec that is not
+a file on disk reads no data by url, and zuzu returns `zuzu.ErrNoLoader`.
+
+`testdata/zuzu/sales.vg.json` reads `testdata/zuzu/data/sales.csv`.
+`TestVegaData` tests a subdirectory, a leading `/`, `..`, a symbolic link
+that points out, a url with a scheme, and a spec that is not a file on disk.
+
+### D45. --zuzu-data sets the directory that a Vega spec reads its data from. Decided. Amends D44.
+
+On 2026-11-15, a maintainer asked for an option that sets another directory
+as the root of the data of a Vega spec. `--zuzu-data DIR` does that. Empty,
+the default, keeps D44: the root is the directory of the spec.
+
+With `--zuzu-data`, `iv` opens `DIR` with `os.Root`, and a url is a path
+under `DIR`. The rules of D44 still hold: a path that leaves `DIR`, through
+`..` or a symbolic link, and a url with a scheme are refused. A spec that is
+not a file on disk, such as a file in an archive, also reads its data from
+`DIR`, because the user named the directory. A `DIR` that does not exist is
+an error.
+
+### D46. zuzu draws a Vega-Lite spec as it draws a Vega spec. Decided. Amends D44.
+
+On 2026-11-15, a maintainer asked that `iv` draw a Vega-Lite spec too. A
+file `group.vl.json` stopped with `mime type "application/json": not
+supported`. The `zuzu` decoder now claims a file whose name ends in
+`.vl.json`, in any case, with the mime type `application/vnd.vegalite+json`,
+and draws it with the Vega-Lite dialect of zuzu. A Vega-Lite spec reads its
+data by url with the same loader as a Vega spec (D44), and `--zuzu-data`
+sets its root too (D45). `testdata/zuzu/sales.vl.json` is the chart of
+`sales.vg.json` in Vega-Lite, and reads the same data.
 
 ## Open questions for the maintainers
 

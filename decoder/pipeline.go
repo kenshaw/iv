@@ -63,7 +63,7 @@ func decodeFile(ctx context.Context, pathName string) (any, string, error) {
 		return nil, "", err
 	}
 	defer f.Close()
-	ctx = ivctx.WithPathName(ctx, pathName)
+	ctx = ivctx.WithFile(ivctx.WithPathName(ctx, pathName), pathName)
 	mime, err := Detect(ctx, f)
 	if err != nil {
 		return nil, "", fmt.Errorf("mime detect: %w", err)
@@ -264,7 +264,8 @@ func resolveFiles(ctx context.Context, files *Files, depth int) (any, string, er
 	if err != nil {
 		return nil, "", err
 	}
-	ctx = ivctx.WithPathName(ctx, name)
+	// a file of a set is not a file on disk, even when the set came from one
+	ctx = ivctx.WithFile(ivctx.WithPathName(ctx, name), "")
 	mime, err := Detect(ctx, rs)
 	if err != nil {
 		return nil, "", fmt.Errorf("mime detect: %w", err)

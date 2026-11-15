@@ -385,12 +385,15 @@ shows its first frame, and does not play.
 | Lottie animations, and dotLottie | `json` `lot` `lottie` | `lottie` |
 | Graphviz graph description (DOT) | `gv` `dot`            | `zuzu`   |
 | Mermaid diagrams                 | `mmd` `mermaid`       | `zuzu`   |
+| Vega charts                      | `vg.json`             | `zuzu`   |
+| Vega-Lite charts                 | `vl.json`             | `zuzu`   |
 
 A `.json` is only taken as a lottie when the document itself says so, so an
-ordinary json file is left alone.
+ordinary json file is left alone. A file whose name ends in `.vg.json` is a
+Vega spec, and one whose name ends in `.vl.json` is a Vega-Lite spec.
 
-[zuzu][] draws DOT graphs and Mermaid diagrams in Go, with no external
-command. `iv` finds a graph or a diagram by its content, or by its extension
+[zuzu][] draws DOT graphs, Mermaid diagrams, and Vega and Vega-Lite charts in
+Go, with no external command. `iv` finds a graph or a diagram by its content, or by its extension
 when the diagram starts with front matter. `--mermaid-theme dark` draws a
 Mermaid diagram in the dark mode of zuzu, and each other theme draws it in the
 light mode. `--mermaid-bg` sets its background.
@@ -398,6 +401,18 @@ light mode. `--mermaid-bg` sets its background.
 zuzu draws every kind of diagram of Mermaid 12.3. The icon packs fa, mdi,
 carbon and k8s are built in, so a label such as `fa:fa-globe` draws the icon.
 An emoji draws in color, with the font Noto Color Emoji.
+
+A Vega or a Vega-Lite spec can name its data by url, such as
+`"url": "data/sales.csv"`.
+`iv` reads such a file only from the directory of the spec and the
+directories under it. A path that leaves that directory, through `..` or a
+symbolic link, and a url with a scheme, such as `https:`, are errors. A spec
+that is not a file on disk, such as a file in an archive, reads no data by
+url.
+
+`--zuzu-data DIR` reads the data from `DIR` and the directories under it
+instead, with the same rules. A url is then a path under `DIR`. A spec that
+is not a file on disk can also read its data from `DIR`.
 
 [zuzu]: https://github.com/xo/zuzu
 
