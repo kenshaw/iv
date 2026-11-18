@@ -35,7 +35,7 @@ the pagination itself, which needs no file to exercise.
 | `tiff`       | `tiff`        | One file per compression the Go encoder supports              |
 | `zuzu`       | `zuzu`        | DOT graphs, Mermaid diagrams, and Vega charts with their data |
 | `vcard`      | `vcard`       | Contacts, drawn as a business card with a scannable code      |
-| `vips`       | `vips`        | heic/heif/jxl, plus a plain and a password protected pdf      |
+| `vips`       | `vips`        | heic/heif/avif/jxl                                            |
 | `winres`     | `winres`      | Windows PE with embedded icons                                |
 
 Every decoder has test data, and no test reaches the network. A test fails
@@ -83,14 +83,15 @@ result shows, because a rendered page comes back without one. Only the width of
 a page is checked, which is the one part of it that `iv` decides. The four live
 pages that the test fetched before were dropped by D12 of `docs/PLAN.md`.
 
-`vips/file-sample_150kB.enc.pdf` is the plain pdf encrypted with the password
-`password`, kept in step with `encPassword` in `ivcmd/decode_test.go` and
-`ENC_PASSWORD` in `test.sh`. Both pass it with `--password`, since the decoder
-prompts otherwise and neither harness has a terminal to prompt at.
+`ivy/file-sample_150kB.enc.pdf` is `ivy/file-sample_150kB.pdf` encrypted with
+the password `password`. It is kept in step with `encPassword` in
+`ivcmd/decode_test.go` and `decoder/ivy/ivy_test.go`, and with `ENC_PASSWORD`
+in `test.sh`. They give it with `--password`, because the decoder asks for the
+password at the terminal otherwise (D50).
 
 `ivy/` holds the files of the `ivy-*` decoders (D49): the office documents,
-one book as epub, mobi, azw3 and fb2, two XPS documents, and three Photoshop
-files. `TestDecode` in `decoder/ivy` draws each one, and checks that an ivy
+one book as epub, mobi, azw3 and fb2, two XPS documents, three Photoshop
+files, and a plain and a password protected pdf. `TestDecode` in `decoder/ivy` draws each one, and checks that an ivy
 decoder takes it.
 
 The office documents cover the three document families and both generations

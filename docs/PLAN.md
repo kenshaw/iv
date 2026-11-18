@@ -125,7 +125,8 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D46](#d46-zuzu-draws-a-vega-lite-spec-as-it-draws-a-vega-spec-decided-amends-d44) | zuzu draws a Vega-Lite spec as it draws a Vega spec | Decided. Amends D44 |
 | [D47](#d47-the-binwalk-decoder-uses-the-walker-of-xomagic-decided-amends-d7) | The binwalk decoder uses the walker of xo/magic | Decided. Amends D7 |
 | [D48](#d48-okage-draws-font-previews-and-measures-the-text-of-the-cards-decided) | okage draws font previews, and measures the text of the cards | Decided |
-| [D49](#d49-xoivy-draws-documents-ebooks-and-page-descriptions-in-go-decided-amends-d28) | xo/ivy draws documents, ebooks and page descriptions in Go | Decided. Amends D28 |
+| [D49](#d49-xoivy-draws-documents-ebooks-and-page-descriptions-in-go-decided-amends-d28-amended-by-d50) | xo/ivy draws documents, ebooks and page descriptions in Go | Decided. Amends D28. Amended by D50 |
+| [D50](#d50-ivy-draws-every-pdf-and-asks-for-a-missing-password-decided-amends-d49) | ivy draws every pdf, and asks for a missing password | Decided. Amends D49 |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -1215,7 +1216,7 @@ one collection in WOFF2. Each of its faces draws the same pixels as the same
 face of the collection that `woff2_decompress` gives. `pfb` left the extensions, because nothing
 read it.
 
-### D49. xo/ivy draws documents, ebooks and page descriptions in Go. Decided. Amends D28.
+### D49. xo/ivy draws documents, ebooks and page descriptions in Go. Decided. Amends D28. Amended by D50.
 
 D28 gave the formats of mupdf to four outside commands and one package:
 `soffice` of LibreOffice, `ebook-convert` of calibre, `xpstopng` of libgxps,
@@ -1274,6 +1275,26 @@ One page, at a display of 1200x1200, as one run of `iv`:
 The release build went from 99.81 MB to 117.51 MB. ivy adds 8.25 MB of code,
 okage, golang.org/x/image and golang.org/x/text add 3.6 MB, and the tables
 of the runtime grow with the code.
+
+### D50. ivy draws every pdf, and asks for a missing password. Decided. Amends D49.
+
+D49 kept the `vips-pdf` decoder after `ivy-pdf`. It drew a pdf that ivy
+could not, and it asked for the password of an encrypted pdf at the
+terminal. On 2026-11-18, a maintainer asked to remove it and to give its
+work to ivy.
+
+- `vips-pdf` is gone. The `vips` decoder takes only images, so libvips draws
+  no pdf. If ivy cannot draw a pdf, `iv` shows the error of ivy.
+- The ivy decoders give ivy the password of `--password`, and a function
+  that asks for the password at the terminal while it is missing or wrong.
+  The function asks at most three times, as `vips-pdf` did. If stdin is not
+  a terminal, it does not ask, and the error says to give `--password`.
+- Each format of ivy that takes a password asks for it in the same way, such
+  as docx, pptx, odf and the Office 97 to 2003 formats, and not only a pdf.
+- The plain and the encrypted pdf moved from `testdata/vips` to
+  `testdata/ivy`. `TestPassword` in `decoder/ivy` gives the password with
+  `--password`, with answers at the terminal, with too many wrong answers,
+  and with no terminal.
 
 ## Open questions for the maintainers
 

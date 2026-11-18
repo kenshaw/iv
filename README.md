@@ -115,9 +115,9 @@ does.
 
 ## Building
 
-`iv` is cgo code. It links libvips for the image formats and pdfs the Go
-decoders do not cover, and fontconfig and freetype for the document renderer,
-so a Go toolchain on its own is not enough. Go 1.27 or later, plus the
+`iv` is cgo code. It links libvips for the image formats that the Go decoders
+do not cover, and fontconfig and freetype for the document renderer, so a Go
+toolchain on its own is not enough. Go 1.27 or later, plus the
 following per platform.
 
 ### Linux
@@ -446,8 +446,9 @@ is not a file on disk can also read its data from `DIR`.
 command. `-p N` picks the page, and a page is drawn at `--dpi`, or at the
 size that it is shown at when that is smaller. A format that has no pages,
 such as Visio, shows its preview. A document lays out its text in the fonts
-that it embeds, then in the fonts of the system. If libvips has a pdf
-loader, it draws a pdf that ivy cannot.
+that it embeds, then in the fonts of the system. If a document needs a
+password and `--password` does not give the right one, `iv` asks for the
+password at the terminal, at most three times.
 
 [ivy]: https://github.com/xo/ivy
 
@@ -552,7 +553,7 @@ terminal can take that form:
 | -------------------------------------------------------------------------------------------- | ----------------------------- | ---------------------------- | ------- |
 | A png that is not scaled, from a file, a `data:` URL, ffmpeg, a web page or a comic archive | the bytes of the file         | the bytes of the file        | encoded |
 | A jpeg that is not scaled                                                                    | raw RGB                       | the bytes of the file        | encoded |
-| An image that libvips decodes (heic, avif, jxl, pdf and others)                              | a PNG that libvips encodes    | a JPEG that libvips encodes  | encoded |
+| An image that libvips decodes (heic, avif, jxl and others)                                   | a PNG that libvips encodes    | a JPEG that libvips encodes  | encoded |
 | An image that a renderer draws (svg, lottie, documents, fonts, psd)                          | raw RGBA                      | encoded                      | encoded |
 | Any other image, such as a gif or a QR code                                                  | a PNG that rasterm encodes    | encoded                      | encoded |
 

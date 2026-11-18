@@ -6,6 +6,10 @@
 // selects, at the size that it is shown at. A format with no pages draws its
 // best preview, such as the thumbnail of a Visio drawing.
 //
+// A document that a password protects, such as a pdf or a docx, opens with
+// --password. When that password is missing or wrong, the decoder asks for
+// the password at the terminal (D50).
+//
 // See: https://github.com/xo/ivy
 package ivy
 
@@ -19,6 +23,7 @@ import (
 	"io"
 	"log/slog"
 	"math"
+	"os"
 	"slices"
 	"strings"
 
@@ -49,6 +54,7 @@ import (
 	"github.com/xo/ivy/vsdx"
 	"github.com/xo/ivy/xlsx"
 	"github.com/xo/ivy/xps"
+	"golang.org/x/term"
 )
 
 // formats are the formats of ivy that iv decodes, each with its description.
@@ -157,9 +163,10 @@ func decodeFunc(f ivy.Format) decoder.DecodeFunc {
 		}
 		c := ivctx.Get(ctx)
 		cfg := ivy.Config{
-			Password: c.Password,
-			Logger:   slog.New(slog.NewTextHandler(logWriter{c.Logger}, &slog.HandlerOptions{Level: slog.LevelDebug, ReplaceAttr: noTime})),
-			Cache:    cache,
+			Password:     c.Password,
+			PasswordFunc: askPassword,
+			Logger:       slog.New(slog.NewTextHandler(logWriter{c.Logger}, &slog.HandlerOptions{Level: slog.LevelDebug, ReplaceAttr: noTime})),
+			Cache:        cache,
 			// an ebook or a document lays out its text in the fonts that it
 			// embeds, then in the fonts of the system
 			SystemFonts: true,
@@ -221,6 +228,47 @@ func renderPage(ctx context.Context, f ivy.Format, pager ivy.Pager) (image.Image
 
 // ErrNoPages is the error of a document with no pages.
 var ErrNoPages = errors.New("no pages")
+
+// maxPasswordAttempts is the number of times that the decoder asks for the
+// password of a document. The password of --password is tried first, and is
+// not one of them.
+const maxPasswordAttempts = 3
+
+// ErrPasswordAttempts is the error when no password that the decoder asked
+// for opens the document.
+var ErrPasswordAttempts = errors.New("too many wrong passwords")
+
+// ErrNoTerminal is the error when the decoder must ask for a password, and
+// stdin is not a terminal.
+var ErrNoTerminal = errors.New("stdin is not a terminal, so --password must give the password")
+
+// readPassword reads a password. A test replaces it.
+var readPassword = terminalPassword
+
+// askPassword asks for the password of a document, at most
+// maxPasswordAttempts times. ivy calls it while the password is missing or
+// wrong.
+func askPassword(_ context.Context, attempt int) (string, error) {
+	if attempt > maxPasswordAttempts {
+		return "", fmt.Errorf("%d attempts: %w", maxPasswordAttempts, ErrPasswordAttempts)
+	}
+	return readPassword()
+}
+
+// terminalPassword reads a password at the terminal, and does not show it.
+func terminalPassword() (string, error) {
+	fd := int(os.Stdin.Fd())
+	if !term.IsTerminal(fd) {
+		return "", ErrNoTerminal
+	}
+	_, _ = fmt.Fprint(os.Stdout, "Password: ")
+	buf, err := term.ReadPassword(fd)
+	_, _ = fmt.Fprintln(os.Stdout)
+	if err != nil {
+		return "", fmt.Errorf("password: %w", err)
+	}
+	return string(buf), nil
+}
 
 // pageDPI returns the resolution that draws the page at the size that it is
 // shown at, and at most at --dpi.

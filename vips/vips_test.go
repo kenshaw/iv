@@ -1,28 +1,11 @@
 package vips
 
 import (
-	"errors"
 	"strings"
 	"testing"
 
 	"github.com/cshum/vipsgen/v2/vips"
 )
-
-func TestIsEncryptedErr(t *testing.T) {
-	for _, test := range []struct {
-		err error
-		exp bool
-	}{
-		{nil, false},
-		{errors.New("pdfload: Document is encrypted"), true},
-		{errors.New("vips load: document is encrypted"), true},
-		{errors.New("pdfload: unable to load"), false},
-	} {
-		if got := IsEncryptedErr(test.err); got != test.exp {
-			t.Errorf("IsEncrypted(%v) = %v, want %v", test.err, got, test.exp)
-		}
-	}
-}
 
 func TestLevelString(t *testing.T) {
 	for _, level := range []vips.LogLevel{

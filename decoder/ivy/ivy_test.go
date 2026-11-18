@@ -3,16 +3,22 @@ package ivy
 import (
 	"bytes"
 	"context"
+	"errors"
 	"image"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/ivctx"
+	"github.com/xo/ivy"
 	"github.com/xo/okage"
 )
+
+// encPassword opens testdata/ivy/file-sample_150kB.enc.pdf.
+const encPassword = "password"
 
 // TestDecode draws each file in testdata/ivy with the decoder that the
 // pipeline routes it to, and checks that it is an ivy decoder (D49).
@@ -25,6 +31,10 @@ func TestDecode(t *testing.T) {
 		name := entry.Name()
 		t.Run(name, func(t *testing.T) {
 			ctx := testContext(t)
+			answer(t)
+			if strings.Contains(name, ".enc.") {
+				ivctx.Get(ctx).Password = encPassword
+			}
 			pathName := filepath.Join("..", "..", "testdata", "ivy", name)
 			img, mime, err := decoder.DecodeFile(ctx, pathName)
 			if err != nil {
@@ -56,6 +66,43 @@ func TestPage(t *testing.T) {
 		t.Error("expected page 2 to differ from page 1")
 	case !bytes.Equal(pages[0], pages[2]):
 		t.Error("expected page 99 to be page 1")
+	}
+}
+
+// TestPassword checks that a pdf that a password protects opens with
+// --password, or with a password that the decoder asks for when --password
+// is missing or wrong, and that the decoder asks at most
+// maxPasswordAttempts times (D50).
+func TestPassword(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		password string
+		answers  []string
+		asked    int
+		exp      error
+	}{
+		{"with password", encPassword, nil, 0, nil},
+		{"asked", "", []string{"wrong", encPassword}, 2, nil},
+		{"wrong password", "wrong", []string{encPassword}, 1, nil},
+		{"too many attempts", "", []string{"a", "b", "c", encPassword}, 3, ErrPasswordAttempts},
+		{"no terminal", "", nil, 1, ErrNoTerminal},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := testContext(t)
+			ivctx.Get(ctx).Password = test.password
+			asked := answer(t, test.answers...)
+			img, _, err := decoder.DecodeFile(ctx, filepath.Join("..", "..", "testdata", "ivy", "file-sample_150kB.enc.pdf"))
+			switch {
+			case *asked != test.asked:
+				t.Errorf("expected to be asked %d times, got %d", test.asked, *asked)
+			case test.exp == nil && err != nil:
+				t.Errorf("expected no error, got: %v", err)
+			case test.exp == nil && img.Bounds().Dx() < 16:
+				t.Errorf("expected an image, got %v", img.Bounds())
+			case test.exp != nil && (!errors.Is(err, test.exp) || !errors.Is(err, ivy.ErrPassword)):
+				t.Errorf("expected %v and %v, got: %v", test.exp, ivy.ErrPassword, err)
+			}
+		})
 	}
 }
 
@@ -112,6 +159,23 @@ func TestRouting(t *testing.T) {
 			}
 		})
 	}
+}
+
+// answer makes the decoder read the answers in order when it asks for a
+// password, and then return ErrNoTerminal, and returns the number of times
+// that it asked. A test never reads a password at the terminal.
+func answer(t *testing.T, answers ...string) *int {
+	t.Helper()
+	asked, prev := new(int), readPassword
+	readPassword = func() (string, error) {
+		*asked++
+		if *asked > len(answers) {
+			return "", ErrNoTerminal
+		}
+		return answers[*asked-1], nil
+	}
+	t.Cleanup(func() { readPassword = prev })
+	return asked
 }
 
 // testPage is a page of a size, for pageDPI.

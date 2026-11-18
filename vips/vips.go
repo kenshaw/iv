@@ -503,12 +503,6 @@ func nrgba(img image.Image) *image.NRGBA {
 	return dst
 }
 
-// IsEncryptedErr reports whether the error is the vips "document is encrypted"
-// error, raised for password protected pdfs.
-func IsEncryptedErr(err error) bool {
-	return err != nil && strings.Contains(strings.ToLower(err.Error()), "document is encrypted")
-}
-
 // levelString returns the vips log level as a short string.
 func levelString(level vips.LogLevel) string {
 	switch level {

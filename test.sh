@@ -25,7 +25,7 @@ SRC=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 # ivcmd/decode_test.go
 STRING_EXT=.iv_test_string
 
-# opens testdata/vips/file-sample_150kB.enc.pdf, kept in step with encPassword
+# opens testdata/ivy/file-sample_150kB.enc.pdf, kept in step with encPassword
 # in ivcmd/decode_test.go
 ENC_PASSWORD=password
 
@@ -43,8 +43,8 @@ fail=0
 
 run() {
   printf '%-72s ' "$(echo "$1" | cut -c1-70)"
-  # an encrypted pdf prompts for its password, and there is nobody here to
-  # type one
+  # the decoder asks for the password of an encrypted pdf, and there is
+  # nobody here to type one
   local pass=()
   case "$1" in
     *.enc.pdf) pass=(--password "$ENC_PASSWORD") ;;

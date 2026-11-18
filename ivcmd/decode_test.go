@@ -68,8 +68,8 @@ func TestDecodeFile(t *testing.T) {
 		{"woff2 collection", "fontimg/IBMPlexSans.woff2", "font/woff2", "fontimg", ""},
 		{"jxl", "vips/precision.jxl", "image/jxl", "vips", ""},
 		{"heic", "vips/cyberpunk.heic", "image/heic", "vips", ""},
-		{"pdf", "vips/file-sample_150kB.pdf", "application/pdf", "ivy-pdf", ""},
-		{"pdf encrypted", "vips/file-sample_150kB.enc.pdf", "application/pdf", "ivy-pdf", ""},
+		{"pdf", "ivy/file-sample_150kB.pdf", "application/pdf", "ivy-pdf", ""},
+		{"pdf encrypted", "ivy/file-sample_150kB.enc.pdf", "application/pdf", "ivy-pdf", ""},
 		// libmagic does not recognize this one at all, so it routes on its
 		// extension -- which is what generic types are for
 		{"xps", "ivy/example.xps", "application/octet-stream", "ivy-xps", ""},
@@ -345,7 +345,7 @@ func readString(pathName string) (string, error) {
 // okage rasterizes, so this covers the round trip through mime detection as
 // well. That the card carries the right cover art is checked in the tag
 // package, which can read the svg before it is rasterized.
-// encPassword opens testdata/vips/file-sample_150kB.enc.pdf.
+// encPassword opens testdata/ivy/file-sample_150kB.enc.pdf.
 const encPassword = "password"
 
 const (

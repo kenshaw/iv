@@ -55,7 +55,7 @@ var benchTargets = []string{
 	"tiff/tux-deflate.tiff",
 	"vcard/john-doe.vcf",
 	"vips/dome.heic",
-	"vips/file-sample_150kB.pdf",
+	"ivy/file-sample_150kB.pdf",
 	"vips/precision.avif",
 	"vips/precision.jxl",
 	"winres/go-winres.exe",

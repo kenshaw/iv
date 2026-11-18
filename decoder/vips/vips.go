@@ -1,29 +1,20 @@
 // Package vips supplies a libvips decoder for iv, covering the image formats
-// and pdfs that the Go decoders do not handle.
+// that the Go decoders do not handle.
 //
 // See: https://github.com/cshum/vipsgen
 package vips
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/cshum/vipsgen/v2/vips"
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/ivctx"
 	ivvips "github.com/kenshaw/iv/vips"
-	"golang.org/x/term"
 )
-
-// maxPasswordAttempts is how many times an encrypted pdf password is prompted
-// for before giving up. The load that runs before the first prompt does not
-// count against it: it carries whatever password was configured, so an
-// unencrypted document never prompts at all.
-const maxPasswordAttempts = 3
 
 func init() {
 	decoder.Register(
@@ -38,14 +29,6 @@ func init() {
 		),
 		decoder.MatcherContext(match),
 		decoder.Decoder(decode),
-	)
-	decoder.Register(
-		"vips-pdf",
-		decoder.Desc("libvips (password protected pdf)"),
-		decoder.Before("vips"),
-		decoder.Extension("pdf"),
-		decoder.MimeType("application/pdf"),
-		decoder.Decoder(decodePDF),
 	)
 }
 
@@ -124,7 +107,7 @@ func loadOptions(mime string) []*vips.LoadOptions {
 		{
 			N:           1,
 			FailOnError: true,
-			Unlimited:   mime != "image/jxl" && !strings.HasSuffix(mime, "/pdf"),
+			Unlimited:   mime != "image/jxl",
 			Memory:      true,
 		},
 		{FailOnError: true, Memory: true},
@@ -154,68 +137,4 @@ func load(ctx context.Context, buf []byte, opts *vips.LoadOptions) (*vips.Image,
 // option that the format's loader does not have.
 func isUnsupportedOption(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "no property named")
-}
-
-// decodePDF decodes a pdf with libvips, prompting for a password when the
-// document is encrypted. It loads from the bytes of the input, as [decode]
-// does.
-func decodePDF(ctx context.Context, r io.Reader) (any, error) {
-	ivvips.Init(ctx)
-	if !vips.HasOperation("pdfload_buffer") {
-		return nil, fmt.Errorf("vips load: pdfload_buffer: %w", decoder.ErrUnsupportedFormat)
-	}
-	buf, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	pass := ivctx.Get(ctx).Password
-	for prompted := 0; ; prompted++ {
-		v, err := loadPDF(ctx, buf, pass)
-		switch {
-		case err == nil:
-			return ivvips.Open(ctx, v)
-		case !ivvips.IsEncryptedErr(err):
-			return nil, fmt.Errorf("vips load: %w", err)
-		case prompted == maxPasswordAttempts:
-			return nil, errors.New("vips load: invalid password")
-		}
-		p, err := readPassword()
-		if err != nil {
-			return nil, fmt.Errorf("vips load: %w", err)
-		}
-		pass = string(p)
-	}
-}
-
-// loadPDF loads the pdf with the password, applying the configured page. The
-// page count is only known after a load, so a specific page costs two.
-func loadPDF(ctx context.Context, buf []byte, pass string) (*vips.Image, error) {
-	opts := &vips.PdfloadBufferOptions{
-		FailOn:   vips.FailOnError,
-		Memory:   true,
-		Password: pass,
-	}
-	if page := int(ivctx.Get(ctx).Page); page != 0 {
-		v, err := vips.NewPdfloadBuffer(buf, opts)
-		if err != nil {
-			return nil, err
-		}
-		if p := page - 1; 0 <= p && p < v.Pages() {
-			opts.Page = p
-		}
-		v.Close()
-	}
-	return vips.NewPdfloadBuffer(buf, opts)
-}
-
-// readPassword prompts for and reads a password from the terminal.
-func readPassword() ([]byte, error) {
-	fd := int(os.Stdin.Fd())
-	if !term.IsTerminal(fd) {
-		return nil, errors.New("document is encrypted and stdin is not a terminal")
-	}
-	_, _ = fmt.Fprint(os.Stdout, "Password: ")
-	pass, err := term.ReadPassword(fd)
-	_, _ = fmt.Fprintln(os.Stdout)
-	return pass, err
 }
