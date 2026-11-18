@@ -15,7 +15,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/kenshaw/iv/decoder"
@@ -69,21 +68,20 @@ func TestDecodeFile(t *testing.T) {
 		{"woff2 collection", "fontimg/IBMPlexSans.woff2", "font/woff2", "fontimg", ""},
 		{"jxl", "vips/precision.jxl", "image/jxl", "vips", ""},
 		{"heic", "vips/cyberpunk.heic", "image/heic", "vips", ""},
-		{"pdf", "vips/file-sample_150kB.pdf", "application/pdf", "vips-pdf", ""},
-		{"pdf encrypted", "vips/file-sample_150kB.enc.pdf", "application/pdf", "vips-pdf", ""},
+		{"pdf", "vips/file-sample_150kB.pdf", "application/pdf", "ivy-pdf", ""},
+		{"pdf encrypted", "vips/file-sample_150kB.enc.pdf", "application/pdf", "ivy-pdf", ""},
 		// libmagic does not recognize this one at all, so it routes on its
 		// extension -- which is what generic types are for
-		{"xps", "gxps/example.xps", "application/octet-stream", "gxps", "xpstopng"},
-		{"xps zip", "gxps/xps-document-example.xps", "application/zip", "gxps", "xpstopng"},
-		{"epub", "calibre/sample.epub", "application/epub+zip", "calibre", "ebook-convert"},
-		{"mobi", "calibre/sample.mobi", "application/x-mobipocket-ebook", "calibre", "ebook-convert"},
-		{"azw3", "calibre/sample.azw3", "application/x-mobipocket-ebook", "calibre", "ebook-convert"},
+		{"xps", "ivy/example.xps", "application/octet-stream", "ivy-xps", ""},
+		{"xps zip", "ivy/xps-document-example.xps", "application/zip", "ivy-xps", ""},
+		{"epub", "ivy/sample.epub", "application/epub+zip", "ivy-epub", ""},
+		{"mobi", "ivy/sample.mobi", "application/x-mobipocket-ebook", "ivy-mobi", ""},
+		{"azw3", "ivy/sample.azw3", "application/x-mobipocket-ebook", "ivy-mobi", ""},
 		// libmagic reads an fb2 as plain xml, so the extension decides
-		{"fb2", "calibre/sample.fb2", "text/xml", "calibre", "ebook-convert"},
-		{"psd", "psd/alpha.psd", "image/vnd.adobe.photoshop", "psd", ""},
-		{"psd cmyk", "psd/cmyk.psd", "image/vnd.adobe.photoshop", "psd", ""},
-		// oov/psd cannot read this one, and hands it to vips
-		{"psd 16-bit", "psd/deep16.psd", "image/vnd.adobe.photoshop", "psd", ""},
+		{"fb2", "ivy/sample.fb2", "text/xml", "ivy-fb2", ""},
+		{"psd", "ivy/alpha.psd", "image/vnd.adobe.photoshop", "ivy-psd", ""},
+		{"psd cmyk", "ivy/cmyk.psd", "image/vnd.adobe.photoshop", "ivy-psd", ""},
+		{"psd 16-bit", "ivy/deep16.psd", "image/vnd.adobe.photoshop", "ivy-psd", ""},
 		{"windows pe", "winres/go-winres.exe", "application/vnd.microsoft.portable-executable", "winres", ""},
 		// libmagic types plain text by what it looks like, and this document
 		// looks like c to it. text/x- is generic, so the extension decides
@@ -97,9 +95,15 @@ func TestDecodeFile(t *testing.T) {
 		{"tag aac", "tag/silent.aac", "audio/x-hx-aac-adts", "tag", ""},
 		{"vcard", "vcard/john-doe.vcf", "text/vcard", "vcard", ""},
 		{"vcard folded", "vcard/folded.vcf", "text/vcard", "vcard", ""},
-		{"docx", "libreoffice/file-sample_100kB.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "libreoffice", "soffice"},
-		{"doc", "libreoffice/file-sample_100kB.doc", "application/x-ole-storage", "libreoffice", "soffice"},
-		{"odt", "libreoffice/file-sample_100kB.odt", "application/vnd.oasis.opendocument.text", "libreoffice", "soffice"},
+		{"docx", "ivy/file-sample_100kB.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "ivy-docx", ""},
+		{"doc", "ivy/file-sample_100kB.doc", "application/x-ole-storage", "ivy-msdoc", ""},
+		{"odt", "ivy/file-sample_100kB.odt", "application/vnd.oasis.opendocument.text", "ivy-odf", ""},
+		{"rtf", "ivy/file-sample_100kB.rtf", "text/rtf", "ivy-rtf", ""},
+		{"xls", "ivy/file_example_XLS_50.xls", "application/vnd.ms-excel", "ivy-msxls", ""},
+		{"xlsx", "ivy/file_example_XLSX_50.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ivy-xlsx", ""},
+		{"ods", "ivy/file_example_ODS_100.ods", "application/vnd.oasis.opendocument.spreadsheet", "ivy-odf", ""},
+		{"odp", "ivy/file_example_ODP_200kB.odp", "application/vnd.oasis.opendocument.presentation", "ivy-odf", ""},
+		{"ppt", "ivy/file_example_PPT_250kB.ppt", "application/x-ole-storage", "ivy-msppt", ""},
 		{"mermaid", "zuzu/gantt.mmd", "text/vnd.mermaid", "zuzu", ""},
 		{"mermaid flowchart", "zuzu/flowchart.mmd", "text/vnd.mermaid", "zuzu", ""},
 		// a diagram with front matter routes on its extension
@@ -399,54 +403,6 @@ func sameImage(got, want image.Image) error {
 	return nil
 }
 
-// TestLibreOfficeRouting checks that every office document in the test data
-// is detected and routed to the libreoffice decoder. Routing is the part iv
-// owns; the conversion itself is soffice's job, so this needs no soffice.
-func TestLibreOfficeRouting(t *testing.T) {
-	for _, test := range []struct {
-		file string
-		mime string
-	}{
-		{"file-sample_100kB.doc", "application/x-ole-storage"},
-		{"file-sample_100kB.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
-		{"file-sample_100kB.odt", "application/vnd.oasis.opendocument.text"},
-		{"file-sample_100kB.rtf", "text/rtf"},
-		// libmagic reads the ole directory, so this one is not merely a
-		// compound file to it
-		{"file_example_XLS_50.xls", "application/vnd.ms-excel"},
-		{"file_example_XLSX_50.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
-		{"spreadsheet.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
-		{"file_example_ODS_100.ods", "application/vnd.oasis.opendocument.spreadsheet"},
-		{"file_example_ODP_200kB.odp", "application/vnd.oasis.opendocument.presentation"},
-		{"file_example_PPT_250kB.ppt", "application/x-ole-storage"},
-	} {
-		t.Run(test.file, func(t *testing.T) {
-			pathName := filepath.Join("..", "testdata", "libreoffice", test.file)
-			f, err := os.Open(pathName)
-			if err != nil {
-				t.Fatalf("no test data: %v", err)
-			}
-			defer f.Close()
-			ctx := ivctx.WithPathName(testContext(t), pathName)
-			mime, err := decoder.Detect(ctx, f)
-			if err != nil {
-				t.Fatalf("expected no error, got: %v", err)
-			}
-			if mime != test.mime {
-				t.Errorf("expected mime %q, got %q", test.mime, mime)
-			}
-			matched := decoder.Match(ctx, mime, ivctx.FileExt(pathName))
-			if len(matched) == 0 || matched[0].Name != "libreoffice" {
-				var names []string
-				for _, d := range matched {
-					names = append(names, d.Name)
-				}
-				t.Errorf("expected the libreoffice decoder, got %v", names)
-			}
-		})
-	}
-}
-
 // TestDecodeIcnsResolutions checks that every resolution in a multi
 // resolution icns is decoded, and that the page selects between them.
 func TestDecodeIcnsResolutions(t *testing.T) {
@@ -646,21 +602,12 @@ func aspect(p image.Point) float64 {
 // untested names the commands that CI does not install on an operating
 // system, with the reason. A test that needs one of them skips on that
 // system, and a missing command fails the test on any other (D27).
-var untested = map[string]map[string]string{
-	"windows": {
-		"soffice":       "LibreOffice has no MSYS2 package",
-		"ebook-convert": "calibre has no MSYS2 package",
-	},
-}
+var untested = map[string]map[string]string{}
 
 // untestedFiles names the test files that CI does not decode on an operating
 // system, with the reason. The test of one of them still checks its mime type
 // and its decoder, and skips the decode on that system (D34).
-var untestedFiles = map[string]map[string]string{
-	"darwin": {
-		"calibre/sample.fb2": "ebook-convert of calibre 9.16 sometimes crashes on it with a segmentation fault",
-	},
-}
+var untestedFiles = map[string]map[string]string{}
 
 // unsupported names the libvips operations that the libvips of CI is built
 // without on an operating system, with the reason. A test that needs one of
@@ -705,45 +652,11 @@ func requireTool(t *testing.T, name string) {
 // usable reports whether an external command the decoders shell out to can
 // actually be used.
 func usable(name string) error {
-	if name == "soffice" {
-		return sofficeUsable()
-	}
 	if _, err := exec.LookPath(name); err != nil {
 		return fmt.Errorf("%s not in path", name)
 	}
 	return nil
 }
-
-// sofficeUsable reports whether soffice can convert a document. Being in
-// $PATH is not enough: LibreOffice also needs a writable user profile and
-// somewhere to put its named pipe, neither of which every sandbox and CI
-// image provides. Probed once, with a document small enough that the cost is
-// one process start.
-var sofficeUsable = sync.OnceValue(func() error {
-	if _, err := exec.LookPath("soffice"); err != nil {
-		return errors.New("soffice not in path")
-	}
-	dir, err := os.MkdirTemp("", "iv-soffice-probe.")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(dir)
-	// a text document, which LibreOffice Writer opens. A csv needs Calc,
-	// which CI does not install, and the tests convert only documents
-	src := filepath.Join(dir, "probe.txt")
-	if err := os.WriteFile(src, []byte("probe\n"), 0o644); err != nil {
-		return err
-	}
-	cmd := exec.Command("soffice", "--headless", "--convert-to", "pdf", "--outdir", dir, src)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("soffice cannot run here: %w: %s", err, bytes.TrimSpace(out))
-	}
-	if _, err := os.Stat(filepath.Join(dir, "probe.pdf")); err != nil {
-		return fmt.Errorf("soffice produced no pdf: %s", bytes.TrimSpace(out))
-	}
-	return nil
-})
 
 // testContext returns a context wired to the test log.
 func testContext(t *testing.T) context.Context {

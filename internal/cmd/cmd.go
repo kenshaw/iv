@@ -1,5 +1,5 @@
 // Package cmd provides lazily resolved external commands for iv decoders that
-// shell out (ffmpeg, ffprobe, soffice).
+// shell out (ffmpeg, ffprobe).
 package cmd
 
 import (

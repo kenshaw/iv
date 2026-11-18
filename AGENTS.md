@@ -74,6 +74,8 @@ dbmeta D110. A bare number, as in D3, names a decision of this repository, in
   `decoder.Register`, or with `decoder.RegisterBuiltin` for a format in the
   `image.Decode` registry of Go. `decoder/png` is the smallest example.
 - `decoder/all/` imports every decoder. A new decoder must be added there.
+- `decoder/ivy/` registers a decoder for each format of xo/ivy that iv
+  takes, such as `ivy-docx`, from the `Format` value of the format (D49).
 - `encoder/` and `encoder/<name>/` do the same for the encoders, and
   `encoder/all/` imports every encoder. `encoder/rasterm` draws to the
   terminal.
@@ -156,8 +158,7 @@ golangci-lint run ./...
 CI runs `go test -race -v ./...` on Linux amd64 and arm64, macOS and Windows
 (D14). It runs `golangci-lint run ./...` with the release that the Lint job
 in `.github/workflows/test.yml` pins (D29). The tests need every decoder
-command: `ffmpeg`, `soffice`, `ebook-convert`, `xpstopng` and `pdftoppm`
-(D27).
+command, which is `ffmpeg` and its `ffprobe` (D27, D49).
 
 If you changed a decoder, an encoder or the pipeline, also run the smoke test:
 

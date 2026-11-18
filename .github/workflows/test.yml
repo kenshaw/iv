@@ -61,11 +61,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get install -y --no-install-recommends \
-            ffmpeg \
-            libreoffice-writer \
-            calibre \
-            libgxps-utils \
-            poppler-utils
+            ffmpeg
 
       - name: Install build dependencies (macOS)
         if: runner.os == 'macOS'
@@ -73,18 +69,10 @@ jobs:
           brew install --quiet vips
           command -v pkg-config >/dev/null || brew install --quiet pkgconf
 
-      # LibreOffice and calibre are casks, which install an app rather than a
-      # command, so the folder of each command goes on the path
       - name: Install decoder commands (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install --quiet ffmpeg libgxps poppler
-          brew install --quiet --cask libreoffice calibre
-          # libgxps is keg-only, because it conflicts with ghostscript, so
-          # xpstopng is not linked into the path
-          echo "$(brew --prefix libgxps)/bin" >> "$GITHUB_PATH"
-          echo /Applications/LibreOffice.app/Contents/MacOS >> "$GITHUB_PATH"
-          echo /Applications/calibre.app/Contents/MacOS >> "$GITHUB_PATH"
+          brew install --quiet ffmpeg
 
       # UCRT64 rather than MINGW64: the mupdf of go-fitz called
       # __intrinsic_setjmpex, which only ucrt has. go-fitz is gone, and
@@ -105,8 +93,6 @@ jobs:
             mingw-w64-ucrt-x86_64-libjxl
             mingw-w64-ucrt-x86_64-imagemagick
             mingw-w64-ucrt-x86_64-ffmpeg
-            mingw-w64-ucrt-x86_64-libgxps
-            mingw-w64-ucrt-x86_64-poppler
 
       - name: Install Go
         uses: actions/setup-go@v7

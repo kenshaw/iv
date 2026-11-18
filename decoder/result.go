@@ -17,7 +17,7 @@ import (
 
 // Image is a mime type and stream to run back through the decoding pipeline.
 // Used by decoders that transform their input into another format, such as
-// libreoffice converting a document to pdf.
+// the ffmpeg decoder handing on the png of a frame of a video.
 type Image struct {
 	Mime   string
 	Ext    string

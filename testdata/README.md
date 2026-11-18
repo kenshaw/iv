@@ -11,35 +11,32 @@ than a raster, so what comes back is whatever the reader rasterized it at, and
 the test compares the shape rather than the pixel count. `encoder/pdf` covers
 the pagination itself, which needs no file to exercise.
 
-| Directory     | Decoder       | Notes                                                         |
-| ------------- | ------------- | ------------------------------------------------------------- |
-| `archives`    | `archives`    | The same two page comic as cbz, cbr, and cbt                  |
-| `binwalk`     | `binwalk`     | Affinity Designer file with an embedded png                   |
-| `blitz`       | `blitz`       | Markdown and html documents                                   |
-| `bmp`         | `bmp`         |                                                               |
-| `calibre`     | `calibre`     | One book as epub, mobi, azw3 and fb2; needs `ebook-convert`   |
-| `ffmpeg`      | `ffmpeg`      | One clip as mkv and mp4, and a test pattern, plain and turned |
-| `fontimg`     | `fontimg`     | Static, variable and monospace fonts, WOFF, WOFF2, collection |
-| `gif`         | `gif`         | Still and animated                                            |
-| `gxps`        | `gxps`        | XPS documents; needs `xpstopng`                               |
-| `icns`        | `icns`        | Apple icon image, eight resolutions from 32 to 1024           |
-| `ico`         | `ico`         | Single and multi image icons                                  |
-| `jpeg`        | `jpeg`        |                                                               |
-| `libreoffice` | `libreoffice` | Office documents; needs `soffice` in `$PATH`                  |
-| `lottie`      | `lottie`      | Noto animated emoji, as json, `.lot`, and a dotLottie         |
-| `nativewebp`  | `nativewebp`  | Lossy and lossless webp, each with its png reference decode   |
-| `netpbm`      | `netpbm`      | pbm/pgm/ppm/pam, raw and plain                                |
-| `okage`       | `okage`       | SVGs, plain and gzipped, trivial to a large choropleth        |
-| `png`         | `png`         |                                                               |
-| `psd`         | `psd`         | Photoshop, with alpha, CMYK, and 16-bit for the vips fallback |
-| `strings`     | `data`, `qr`, | Command line arguments, not files -- see below                |
-|               | `blitz-url`   |                                                               |
-| `tag`         | `tag`         | Silent audio carrying embedded cover art                      |
-| `tiff`        | `tiff`        | One file per compression the Go encoder supports              |
-| `zuzu`        | `zuzu`        | DOT graphs, Mermaid diagrams, and Vega charts with their data |
-| `vcard`       | `vcard`       | Contacts, drawn as a business card with a scannable code      |
-| `vips`        | `vips`        | heic/heif/jxl, plus a plain and a password protected pdf      |
-| `winres`      | `winres`      | Windows PE with embedded icons                                |
+| Directory    | Decoder       | Notes                                                         |
+| ------------ | ------------- | ------------------------------------------------------------- |
+| `archives`   | `archives`    | The same two page comic as cbz, cbr, and cbt                  |
+| `binwalk`    | `binwalk`     | Affinity Designer file with an embedded png                   |
+| `blitz`      | `blitz`       | Markdown and html documents                                   |
+| `bmp`        | `bmp`         |                                                               |
+| `ffmpeg`     | `ffmpeg`      | One clip as mkv and mp4, and a test pattern, plain and turned |
+| `fontimg`    | `fontimg`     | Static, variable and monospace fonts, WOFF, WOFF2, collection |
+| `gif`        | `gif`         | Still and animated                                            |
+| `icns`       | `icns`        | Apple icon image, eight resolutions from 32 to 1024           |
+| `ico`        | `ico`         | Single and multi image icons                                  |
+| `ivy`        | `ivy-*`       | Documents, ebooks, XPS and Photoshop files that xo/ivy reads  |
+| `jpeg`       | `jpeg`        |                                                               |
+| `lottie`     | `lottie`      | Noto animated emoji, as json, `.lot`, and a dotLottie         |
+| `nativewebp` | `nativewebp`  | Lossy and lossless webp, each with its png reference decode   |
+| `netpbm`     | `netpbm`      | pbm/pgm/ppm/pam, raw and plain                                |
+| `okage`      | `okage`       | SVGs, plain and gzipped, trivial to a large choropleth        |
+| `png`        | `png`         |                                                               |
+| `strings`    | `data`, `qr`, | Command line arguments, not files -- see below                |
+|              | `blitz-url`   |                                                               |
+| `tag`        | `tag`         | Silent audio carrying embedded cover art                      |
+| `tiff`       | `tiff`        | One file per compression the Go encoder supports              |
+| `zuzu`       | `zuzu`        | DOT graphs, Mermaid diagrams, and Vega charts with their data |
+| `vcard`      | `vcard`       | Contacts, drawn as a business card with a scannable code      |
+| `vips`       | `vips`        | heic/heif/jxl, plus a plain and a password protected pdf      |
+| `winres`     | `winres`      | Windows PE with embedded icons                                |
 
 Every decoder has test data, and no test reaches the network. A test fails
 when a command that it needs is missing, except for the commands that CI does
@@ -91,24 +88,29 @@ pages that the test fetched before were dropped by D12 of `docs/PLAN.md`.
 `ENC_PASSWORD` in `test.sh`. Both pass it with `--password`, since the decoder
 prompts otherwise and neither harness has a terminal to prompt at.
 
-`libreoffice/` covers the three document families and both generations of the
-Microsoft formats, because they are detected differently:
+`ivy/` holds the files of the `ivy-*` decoders (D49): the office documents,
+one book as epub, mobi, azw3 and fb2, two XPS documents, and three Photoshop
+files. `TestDecode` in `decoder/ivy` draws each one, and checks that an ivy
+decoder takes it.
 
-| File                                                                             | Detected as                                                               |
-| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `file-sample_100kB.docx`                                                         | `application/vnd.openxmlformats-officedocument.wordprocessingml.document` |
-| `file_example_XLSX_50.xlsx`, `spreadsheet.xlsx`                                  | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`       |
-| `file-sample_100kB.doc`, `file_example_XLS_50.xls`, `file_example_PPT_250kB.ppt` | `application/x-ole-storage`                                               |
-| `file-sample_100kB.odt`                                                          | `application/vnd.oasis.opendocument.text`                                 |
-| `file_example_ODS_100.ods`                                                       | `application/vnd.oasis.opendocument.spreadsheet`                          |
-| `file_example_ODP_200kB.odp`                                                     | `application/vnd.oasis.opendocument.presentation`                         |
-| `file-sample_100kB.rtf`                                                          | `text/rtf`                                                                |
+The office documents cover the three document families and both generations
+of the Microsoft formats, because they are detected differently:
+
+| File                                                  | Detected as                                                               |
+| ----------------------------------------------------- | ------------------------------------------------------------------------- |
+| `file-sample_100kB.docx`                              | `application/vnd.openxmlformats-officedocument.wordprocessingml.document` |
+| `file_example_XLSX_50.xlsx`, `spreadsheet.xlsx`       | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`       |
+| `file-sample_100kB.doc`, `file_example_PPT_250kB.ppt` | `application/x-ole-storage`                                               |
+| `file_example_XLS_50.xls`                             | `application/vnd.ms-excel`                                                |
+| `file-sample_100kB.odt`                               | `application/vnd.oasis.opendocument.text`                                 |
+| `file_example_ODS_100.ods`                            | `application/vnd.oasis.opendocument.spreadsheet`                          |
+| `file_example_ODP_200kB.odp`                          | `application/vnd.oasis.opendocument.presentation`                         |
+| `file-sample_100kB.rtf`                               | `text/rtf`                                                                |
 
 The pre-2007 binary formats are all OLE compound files. libmagic reads the
 directory inside one, so an `.xls` is reported as `application/vnd.ms-excel`,
-but a `.doc` and a `.ppt` are only `application/x-ole-storage` -- the
-`libreoffice` decoder claims both shapes rather than relying on the extension.
-`TestLibreOfficeRouting` checks every one of these without needing `soffice`.
+but a `.doc` and a `.ppt` are only `application/x-ole-storage`, and their
+extension decides. `TestRouting` in `decoder/ivy` checks that rule.
 
 ## Provenance
 
@@ -159,10 +161,10 @@ but a `.doc` and a `.ppt` are only `application/x-ole-storage` -- the
   checks that `-p` selects each face. fontTools 4.68.0 cannot read a
   collection in WOFF2, and `woff2_decompress` and okage give the same
   faces.
-- `calibre/` -- `blitz/sample.html`, converted with `ebook-convert` of calibre
-  9.14 to epub, azw3 and fb2, with the title "iv sample". `sample.mobi` is the
-  epub converted with `--mobi-file-type both`, because calibre cannot read
-  back the MOBI 6 file that it writes from the html, which has no guide.
+- `ivy/sample.*` -- `blitz/sample.html`, converted with `ebook-convert` of
+  calibre 9.14 to epub, azw3 and fb2, with the title "iv sample". `sample.mobi`
+  is the epub converted with `--mobi-file-type both`, because calibre cannot
+  read back the MOBI 6 file that it writes from the html, which has no guide.
 - `ffmpeg/testsrc2.mp4` -- the `testsrc2` test pattern of ffmpeg n9.0.2, 10
   seconds at 640x360 and 24 frames a second. `testsrc2-rotated.mp4` is its
   first 2 seconds, with a rotation of 90 degrees in the display matrix, as a
@@ -177,10 +179,10 @@ but a `.doc` and a `.ppt` are only `application/x-ole-storage` -- the
     -movflags +faststart testsrc2-rotated.mp4
   ```
 
-- `psd/` -- generated with ImageMagick: `alpha.psd` from `png/tux.png`,
+- `ivy/*.psd` -- generated with ImageMagick: `alpha.psd` from `png/tux.png`,
   `cmyk.psd` from `png/rose.png` in the CMYK colorspace, and `deep16.psd` from
-  `png/rose.png` at 16 bits. oov/psd cannot read `deep16.psd`, so it covers
-  the fallback to libvips.
+  `png/rose.png` at 16 bits. oov/psd, which iv used before ivy, could not
+  read `deep16.psd`, and ivy reads all three.
 
 ### Documents
 

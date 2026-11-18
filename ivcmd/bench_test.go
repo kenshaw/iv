@@ -24,10 +24,8 @@ const (
 )
 
 // benchTargets are the targets that the benchmarks render, one or two for
-// each decoder. The libreoffice and calibre decoders are not here, because
-// one run of soffice or ebook-convert takes a second or more. A target that
-// a version cannot decode is skipped, which is how the same file runs against
-// an earlier release.
+// each decoder. A target that a version cannot decode is skipped, which is
+// how the same file runs against an earlier release.
 var benchTargets = []string{
 	"archives/science-preview.cbz",
 	"binwalk/icon.afdesign",
@@ -37,7 +35,9 @@ var benchTargets = []string{
 	"fontimg/Ubuntu-R.ttf",
 	"gif/tux.gif",
 	"zuzu/booktest_sqlite3.dot",
-	"gxps/example.xps",
+	"ivy/example.xps",
+	"ivy/file-sample_100kB.docx",
+	"ivy/sample.epub",
 	"icns/test.icns",
 	"ico/1.ico",
 	"jpeg/precision.jpg",
@@ -47,7 +47,7 @@ var benchTargets = []string{
 	"netpbm/tux.ppm",
 	"png/dice.png",
 	"png/precision.png",
-	"psd/alpha.psd",
+	"ivy/alpha.psd",
 	"okage/choropleth.svg",
 	"strings/data-png-base64.iv_test_string",
 	"strings/wifi.iv_test_string",

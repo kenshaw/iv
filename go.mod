@@ -1,6 +1,6 @@
 module github.com/kenshaw/iv
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/HugoSmits86/nativewebp v1.3.0
@@ -10,7 +10,6 @@ require (
 	github.com/kenshaw/colors v0.2.4
 	github.com/kenshaw/rasterm v0.3.1
 	github.com/mholt/archives v0.1.5
-	github.com/oov/psd v0.0.0-20260818185439-a5d50ec0acac
 	github.com/sergeymakinen/go-bmp v1.0.0
 	github.com/sergeymakinen/go-ico v1.0.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
@@ -18,10 +17,11 @@ require (
 	github.com/tc-hib/winres v0.3.1
 	github.com/ulikunitz/xz v0.5.17
 	github.com/xo/blitz v0.5.0
-	github.com/xo/magic v0.6.1
+	github.com/xo/ivy v0.0.0-20261117102720-e0b710b620f7
+	github.com/xo/magic v0.7.0
 	github.com/xo/magic/compress/xz v0.6.0
 	github.com/xo/magic/compress/zstd v0.6.0
-	github.com/xo/okage v0.9.0
+	github.com/xo/okage v0.10.0
 	github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18
 	github.com/xo/transit v0.7.8
 	github.com/xo/transit/grammars/bash v0.7.8
@@ -52,7 +52,6 @@ require (
 	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
 	github.com/go-text/typesetting v0.3.5 // indirect
-	github.com/gopherjs/gopherjs v1.21.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/klauspost/compress v1.20.4 // indirect
 	github.com/klauspost/pgzip v1.3.0 // indirect
@@ -77,5 +76,6 @@ require (
 	github.com/xo/blitz/libblitz/windows-amd64 v0.1.8 // indirect
 	github.com/xo/blitz/libblitz/windows-arm64 v0.1.8 // indirect
 	go4.org v0.0.0-20261028031214-ed6929a230fe // indirect
+	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/text v0.44.0 // indirect
 )

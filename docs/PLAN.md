@@ -31,13 +31,12 @@ The state below is the working tree of 2026-10-15, after D22 to D33.
   alike.
 - libvips decodes, scales and encodes the formats that no Go package covers
   (D5, D8, D22). blitz renders Markdown, HTML and web pages (D16). zuzu
-  draws DOT graphs and Mermaid diagrams in Go (D36). oov/psd decodes
-  Photoshop files (D28).
-- Six decoders run an external command that must be in `$PATH` (D7, D28):
-  `ffmpeg` and `tag` run `ffmpeg` and `ffprobe`, `libreoffice` runs
-  `soffice`, `calibre` runs `ebook-convert`, `gxps` runs `xpstopng`, and
-  `poppler` runs `pdftoppm` where libvips has no pdf loader. The `binwalk`
-  decoder runs no command (D47).
+  draws DOT graphs and Mermaid diagrams in Go (D36). xo/ivy draws office
+  documents, ebooks, PDF, XPS, Photoshop files and other formats in Go
+  (D49).
+- Two decoders run an external command that must be in `$PATH` (D7):
+  `ffmpeg` and `tag` run `ffmpeg` and `ffprobe`. The `binwalk` decoder runs
+  no command (D47), and neither does ivy (D49).
 - `iv` plays an animation from a gif, a lottie file or a video, with limits
   (D19). A video plays at its own speed and for its own length, and kitty and
   Ghostty show each frame in one Kitty image (D42, D43).
@@ -105,7 +104,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D25](#d25---mermaid-bg-sets-the-background-in-the-mermaid-renderer-decided) | --mermaid-bg sets the background in the mermaid renderer | Decided |
 | [D26](#d26-benchmarks-compare-the-releases-and-the-readme-holds-the-numbers-decided) | Benchmarks compare the releases, and the README holds the numbers | Decided |
 | [D27](#d27-a-test-fails-when-what-it-needs-is-missing-decided-amends-d12-amended-by-d34) | A test fails when what it needs is missing | Decided. Amends D12. Amended by D34 |
-| [D28](#d28-mupdf-is-removed-and-calibre-libgxps-oovpsd-and-poppler-take-its-formats-decided-amends-d22) | mupdf is removed, and calibre, libgxps, oov/psd and poppler take its formats | Decided. Amends D22 |
+| [D28](#d28-mupdf-is-removed-and-calibre-libgxps-oovpsd-and-poppler-take-its-formats-decided-amends-d22-amended-by-d49) | mupdf is removed, and calibre, libgxps, oov/psd and poppler take its formats | Decided. Amends D22. Amended by D49 |
 | [D29](#d29-golangci-lint-checks-the-code-in-ci-with-the-rules-of-the-xo-repositories-decided) | golangci-lint checks the code in CI, with the rules of the xo repositories | Decided |
 | [D30](#d30-a-png-or-a-jpeg-decodes-its-pixels-only-when-they-are-needed-decided) | A PNG or a JPEG decodes its pixels only when they are needed | Decided |
 | [D31](#d31-the-code-follows-go-pedantry-where-the-two-disagreed-decided) | The code follows go-pedantry where the two disagreed | Decided |
@@ -126,6 +125,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D46](#d46-zuzu-draws-a-vega-lite-spec-as-it-draws-a-vega-spec-decided-amends-d44) | zuzu draws a Vega-Lite spec as it draws a Vega spec | Decided. Amends D44 |
 | [D47](#d47-the-binwalk-decoder-uses-the-walker-of-xomagic-decided-amends-d7) | The binwalk decoder uses the walker of xo/magic | Decided. Amends D7 |
 | [D48](#d48-okage-draws-font-previews-and-measures-the-text-of-the-cards-decided) | okage draws font previews, and measures the text of the cards | Decided |
+| [D49](#d49-xoivy-draws-documents-ebooks-and-page-descriptions-in-go-decided-amends-d28) | xo/ivy draws documents, ebooks and page descriptions in Go | Decided. Amends D28 |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -544,7 +544,7 @@ system. `untested` in `ivcmd/decode_test.go` names each one with its reason:
 on Windows, LibreOffice and calibre have no MSYS2 package, and binwalk has no
 Windows package. CI installs every other command on every runner.
 
-### D28. mupdf is removed, and calibre, libgxps, oov/psd and poppler take its formats. Decided. Amends D22.
+### D28. mupdf is removed, and calibre, libgxps, oov/psd and poppler take its formats. Decided. Amends D22. Amended by D49.
 
 A maintainer decided on 2026-10-15 to remove `github.com/gen2brain/go-fitz`,
 which linked a static mupdf, from a module of 258 MB. It decoded EPUB, MOBI,
@@ -1211,6 +1211,64 @@ the same pixels as its TrueType, and IBM Plex Sans from zuzu, six faces in
 one collection in WOFF2. Each of its faces draws the same pixels as the same
 face of the collection that `woff2_decompress` gives. `pfb` left the extensions, because nothing
 read it.
+
+### D49. xo/ivy draws documents, ebooks and page descriptions in Go. Decided. Amends D28.
+
+D28 gave the formats of mupdf to four outside commands and one package:
+`soffice` of LibreOffice, `ebook-convert` of calibre, `xpstopng` of libgxps,
+`pdftoppm` of poppler, and oov/psd. On 2026-11-18, a maintainer asked to
+move to xo/ivy, which decodes and draws such formats in pure Go with okage.
+ivy had no tag yet, so `iv` requires its pushed commit `e0b710b`. That
+commit requires okage v0.10.0 and magic v0.7.0, and `iv` moved to them.
+
+`decoder/ivy` registers one decoder for each format of ivy that `iv` takes,
+named `ivy-` and the name of the format, from the `Format` value that the
+package of the format exports. The decoders `libreoffice`, `calibre`,
+`gxps`, `poppler` and `psd` are gone, and CI installs only `ffmpeg`. `iv`
+gains CHM, DjVu, EMF and WMF, the previews of camera RAW files, EPS,
+iWork, Visio and Publisher, OpenRaster and Krita, and CSV as a table. It
+loses WordPerfect, which only LibreOffice read.
+
+- A document with pages draws the page of `--page` over white. It draws at
+  `--dpi`, or at the lower resolution that draws the page at the size that
+  it is shown at. A page of a raster image (Photoshop, OpenRaster, camera
+  RAW) draws at its own size, with its transparent pixels, so that `--bg`
+  applies to it as to any other image.
+- A document with no pages, such as a Visio drawing, draws its preview that
+  is closest to the display size.
+- A document lays out its text in the fonts that it embeds, then in the
+  fonts of the system. `iv` does not bundle the fonts module of ivy, which
+  holds fonts with the metrics of the fonts of Office, because it adds about
+  10.9 MB.
+- A decoder does not register a generic mime type, such as `text/csv` or
+  `application/zip`, which would claim every file of that type. The
+  pipeline routes such a file by its extension. A compound file of Office
+  97 to 2003, which libmagic types as `application/x-ole-storage`, is
+  routed by its extension too. A table with no extension, as from a pipe,
+  is a CSV.
+- Each decoder of ivy comes before libvips, which still draws a pdf that
+  ivy cannot. blitz keeps HTML, Markdown and text, and the archives decoder
+  keeps the comic archives, because ivy does not read CBR.
+
+`testdata/calibre`, `gxps`, `libreoffice` and `psd` became `testdata/ivy`.
+Each office document, ebook, XPS and Photoshop file of the test data draws
+close to the old output, and the Photoshop files keep the same alpha. ivy
+cannot draw a WMF image in `file-sample_100kB.doc`, so the page has no chart
+and `iv` warns that it is drawn in part. The cover of `sample.epub` has a
+white strip at its right side, where the page is wider than the cover.
+
+One page, at a display of 1200x1200, as one run of `iv`:
+
+| File | Before | ivy |
+| --- | --- | --- |
+| `file-sample_100kB.docx` | 505 ms | 142 ms |
+| `sample.epub` | 1619 ms | 155 ms |
+| `example.xps` | 845 ms | 99 ms |
+| `file-sample_150kB.pdf` | 53 ms | 73 ms |
+
+The release build went from 99.81 MB to 117.51 MB. ivy adds 8.25 MB of code,
+okage, golang.org/x/image and golang.org/x/text add 3.6 MB, and the tables
+of the runtime grow with the code.
 
 ## Open questions for the maintainers
 

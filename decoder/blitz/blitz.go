@@ -46,7 +46,7 @@ func init() {
 		decoder.Desc("Markdown and html documents"),
 		// text/plain is shared with mermaid, csv and dot, so this is the last
 		// plain text decoder tried
-		decoder.After("zuzu", "libreoffice"),
+		decoder.After("zuzu", "ivy-csv"),
 		decoder.Extension("md", "markdown", "mkd", "mdown", "txt", "html", "htm", "xhtml"),
 		decoder.MimeType(
 			"text/markdown",

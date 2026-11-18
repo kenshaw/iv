@@ -184,16 +184,13 @@ is built for 64-bit targets only.
 
 ### Optional tools
 
-Six decoders shell out. Without the command, the file fails to render with
-`<command> not in path` rather than being quietly skipped:
+Two decoders shell out, to `ffmpeg` and `ffprobe`. Without the command, the
+file fails to render with `<command> not in path` rather than being quietly
+skipped:
 
-| Command         | Used for                                             |
-| --------------- | ---------------------------------------------------- |
-| `soffice`       | Word, Excel, PowerPoint, and OpenDocument documents  |
-| `ebook-convert` | EPUB, MOBI, AZW, and FictionBook books (calibre)     |
-| `xpstopng`      | XPS documents (libgxps)                              |
-| `pdftoppm`      | pdf pages, where libvips has no pdf loader (poppler) |
-| `ffmpeg`        | video snapshots, and the waveform on an audio card   |
+| Command  | Used for                                           |
+| -------- | -------------------------------------------------- |
+| `ffmpeg` | video snapshots, and the waveform on an audio card |
 
 An audio card is the exception: it is drawn without a waveform rather than not
 at all.
@@ -359,33 +356,37 @@ shows its first frame, and does not play.
 
 ### Images
 
-| Format                                    | Extensions                            | Decoder      |
-| ----------------------------------------- | ------------------------------------- | ------------ |
-| Portable Network Graphics, including APNG | `png`                                 | `png`        |
-| JPEG                                      | `jpg` `jpeg` `jpe` `jif` `jfif` `jfi` | `jpeg`       |
-| GIF, first frame of an animation          | `gif`                                 | `gif`        |
-| WebP, lossy and lossless                  | `webp`                                | `nativewebp` |
-| TIFF                                      | `tif` `tiff`                          | `tiff`       |
-| Windows Bitmap                            | `bmp` `dib`                           | `bmp`        |
-| Netpbm, raw and plain                     | `pbm` `pgm` `ppm` `pnm` `pam`         | `netpbm`     |
-| Windows icons and cursors                 | `ico` `cur`                           | `ico`        |
-| Apple Icon Image                          | `icns`                                | `icns`       |
-| Photoshop, the merged image               | `psd` `psb`                           | `psd`        |
-| HEIC/HEIF and AVIF                        | `heic` `heif` `avif`                  | `vips`       |
-| JPEG 2000 and JPEG XL                     | `jp2` `jpf` `j2k` `jxl` `jxs`         | `vips`       |
-| OpenEXR, Radiance HDR, PFM                | `exr` `hdr` `pfm` `rad`               | `vips`       |
-| FITS, MATLAB, NIfTI, native vips          | `fits` `mat` `nii` `v`                | `vips`       |
+| Format                                         | Extensions                                                                    | Decoder      |
+| ---------------------------------------------- | ----------------------------------------------------------------------------- | ------------ |
+| Portable Network Graphics, including APNG      | `png`                                                                         | `png`        |
+| JPEG                                           | `jpg` `jpeg` `jpe` `jif` `jfif` `jfi`                                         | `jpeg`       |
+| GIF, first frame of an animation               | `gif`                                                                         | `gif`        |
+| WebP, lossy and lossless                       | `webp`                                                                        | `nativewebp` |
+| TIFF                                           | `tif` `tiff`                                                                  | `tiff`       |
+| Windows Bitmap                                 | `bmp` `dib`                                                                   | `bmp`        |
+| Netpbm, raw and plain                          | `pbm` `pgm` `ppm` `pnm` `pam`                                                 | `netpbm`     |
+| Windows icons and cursors                      | `ico` `cur`                                                                   | `ico`        |
+| Apple Icon Image                               | `icns`                                                                        | `icns`       |
+| Photoshop, the merged image                    | `psd` `psb`                                                                   | `ivy-psd`    |
+| HEIC/HEIF and AVIF                             | `heic` `heif` `avif`                                                          | `vips`       |
+| JPEG 2000 and JPEG XL                          | `jp2` `jpf` `j2k` `jxl` `jxs`                                                 | `vips`       |
+| OpenEXR, Radiance HDR, PFM                     | `exr` `hdr` `pfm` `rad`                                                       | `vips`       |
+| FITS, MATLAB, NIfTI, native vips               | `fits` `mat` `nii` `v`                                                        | `vips`       |
+| OpenRaster and Krita, the merged image         | `ora` `kra`                                                                   | `ivy-ora`    |
+| Camera RAW, the preview that the camera embeds | `cr2` `cr3` `nef` `nrw` `arw` `srf` `sr2` `dng` `orf` `rw2` `pef` `srw` `raf` | `ivy-camera` |
 
 ### Vector graphics and diagrams
 
-| Format                           | Extensions            | Decoder  |
-| -------------------------------- | --------------------- | -------- |
-| SVG, plain and gzipped           | `svg` `svgz`          | `okage`  |
-| Lottie animations, and dotLottie | `json` `lot` `lottie` | `lottie` |
-| Graphviz graph description (DOT) | `gv` `dot`            | `zuzu`   |
-| Mermaid diagrams                 | `mmd` `mermaid`       | `zuzu`   |
-| Vega charts                      | `vg.json`             | `zuzu`   |
-| Vega-Lite charts                 | `vl.json`             | `zuzu`   |
+| Format                                | Extensions                     | Decoder   |
+| ------------------------------------- | ------------------------------ | --------- |
+| SVG, plain and gzipped                | `svg` `svgz`                   | `okage`   |
+| Lottie animations, and dotLottie      | `json` `lot` `lottie`          | `lottie`  |
+| Graphviz graph description (DOT)      | `gv` `dot`                     | `zuzu`    |
+| Mermaid diagrams                      | `mmd` `mermaid`                | `zuzu`    |
+| Vega charts                           | `vg.json`                      | `zuzu`    |
+| Vega-Lite charts                      | `vl.json`                      | `zuzu`    |
+| EMF and WMF, plain and compressed     | `emf` `emz` `wmf` `wmz`        | `ivy-emf` |
+| EPS, the preview that the file embeds | `eps` `epsi` `epsf` `ept` `ps` | `ivy-ps`  |
 
 A `.json` is only taken as a lottie when the document itself says so, so an
 ordinary json file is left alone. A file whose name ends in `.vg.json` is a
@@ -417,16 +418,38 @@ is not a file on disk can also read its data from `DIR`.
 
 ### Documents
 
-| Format                                                           | Extensions                                                                                 | Decoder       |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------- |
-| PDF, including password protected                                | `pdf`                                                                                      | `vips-pdf`    |
-| EPUB, MOBI, AZW, FictionBook *(needs `ebook-convert`)*           | `epub` `mobi` `azw` `azw3` `fb2`                                                           | `calibre`     |
-| XPS *(needs `xpstopng`)*                                         | `xps` `oxps`                                                                               | `gxps`        |
-| Markdown, HTML, and plain text                                   | `md` `markdown` `mkd` `mdown` `html` `htm` `xhtml` `txt`                                   | `blitz`       |
-| Comic book archives                                              | `cbz` `cbr` `cbt` `cb7`                                                                    | `archives`    |
-| Word, Excel, PowerPoint *(needs `soffice`)*                      | `doc` `docx` `dot` `dotx` `xls` `xlsx` `xlt` `xltx` `ppt` `pptx` `pot` `potx` `pps` `ppsx` | `libreoffice` |
-| OpenDocument *(needs `soffice`)*                                 | `odt` `ods` `odp` `odg` `odf` `odc` `ott` `ots` `otp` `otg`                                | `libreoffice` |
-| RTF, Publisher, Visio, WordPerfect, csv, tsv *(needs `soffice`)* | `rtf` `pub` `vsd` `wpd` `csv` `tsv`                                                        | `libreoffice` |
+| Format                                                  | Extensions                                                        | Decoder     |
+| ------------------------------------------------------- | ----------------------------------------------------------------- | ----------- |
+| PDF and Adobe Illustrator, including password protected | `pdf` `ai`                                                        | `ivy-pdf`   |
+| EPUB and kepub                                          | `epub` `kepub`                                                    | `ivy-epub`  |
+| MOBI, PRC, AZW, AZW3 and AZW4                           | `mobi` `prc` `azw` `azw3` `azw4`                                  | `ivy-mobi`  |
+| FictionBook, plain and zipped                           | `fb2` `fbz`                                                       | `ivy-fb2`   |
+| Compiled HTML Help                                      | `chm`                                                             | `ivy-chm`   |
+| DjVu                                                    | `djvu` `djv`                                                      | `ivy-djvu`  |
+| XPS and OpenXPS                                         | `xps` `oxps`                                                      | `ivy-xps`   |
+| Word                                                    | `docx` `dotx` `docm` `dotm`                                       | `ivy-docx`  |
+| Word 97 to 2003                                         | `doc` `dot`                                                       | `ivy-msdoc` |
+| Excel                                                   | `xlsx` `xltx` `xlsm` `xltm`                                       | `ivy-xlsx`  |
+| Excel 97 to 2003                                        | `xls` `xlt`                                                       | `ivy-msxls` |
+| PowerPoint                                              | `pptx` `potx` `ppsx` `pptm` `ppsm`                                | `ivy-pptx`  |
+| PowerPoint 97 to 2003                                   | `ppt` `pps` `pot`                                                 | `ivy-msppt` |
+| OpenDocument                                            | `odt` `ott` `odm` `ods` `ots` `odp` `otp` `odg` `otg` `odc` `odf` | `ivy-odf`   |
+| RTF                                                     | `rtf`                                                             | `ivy-rtf`   |
+| CSV and TSV, as a table                                 | `csv` `tsv` `tab`                                                 | `ivy-csv`   |
+| Pages, Keynote and Numbers, the preview                 | `pages` `key` `numbers`                                           | `ivy-iwork` |
+| Visio, the preview                                      | `vsdx` `vsdm` `vstx` `vstm` `vssx` `vssm` `vsd` `vst` `vss`       | `ivy-vsdx`  |
+| Publisher, the preview                                  | `pub`                                                             | `ivy-pub`   |
+| Markdown, HTML, and plain text                          | `md` `markdown` `mkd` `mdown` `html` `htm` `xhtml` `txt`          | `blitz`     |
+| Comic book archives                                     | `cbz` `cbr` `cbt` `cb7`                                           | `archives`  |
+
+[ivy][] draws documents, ebooks and page descriptions in Go, with no outside
+command. `-p N` picks the page, and a page is drawn at `--dpi`, or at the
+size that it is shown at when that is smaller. A format that has no pages,
+such as Visio, shows its preview. A document lays out its text in the fonts
+that it embeds, then in the fonts of the system. If libvips has a pdf
+loader, it draws a pdf that ivy cannot.
+
+[ivy]: https://github.com/xo/ivy
 
 `blitz` colors the fenced code blocks of a Markdown document with
 [transit][], a port of tree-sitter to Go. It knows Bash, C, C++, Go, HTML,
