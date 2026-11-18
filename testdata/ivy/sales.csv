@@ -1,0 +1,7 @@
+Region,Quarter,Product,Units,Revenue,Margin,Owner,Notes
+North,Q1,Widgets,120,2400.00,0.31,Ana,steady
+South,Q1,Gadgets,85,1955.50,0.27,Ben,new store
+East,Q2,Widgets,140,2800.00,0.33,Chen,promotion in May
+West,Q2,Gizmos,60,1500.00,0.22,Dana,late shipment
+North,Q3,Gadgets,95,2185.00,0.29,Ana,
+South,Q4,Gizmos,70,1750.00,0.24,Ben,returns were high

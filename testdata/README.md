@@ -91,8 +91,8 @@ password at the terminal otherwise (D50).
 
 `ivy/` holds the files of the `ivy-*` decoders (D49): the office documents,
 one book as epub, mobi, azw3 and fb2, two XPS documents, three Photoshop
-files, and a plain and a password protected pdf. `TestDecode` in `decoder/ivy` draws each one, and checks that an ivy
-decoder takes it.
+files, a plain and a password protected pdf, and a csv table. `TestDecode`
+in `decoder/ivy` draws each one, and checks that an ivy decoder takes it.
 
 The office documents cover the three document families and both generations
 of the Microsoft formats, because they are detected differently:
@@ -180,6 +180,9 @@ extension decides. `TestRouting` in `decoder/ivy` checks that rule.
     -movflags +faststart testsrc2-rotated.mp4
   ```
 
+- `ivy/sales.csv` -- written for iv: a table of eight columns that gives no
+  orientation. `TestPaper` in `decoder/ivy` checks that it is drawn in
+  landscape (D51).
 - `ivy/*.psd` -- generated with ImageMagick: `alpha.psd` from `png/tux.png`,
   `cmyk.psd` from `png/rose.png` in the CMYK colorspace, and `deep16.psd` from
   `png/rose.png` at 16 bits. oov/psd, which iv used before ivy, could not

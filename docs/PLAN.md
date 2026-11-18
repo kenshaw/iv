@@ -127,6 +127,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D48](#d48-okage-draws-font-previews-and-measures-the-text-of-the-cards-decided) | okage draws font previews, and measures the text of the cards | Decided |
 | [D49](#d49-xoivy-draws-documents-ebooks-and-page-descriptions-in-go-decided-amends-d28-amended-by-d50) | xo/ivy draws documents, ebooks and page descriptions in Go | Decided. Amends D28. Amended by D50 |
 | [D50](#d50-ivy-draws-every-pdf-and-asks-for-a-missing-password-decided-amends-d49) | ivy draws every pdf, and asks for a missing password | Decided. Amends D49 |
+| [D51](#d51-a-spreadsheet-is-drawn-in-landscape-by-default-decided) | A spreadsheet is drawn in landscape by default | Decided |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -1296,6 +1297,27 @@ work to ivy.
   `testdata/ivy`. `TestPassword` in `decoder/ivy` gives the password with
   `--password`, with answers at the terminal, with too many wrong answers,
   and with no terminal.
+
+### D51. A spreadsheet is drawn in landscape by default. Decided.
+
+ivy draws a sheet on the paper that its file gives. A file that gives no
+paper takes the paper of `ivy.Config`, and the zero paper is US Letter in
+portrait. A table is usually wider than it is tall, so on 2026-11-19 a
+maintainer asked to draw a spreadsheet in landscape by default.
+
+- The ivy decoders give `ivy.Letter.Landscape()` as the paper of csv, xlsx
+  and xls files, and of an OpenDocument spreadsheet. Any other document
+  keeps the zero paper.
+- The odf format of ivy holds text documents, spreadsheets and
+  presentations, and a decode function does not get the mime type. The
+  decoder reads the mime type from the first entry of the zip, which the
+  OpenDocument package stores first and uncompressed.
+- ivy uses the paper only where the file gives none. A sheet that gives its
+  orientation keeps it. An xlsx sheet that gives its own paper size and no
+  orientation is in portrait, because ivy reads it so. The `file_example_*` sheets in
+  `testdata/ivy` give A4 in portrait, and stay in portrait.
+- `TestPaper` in `decoder/ivy` checks each case, with the new
+  `testdata/ivy/sales.csv`. `TestIsODS` checks the test of the mime type.
 
 ## Open questions for the maintainers
 

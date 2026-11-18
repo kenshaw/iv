@@ -6,6 +6,10 @@
 // selects, at the size that it is shown at. A format with no pages draws its
 // best preview, such as the thumbnail of a Visio drawing.
 //
+// A spreadsheet whose file gives no orientation is drawn in landscape, on
+// US Letter: a csv or tsv table, an Excel workbook, or an OpenDocument
+// spreadsheet. A sheet whose file gives portrait stays in portrait (D51).
+//
 // A document that a password protects, such as a pdf or a docx, opens with
 // --password. When that password is missing or wrong, the decoder asks for
 // the password at the terminal (D50).
@@ -16,6 +20,7 @@ package ivy
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"image"
@@ -134,8 +139,8 @@ func init() {
 			decoder.Matcher(func(mime, ext string) bool {
 				return slices.Contains(containers, mime) && slices.Contains(exts, ext)
 			}),
-			// libvips also reads a pdf and a psd, and is tried after ivy
-			decoder.Before("vips", "vips-pdf"),
+			// libvips also reads a psd, and is tried after ivy
+			decoder.Before("vips"),
 			decoder.Decoder(decodeFunc(f.format)),
 		}
 		if len(mimes) != 0 {
@@ -170,6 +175,7 @@ func decodeFunc(f ivy.Format) decoder.DecodeFunc {
 			// an ebook or a document lays out its text in the fonts that it
 			// embeds, then in the fonts of the system
 			SystemFonts: true,
+			Paper:       paper(f, buf),
 		}
 		doc, err := f.Open(ctx, bytes.NewReader(buf), cfg)
 		if err != nil {
@@ -186,6 +192,41 @@ func decodeFunc(f ivy.Format) decoder.DecodeFunc {
 		}
 		return img, nil
 	}
+}
+
+// sheets are the formats that hold only spreadsheets. The odf format holds
+// spreadsheets and other documents.
+var sheets = []string{"csv", "msxls", "xlsx"}
+
+// odsMime starts the mime type of an OpenDocument spreadsheet, and of its
+// template.
+const odsMime = "application/vnd.oasis.opendocument.spreadsheet"
+
+// paper returns the paper for a document whose file gives none. A
+// spreadsheet is drawn in landscape, because a table is usually wider than
+// it is tall. Any other document keeps the paper of ivy, US Letter in
+// portrait (D51).
+func paper(f ivy.Format, buf []byte) ivy.Paper {
+	if slices.Contains(sheets, f.Name) || (f.Name == "odf" && isODS(buf)) {
+		return ivy.Letter.Landscape()
+	}
+	return ivy.Paper{}
+}
+
+// isODS reports whether buf is an OpenDocument spreadsheet. The package of
+// an OpenDocument file is a zip whose first entry is mimetype, which is not
+// compressed. The local header of an entry is 30 bytes, then the name, the
+// extra field and the data.
+func isODS(buf []byte) bool {
+	if len(buf) < 30 || !bytes.HasPrefix(buf, []byte("PK\x03\x04")) {
+		return false
+	}
+	n := 30 + int(binary.LittleEndian.Uint16(buf[26:]))
+	if len(buf) < n || string(buf[30:n]) != "mimetype" {
+		return false
+	}
+	data := buf[min(len(buf), n+int(binary.LittleEndian.Uint16(buf[28:]))):]
+	return bytes.HasPrefix(data, []byte(odsMime))
 }
 
 // renderPage draws the page that --page selects.

@@ -69,6 +69,64 @@ func TestPage(t *testing.T) {
 	}
 }
 
+// TestPaper checks that a spreadsheet whose file gives no orientation is
+// drawn in landscape, and that a sheet whose file gives portrait, and any
+// other document, is drawn in portrait (D51).
+func TestPaper(t *testing.T) {
+	tests := []struct {
+		name      string
+		landscape bool
+	}{
+		{"sales.csv", true},
+		{"spreadsheet.xlsx", true},
+		// the file gives A4 in portrait
+		{"file_example_XLSX_50.xlsx", false},
+		{"file_example_ODS_100.ods", false},
+		{"file-sample_100kB.docx", false},
+		{"file-sample_100kB.odt", false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			b := testDecode(t, testContext(t), test.name).Bounds()
+			if landscape := b.Dx() > b.Dy(); landscape != test.landscape {
+				t.Errorf("expected landscape %t, got %v", test.landscape, b.Size())
+			}
+		})
+	}
+}
+
+// TestIsODS checks that an OpenDocument spreadsheet is told from the other
+// OpenDocument files by the first entry of its zip.
+func TestIsODS(t *testing.T) {
+	tests := []struct {
+		name string
+		exp  bool
+	}{
+		{"file_example_ODS_100.ods", true},
+		{"file-sample_100kB.odt", false},
+		{"file_example_ODP_200kB.odp", false},
+		{"file_example_XLSX_50.xlsx", false},
+		{"sales.csv", false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			buf, err := os.ReadFile(filepath.Join("..", "..", "testdata", "ivy", test.name))
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			if got := isODS(buf); got != test.exp {
+				t.Errorf("expected %t, got %t", test.exp, got)
+			}
+			// a file cut short is not a spreadsheet
+			for _, n := range []int{0, 29, 37, 40} {
+				if isODS(buf[:min(n, len(buf))]) {
+					t.Errorf("expected false for the first %d bytes", n)
+				}
+			}
+		})
+	}
+}
+
 // TestPassword checks that a pdf that a password protects opens with
 // --password, or with a password that the decoder asks for when --password
 // is missing or wrong, and that the decoder asks at most

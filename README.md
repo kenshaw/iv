@@ -448,7 +448,9 @@ size that it is shown at when that is smaller. A format that has no pages,
 such as Visio, shows its preview. A document lays out its text in the fonts
 that it embeds, then in the fonts of the system. If a document needs a
 password and `--password` does not give the right one, `iv` asks for the
-password at the terminal, at most three times.
+password at the terminal, at most three times. A spreadsheet, such as a
+csv, xlsx, xls or ods file, is drawn in landscape on US Letter, unless the
+file gives its own orientation.
 
 [ivy]: https://github.com/xo/ivy
 
