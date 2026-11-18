@@ -1225,7 +1225,8 @@ move to xo/ivy, which decodes and draws such formats in pure Go with okage.
 ivy had no tag yet, so `iv` requires its pushed commit `e0b710b`. That
 commit requires okage v0.10.0 and magic v0.7.0, and `iv` moved to them. Later
 on the same day, `iv` moved to the ivy commit `6e838f4`, okage v0.12.0 and
-magic v0.8.0.
+magic v0.8.0. On 2026-11-19, `iv` moved to the ivy commit `72caf3e`, which
+requires okage v0.14.0 and magic v0.9.1.
 
 `decoder/ivy` registers one decoder for each format of ivy that `iv` takes,
 named `ivy-` and the name of the format, from the `Format` value that the
