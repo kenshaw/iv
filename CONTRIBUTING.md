@@ -32,12 +32,17 @@ Run these commands in the repository root. All of them must pass, and
 gofmt -l .
 go build ./...
 go vet ./...
-go test ./...
+go test -race -timeout 30m ./...
 golangci-lint run ./...
 ```
 
-The tests fail when a decoder command is missing, so install `ffmpeg` first. The Optional tools section of
-[`README.md`](README.md#optional-tools) says what each one is for.
+CI runs the same tests on Linux, macOS and Windows. The tests fail when a
+decoder command is missing, so install `ffmpeg` first. The Optional tools
+section of [`README.md`](README.md#optional-tools) says what each one is for.
+
+After you push, make sure that every job of the Test workflow on GitHub
+passes. A test can pass on your computer and fail on the slower macOS runner,
+or on Windows, where a command ends each line of its output with `\r\n`.
 
 If you changed a decoder, an encoder or the pipeline, also run the smoke test.
 It renders every file in `testdata/` through the command:

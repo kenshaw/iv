@@ -17,11 +17,11 @@ require (
 	github.com/tc-hib/winres v0.3.1
 	github.com/ulikunitz/xz v0.5.17
 	github.com/xo/blitz v0.5.0
-	github.com/xo/ivy v0.0.0-20261117102720-e0b710b620f7
-	github.com/xo/magic v0.7.0
+	github.com/xo/ivy v0.0.0-20261118083541-6e838f44419a
+	github.com/xo/magic v0.8.0
 	github.com/xo/magic/compress/xz v0.6.0
 	github.com/xo/magic/compress/zstd v0.6.0
-	github.com/xo/okage v0.10.0
+	github.com/xo/okage v0.12.0
 	github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18
 	github.com/xo/transit v0.7.8
 	github.com/xo/transit/grammars/bash v0.7.8
@@ -38,7 +38,7 @@ require (
 	github.com/xo/transit/grammars/sql v0.7.8
 	github.com/xo/transit/grammars/typescript v0.7.8
 	github.com/xo/transit/styles v0.7.8
-	github.com/xo/zuzu v0.7.2
+	github.com/xo/zuzu v0.7.3
 	golang.org/x/image v0.48.0
 	golang.org/x/sys v0.50.0
 	golang.org/x/term v0.48.0
@@ -54,10 +54,11 @@ require (
 	github.com/go-text/typesetting v0.3.5 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/klauspost/compress v1.20.4 // indirect
+	github.com/klauspost/cpuid/v2 v2.4.2 // indirect
 	github.com/klauspost/pgzip v1.3.0 // indirect
 	github.com/mattn/go-sixel v0.0.14 // indirect
 	github.com/mikelolasagasti/xz v1.0.1 // indirect
-	github.com/minio/minlz v1.2.4 // indirect
+	github.com/minio/minlz v1.3.0 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/nwaples/rardecode/v2 v2.4.6 // indirect
 	github.com/pierrec/lz4/v4 v4.1.33 // indirect
@@ -75,7 +76,8 @@ require (
 	github.com/xo/blitz/libblitz/macos-arm64 v0.1.8 // indirect
 	github.com/xo/blitz/libblitz/windows-amd64 v0.1.8 // indirect
 	github.com/xo/blitz/libblitz/windows-arm64 v0.1.8 // indirect
+	github.com/zeebo/xxh3 v1.1.1-0.20260908150653-f7225998cebf // indirect
 	go4.org v0.0.0-20261028031214-ed6929a230fe // indirect
-	golang.org/x/crypto v0.58.0 // indirect
+	golang.org/x/crypto v0.59.0 // indirect
 	golang.org/x/text v0.44.0 // indirect
 )

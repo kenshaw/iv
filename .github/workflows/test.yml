@@ -114,8 +114,11 @@ jobs:
           go vet ./...
 
       - name: Test
+        # the race detector makes the pure Go decoders slow, and the ivcmd
+        # tests take more than the 10 minutes that go test allows by default
+        # on the macOS runner
         run: |
-          go test -race -v ./...
+          go test -race -timeout 30m -v ./...
 
   lint:
     name: Lint

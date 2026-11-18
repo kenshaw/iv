@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -79,30 +81,43 @@ func TestReadFrame(t *testing.T) {
 	}
 }
 
-// TestProbeParsing checks that the video's length and size are read out of
-// ffprobe's output, and that a stream carrying no length of its own does not
-// hide the one the container recorded.
+// TestProbeParsing checks that the video's length, size, frame rate and
+// rotation are read out of ffprobe's output, and that a stream carrying no
+// length of its own does not hide the one the container recorded. ffprobe
+// ends each line with a carriage return and a line feed on Windows, and with
+// a line feed elsewhere.
 func TestProbeParsing(t *testing.T) {
 	const out = `[STREAM]
 width=1920
 height=1080
+r_frame_rate=30/1
+avg_frame_rate=24000/1001
 duration=N/A
+rotation=-90
 [/STREAM]
 [FORMAT]
 duration=95.500000
 [/FORMAT]
 `
-	buf := []byte(out)
-	switch d := duration(buf); {
-	case d != 95500*time.Millisecond:
-		t.Errorf("expected 95.5s, got %v", d)
-	}
-	switch w, h := number(widthRE, buf), number(heightRE, buf); {
-	case w != 1920 || h != 1080:
-		t.Errorf("expected 1920x1080, got %dx%d", w, h)
-	}
-	if d := duration([]byte("duration=N/A\n")); d != 0 {
-		t.Errorf("expected no duration, got %v", d)
+	for _, eol := range []string{"\n", "\r\n"} {
+		t.Run(strconv.Quote(eol), func(t *testing.T) {
+			buf := []byte(strings.ReplaceAll(out, "\n", eol))
+			if d := duration(buf); d != 95500*time.Millisecond {
+				t.Errorf("expected 95.5s, got %v", d)
+			}
+			if w, h := number(widthRE, buf), number(heightRE, buf); w != 1920 || h != 1080 {
+				t.Errorf("expected 1920x1080, got %dx%d", w, h)
+			}
+			if rate := frameRate(buf); rate != 24000.0/1001 {
+				t.Errorf("expected %g fps, got %g", 24000.0/1001, rate)
+			}
+			if r := rotation(buf); r != 270 {
+				t.Errorf("expected a rotation of 270, got %d", r)
+			}
+			if d := duration([]byte("duration=N/A" + eol)); d != 0 {
+				t.Errorf("expected no duration, got %v", d)
+			}
+		})
 	}
 }
 

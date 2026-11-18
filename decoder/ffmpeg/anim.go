@@ -243,13 +243,14 @@ func number(re *regexp.Regexp, buf []byte) int {
 	return n
 }
 
-// the video stream fields read out of ffprobe's output.
+// the video stream fields read out of ffprobe's output. A line can end with a
+// carriage return, as it does on Windows.
 var (
-	widthRE  = regexp.MustCompile(`(?m)^width=(\d+)$`)
-	heightRE = regexp.MustCompile(`(?m)^height=(\d+)$`)
+	widthRE  = regexp.MustCompile(`(?m)^width=(\d+)\r?$`)
+	heightRE = regexp.MustCompile(`(?m)^height=(\d+)\r?$`)
 	// the rates are fractions, and the rotation is a number of degrees that
 	// can be negative or have a fraction
-	avgRateRE  = regexp.MustCompile(`(?m)^avg_frame_rate=(\d+)/(\d+)$`)
-	rateRE     = regexp.MustCompile(`(?m)^r_frame_rate=(\d+)/(\d+)$`)
-	rotationRE = regexp.MustCompile(`(?m)^rotation=(-?[\d.]+)$`)
+	avgRateRE  = regexp.MustCompile(`(?m)^avg_frame_rate=(\d+)/(\d+)\r?$`)
+	rateRE     = regexp.MustCompile(`(?m)^r_frame_rate=(\d+)/(\d+)\r?$`)
+	rotationRE = regexp.MustCompile(`(?m)^rotation=(-?[\d.]+)\r?$`)
 )

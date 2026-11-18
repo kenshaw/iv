@@ -151,14 +151,37 @@ them must pass, and `gofmt -l .` must print nothing:
 gofmt -l .
 go build ./...
 go vet ./...
-go test ./...
+go test -race -timeout 30m ./...
 golangci-lint run ./...
 ```
 
-CI runs `go test -race -v ./...` on Linux amd64 and arm64, macOS and Windows
-(D14). It runs `golangci-lint run ./...` with the release that the Lint job
-in `.github/workflows/test.yml` pins (D29). The tests need every decoder
-command, which is `ffmpeg` and its `ffprobe` (D27, D49).
+CI runs `go test -race -timeout 30m -v ./...` on Linux amd64 and arm64, macOS
+and Windows (D14). It runs `golangci-lint run ./...` with the release that the
+Lint job in `.github/workflows/test.yml` pins (D29). The tests need every
+decoder command, which is `ffmpeg` and its `ffprobe` (D27, D49).
+
+Two kinds of fault pass on Linux and fail in CI:
+
+- A runner is slower than a workstation, and the race detector makes the pure
+  Go decoders slower again. With the race detector, the `ivcmd` tests take 4
+  minutes on a workstation with 32 cores, and more than 10 minutes on the
+  macOS runner. If a change makes a package take more than 10 minutes here,
+  it can pass the limit of 30 minutes in CI.
+- On Windows, a command ends each line of its output with a carriage return
+  and a line feed. A pattern that reads a line must accept `\r\n`, and its
+  test must give it both line ends, as `TestProbeParsing` in
+  `decoder/ffmpeg` does.
+
+After a maintainer says to push, make sure that every job of the Test workflow
+passes:
+
+```sh
+gh run list --workflow test.yml --limit 1
+gh run watch <id> --exit-status
+```
+
+If a job fails, read its log with `gh run view <id> --log-failed`. Fix the
+fault before you start the next change, and tell the maintainer.
 
 If you changed a decoder, an encoder or the pipeline, also run the smoke test:
 

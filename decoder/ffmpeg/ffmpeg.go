@@ -111,8 +111,10 @@ func durationTimecode(dur time.Duration) string {
 	return "00:00"
 }
 
-// durationRE matches ffprobe's duration output.
-var durationRE = regexp.MustCompile(`(?m)^duration=(.*)$`)
+// durationRE matches ffprobe's duration output. On Windows, ffprobe ends each
+// line with a carriage return and a line feed, and the carriage return is not
+// part of the value.
+var durationRE = regexp.MustCompile(`(?m)^duration=([^\r\n]*)\r?$`)
 
 // formatTimecode formats a duration in ffmpeg's MM:SS timecode format.
 func formatTimecode(d time.Duration) string {

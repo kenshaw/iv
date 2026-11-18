@@ -806,6 +806,9 @@ zuzu v0.7.2 came with okage v0.8.0 on 2026-11-15. It embeds IBM Plex Sans as
 one collection in WOFF2 (zuzu D34), 958 KB smaller, and fixes marks, axes
 and colors of Vega and Vega-Lite. Every test of `iv` passed with it.
 
+zuzu v0.7.3 came on 2026-11-18. It changes no drawing, and requires okage
+v0.12.0, the version that `iv` uses with ivy (D49).
+
 ### D37. A minimum size given on the command line is a hard floor. Decided.
 
 `--min-width` and `--min-height` default to 64. With the defaults, `iv` grows
@@ -1219,7 +1222,9 @@ D28 gave the formats of mupdf to four outside commands and one package:
 `pdftoppm` of poppler, and oov/psd. On 2026-11-18, a maintainer asked to
 move to xo/ivy, which decodes and draws such formats in pure Go with okage.
 ivy had no tag yet, so `iv` requires its pushed commit `e0b710b`. That
-commit requires okage v0.10.0 and magic v0.7.0, and `iv` moved to them.
+commit requires okage v0.10.0 and magic v0.7.0, and `iv` moved to them. Later
+on the same day, `iv` moved to the ivy commit `6e838f4`, okage v0.12.0 and
+magic v0.8.0.
 
 `decoder/ivy` registers one decoder for each format of ivy that `iv` takes,
 named `ivy-` and the name of the format, from the `Format` value that the
