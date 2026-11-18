@@ -128,6 +128,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D49](#d49-xoivy-draws-documents-ebooks-and-page-descriptions-in-go-decided-amends-d28-amended-by-d50) | xo/ivy draws documents, ebooks and page descriptions in Go | Decided. Amends D28. Amended by D50 |
 | [D50](#d50-ivy-draws-every-pdf-and-asks-for-a-missing-password-decided-amends-d49) | ivy draws every pdf, and asks for a missing password | Decided. Amends D49 |
 | [D51](#d51-a-spreadsheet-is-drawn-in-landscape-by-default-decided) | A spreadsheet is drawn in landscape by default | Decided |
+| [D52](#d52-a-scheduled-workflow-keeps-the-aur-packages-current-decided) | A scheduled workflow keeps the AUR packages current | Decided |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -1318,6 +1319,28 @@ maintainer asked to draw a spreadsheet in landscape by default.
   `testdata/ivy` give A4 in portrait, and stay in portrait.
 - `TestPaper` in `decoder/ivy` checks each case, with the new
   `testdata/ivy/sales.csv`. `TestIsODS` checks the test of the mime type.
+
+### D52. A scheduled workflow keeps the AUR packages current. Decided.
+
+The Announce Release workflow bumped the AUR packages `iv-cli` and
+`iv-cli-bin` when a release was published. Nothing tried a bump again when
+it failed, or when the event did not arrive. On 2026-11-15, the bump of
+`iv-cli-bin` for v0.23.0 failed, because GitHub gave a 404 for an asset of
+the release that it had just published. On 2026-11-19, a maintainer asked to
+move the bump to a workflow that runs on a schedule.
+
+- `.github/workflows/aur.yml` runs every 12 hours, at 00:23 and 12:23 UTC,
+  and can also be started by hand. It does not run on the release event.
+- Its first job reads the tag of the latest published release with `gh`,
+  and the version of each package from the RPC interface of the AUR. A
+  package is behind when its `pkgver` is lower than the release. A package
+  that is at the release, or past it, is left alone.
+- A second job bumps only the packages that are behind, in an Arch Linux
+  container, as Announce Release did. It does not start when no package is
+  behind. If a bump fails, the next run tries again.
+- Announce Release keeps the Homebrew formula and the Discord announcement.
+- GitHub turns off a scheduled workflow in a public repository after 60 days
+  with no activity. A maintainer then turns it on again on the Actions tab.
 
 ## Open questions for the maintainers
 

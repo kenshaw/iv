@@ -66,7 +66,7 @@ $ brew install kenshaw/iv/iv
 ### Installing via AUR (Arch Linux)
 
 Install `iv` from the [Arch Linux AUR][aur] in the usual way with the [`yay`
-command][yay]:
+command][yay]. The AUR packages follow a release within about 12 hours:
 
 ```sh
 # install

@@ -1,0 +1,133 @@
+name: AUR
+# Keeps the AUR packages at the version of the latest published release. It
+# runs on a schedule, and not on the release event, because a release event
+# that does not arrive leaves the packages behind until the next release
+# (D52). A run that finds every package current changes nothing.
+on:
+  schedule:
+    # every 12 hours. The minute is not 0, because many scheduled workflows
+    # start on the hour, and GitHub delays or drops runs then
+    - cron: '23 */12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# two runs at the same time could push the same version twice
+concurrency:
+  group: aur
+  cancel-in-progress: false
+
+env:
+  APP: iv
+  REPO: ${{ github.repository }}
+  AUTHOR_NAME: Kenneth Shaw
+  AUTHOR_EMAIL: kenshaw@gmail.com
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      packages: ${{ steps.check.outputs.packages }}
+    steps:
+      # the latest release is the newest one that is published, and not a
+      # draft or a prerelease. The AUR gives each version as pkgver-pkgrel. A
+      # package is behind when its pkgver is lower than the release, so a
+      # package that a maintainer bumped past the release is left alone
+      - id: check
+        name: Compare the AUR packages with the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PACKAGES=(iv-cli iv-cli-bin)
+          VER=$(gh release view --repo "$REPO" --json tagName --jq .tagName)
+          echo "latest release: $VER"
+          INFO=$(curl -fsSg "https://aur.archlinux.org/rpc/v5/info?$(printf 'arg[]=%s&' "${PACKAGES[@]}")")
+          STALE=()
+          for PACKAGE in "${PACKAGES[@]}"; do
+            CUR=$(jq -r --arg name "$PACKAGE" '.results[] | select(.Name == $name) | .Version' <<< "$INFO")
+            if [ -z "$CUR" ]; then
+              echo "::error::$PACKAGE: not in the AUR"
+              exit 1
+            fi
+            echo "$PACKAGE: $CUR"
+            if dpkg --compare-versions "${VER#v}" gt "${CUR%-*}"; then
+              STALE+=("$PACKAGE")
+            fi
+          done
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "packages=$(jq -cn '$ARGS.positional' --args "${STALE[@]}")" >> "$GITHUB_OUTPUT"
+
+  bump:
+    name: Bump (${{ matrix.package }})
+    needs: check
+    if: needs.check.outputs.packages != '[]'
+    runs-on: ubuntu-latest
+    # the packages are bumped from an arch container so that updpkgsums and
+    # makepkg can write the checksums and the .SRCINFO, rather than the
+    # workflow editing both by hand and having to agree with itself
+    container:
+      image: docker.io/library/archlinux:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # iv-cli builds from the release tarball, and iv-cli-bin takes the
+        # release assets for each arch
+        package: ${{ fromJSON(needs.check.outputs.packages) }}
+    env:
+      VER: ${{ needs.check.outputs.version }}
+      PACKAGE: ${{ matrix.package }}
+    steps:
+      - name: Setup
+        run: |
+          pacman-key --init
+          pacman -Syu --noconfirm --needed archlinux-keyring
+          pacman -S --noconfirm --needed git base-devel sudo pacman-contrib openssh jq
+          # makepkg refuses to run as root, so everything below that needs it
+          # runs as this user instead
+          useradd -m build
+          echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+      - name: Add AUR SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.AUR_SSH_KEY }}
+          name: id_ed25519
+          known_hosts: |
+            aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN
+            aur.archlinux.org ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDKF9vAFWdgm9Bi8uc+tYRBmXASBb5cB5iZsB7LOWWFeBrLp3r14w0/9S2vozjgqY5sJLDPONWoTTaVTbhe3vwO8CBKZTEt1AcWxuXNlRnk9FliR1/eNB9uz/7y1R0+c1Md+P98AJJSJWKN12nqIDIhjl2S1vOUvm7FNY43fU2knIhEbHybhwWeg+0wxpKwcAd/JeL5i92Uv03MYftOToUijd1pqyVFdJvQFhqD4v3M157jxS5FTOBrccAEjT+zYmFyD8WvKUa9vUclRddNllmBJdy4NyLB8SvVZULUPrP3QOlmzemeKracTlVOUG1wsDbxknF1BwSCU7CmU6UFP90kpWIyz66bP0bl67QAvlIc52Yix7pKJPbw85+zykvnfl2mdROsaT8p8R9nwCdFsBc9IiD0NhPEHcyHRwB8fokXTajk2QnGhL+zP5KnkmXnyQYOCUYo3EKMXIlVOVbPDgRYYT/XqvBuzq5S9rrU70KoI/S5lDnFfx/+lPLdtcnnEPk=
+            aur.archlinux.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLMiLrP8pVi5BFX2i3vepSUnpedeiewE5XptnUnau+ZoeUOPkpoCgZZuYfpaIQfhhJJI5qgnjJmr4hyJbe/zxow=
+
+      - name: Bump ${{ matrix.package }}
+        run: |
+          export WORKDIR=$(mktemp -d /tmp/${PACKAGE}.XXXXXX)
+          export REPO_PATH=$WORKDIR/${PACKAGE}
+          export CHANGELOG=$(
+            curl \
+              -fsS \
+              -H 'Accept: application/vnd.github+json' \
+              https://api.github.com/repos/$REPO/releases/tags/$VER \
+              |jq -r .body \
+              |sed -e 's/\r//g'
+          )
+          git clone aur@aur.archlinux.org:${PACKAGE}.git $REPO_PATH
+          git config --global --add safe.directory $REPO_PATH
+          git -C $REPO_PATH config user.name "$AUTHOR_NAME"
+          git -C $REPO_PATH config user.email "$AUTHOR_EMAIL"
+          sed -i "s/pkgver=.*$/pkgver=${VER#v}/" $REPO_PATH/PKGBUILD
+          # the capture keeps the arch suffix, so sha256sums_x86_64 and
+          # sha256sums_aarch64 are cleared along with the plain one and
+          # updpkgsums fills in all three
+          sed -i "s/sha256sums\([^=]*\)=.*$/sha256sums\1=('SKIP')/" $REPO_PATH/PKGBUILD
+          sed -i "s/pkgrel=.*$/pkgrel=1/" $REPO_PATH/PKGBUILD
+          chown -R build:build $WORKDIR
+          pushd $REPO_PATH &> /dev/null
+          sudo -u build bash -c 'updpkgsums'
+          sudo -u build bash -c 'makepkg --printsrcinfo > .SRCINFO'
+          popd &> /dev/null
+          git -C $REPO_PATH add PKGBUILD .SRCINFO
+          git -C $REPO_PATH commit -m "$(printf %b "Update $APP version to ${VER}\n\n${CHANGELOG}")"
+          git -C $REPO_PATH show -C
+          git -C $REPO_PATH push origin master

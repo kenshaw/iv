@@ -42,7 +42,7 @@ every other agent read the same rules. Edit this file, not that one.
 | changing the libvips code | `vips/`, `decoder/vips`, `encoder/vips`, D5, D8 and D22 |
 | measuring a change for speed | the Performance section of `README.md`, and D26 |
 | changing animation | `ivcmd/animate.go`, `decoder/anim.go`, D19, D42 and D43 |
-| changing a workflow | D14 and D15, and the comments in `.github/workflows/` |
+| changing a workflow | D14, D15 and D52, and the comments in `.github/workflows/` |
 | writing a document, a code comment, an error message or a commit message | the `simple-english` skill. Load it first |
 | writing or reviewing Go code | the `go-pedantry` skill. Load it first, then the Go conventions below |
 | adding or updating an agent skill | the Agent skills section of `CONTRIBUTING.md`, and D21 |
