@@ -94,10 +94,23 @@ jobs:
             mingw-w64-ucrt-x86_64-imagemagick
             mingw-w64-ucrt-x86_64-ffmpeg
 
+      # setup-go keys its cache of compiled packages on go.sum only. A package
+      # that links libvips keeps the paths that pkg-config gave when it was
+      # compiled, and on macOS a path names the version of the Homebrew
+      # bottle, as in Cellar/vips/8.18.7_1. The flags are part of the key, so
+      # that a new bottle does not restore a package that names a path that
+      # is gone
+      - name: Record the libvips flags
+        run: |
+          pkg-config --cflags --libs vips | tee vips-flags.txt
+
       - name: Install Go
         uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: |
+            go.sum
+            vips-flags.txt
 
       - name: Versions
         run: |
