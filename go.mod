@@ -21,7 +21,7 @@ require (
 	github.com/xo/magic v0.9.1
 	github.com/xo/magic/compress/xz v0.6.0
 	github.com/xo/magic/compress/zstd v0.6.0
-	github.com/xo/okage v0.18.0
+	github.com/xo/okage v0.18.1
 	github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18
 	github.com/xo/transit v0.7.8
 	github.com/xo/transit/grammars/bash v0.7.8

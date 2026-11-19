@@ -118,8 +118,8 @@ github.com/xo/magic/compress/xz v0.6.0 h1:+K1AEm84WUxosawmWgdUWNKdLv6DLpofll0jko
 github.com/xo/magic/compress/xz v0.6.0/go.mod h1:gmrSj5S7pUKVHUvHLKN8bq67tUlwnCs+am10R/Z4h4A=
 github.com/xo/magic/compress/zstd v0.6.0 h1:v/jZHke5gDcz3iJL7R53eQvCcXix3yi04YVbr1PwSI8=
 github.com/xo/magic/compress/zstd v0.6.0/go.mod h1:G+C87slkiuLhRQc4wwMNd/i5TCCi5YL2LdAQH4AiocE=
-github.com/xo/okage v0.18.0 h1:wmEx+qfrqUZwcmMISwKh2c8OBGZ5Z0JYY3vX/EUKisw=
-github.com/xo/okage v0.18.0/go.mod h1:pte/3aqjk2ElZwxYex0erXC3kT2tqxOwWuIHA8fhKOM=
+github.com/xo/okage v0.18.1 h1:2ce3DImijE5v9alHe5X9eYcyBNMC3vXQfQRtKyVUPFo=
+github.com/xo/okage v0.18.1/go.mod h1:pte/3aqjk2ElZwxYex0erXC3kT2tqxOwWuIHA8fhKOM=
 github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18 h1:SHUjYUDTmfldf6LY6vzkX8Va9EVHb1k1PZSJ+l6+mYY=
 github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18/go.mod h1:MREUmRj7Fcm+0Gc/UImQNaZoq1nexrj0jkNBdo/ljnY=
 github.com/xo/transit v0.7.8 h1:/YhM1w3retsPtY0wYOvqZgvcrUxhlR0HIzxUlfHuxNk=
