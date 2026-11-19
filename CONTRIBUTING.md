@@ -38,7 +38,7 @@ golangci-lint run ./...
 
 CI runs the same tests on Linux, macOS and Windows. The tests fail when a
 decoder command is missing, so install `ffmpeg` first. The Optional tools
-section of [`README.md`](README.md#optional-tools) says what each one is for.
+section of [`README.md`](README.md#optional-tools) says what it is for.
 
 After you push, make sure that every job of the Test workflow on GitHub
 passes. A test can pass on your computer and fail on the slower macOS runner,
@@ -54,6 +54,14 @@ go build -o ./iv . && ./test.sh
 If you changed how an image is decoded, scaled or encoded, run the benchmarks
 and compare them with the last release. The Performance section of
 [`README.md`](README.md#performance) holds the commands and the last results.
+
+## Screenshots
+
+`docs/screenshots/screenshots.sh` makes the screenshots in `README.md`. It
+needs Sway, Ghostty, grim, jq and python3. It opens a Ghostty window for each
+screenshot, on a workspace of its own, so do not use the computer while it
+runs. If a change alters how `iv` looks in a terminal, run it, and look at
+each screenshot before you send the change.
 
 ## Agent skills
 

@@ -55,7 +55,7 @@ jobs:
             libheif-plugin-aomenc
 
       # the external commands that the decoders run. A test fails when one of
-      # them is missing (D12), so every runner installs what it has a
+      # them is missing (D27), so every runner installs what it has a
       # package for, and ivcmd/decode_test.go names the rest
       - name: Install decoder commands (Linux)
         if: runner.os == 'Linux'

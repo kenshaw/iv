@@ -1,5 +1,10 @@
 name: Release
-on: push
+# a release builds the binaries on seven runners, so it runs only for a pushed
+# version tag, and not for each push. The Test workflow tests each push (D53)
+on:
+  push:
+    tags:
+      - 'v*'
 env:
   APP: iv
   VER: ${{ github.ref_name }}
@@ -217,7 +222,6 @@ jobs:
         uses: actions/download-artifact@v8
       - name: Release
         uses: softprops/action-gh-release@v3
-        if: startsWith(github.ref, 'refs/tags/v')
         with:
           name: ${{ env.APP }} ${{ env.VER }}
           draft: true

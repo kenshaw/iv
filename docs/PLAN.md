@@ -17,34 +17,30 @@ renderer (D1). Speed is not a goal (D2).
 
 ## Current state
 
-The state below is the working tree of 2026-10-15, after D22 to D33.
+This is the state of 2026-11-19, after D54.
 
-- One package per format registers a decoder or an encoder from `init`, and a
-  pipeline in `decoder` runs them (D10). `iv --list` names every registered
-  decoder and encoder.
-- `iv` selects a decoder by the mime type that libmagic sniffs from the
-  content (D6, D17).
+- One package for each format registers a decoder or an encoder from `init`,
+  and a pipeline in `decoder` runs them (D10). `iv --list` names each one.
+- `iv` selects a decoder by the mime type that xo/magic, a port of libmagic
+  to Go, finds in the content (D6, D17).
 - An image reaches the encoder in the form that it already has: the bytes of
-  its PNG or JPEG file, which decodes its pixels only when they are needed,
-  or the image that libvips holds, until a step changes its pixels (D22,
-  D30). `ivimg.Prepare` scales and composites stills and animation frames
-  alike.
+  its PNG or JPEG file, or the image that libvips holds, until a step changes
+  its pixels (D22, D30). `ivimg.Prepare` scales and composites stills and
+  animation frames alike.
 - libvips decodes, scales and encodes the formats that no Go package covers
-  (D5, D8, D22). blitz renders Markdown, HTML and web pages (D16). zuzu
-  draws DOT graphs and Mermaid diagrams in Go (D36). xo/ivy draws office
-  documents, ebooks, PDF, XPS, Photoshop files and other formats in Go
-  (D49).
-- Two decoders run an external command that must be in `$PATH` (D7):
-  `ffmpeg` and `tag` run `ffmpeg` and `ffprobe`. The `binwalk` decoder runs
-  no command (D47), and neither does ivy (D49).
-- `iv` plays an animation from a gif, a lottie file or a video, with limits
-  (D19). A video plays at its own speed and for its own length, and kitty and
-  Ghostty show each frame in one Kitty image (D42, D43).
-- CI builds, tests and lints on Linux amd64 and arm64, macOS and Windows
-  (D14, D29). A release builds for the same 64-bit platforms (D15, D32).
-- `go test ./...` passes, and fails when a command or a file that a test
-  needs is missing (D27). `./test.sh` renders every file in `testdata/`
-  (D11). The benchmarks in `ivcmd` compare the releases (D26).
+  (D5, D8, D22). blitz draws Markdown, HTML and web pages (D16). zuzu draws
+  DOT graphs, Mermaid diagrams and Vega charts (D36). xo/ivy draws office
+  documents, ebooks, PDF, XPS, Photoshop files and other formats, and asks
+  for a missing password (D49, D50, D51).
+- Two decoders run an external command from `$PATH` (D7): `ffmpeg` and `tag`
+  run `ffmpeg` and `ffprobe`.
+- `iv` plays an animated gif, lottie or video (D19, D42, D43).
+- CI tests and lints each push on Linux amd64 and arm64, macOS and Windows
+  (D14, D29). A version tag builds a release for the same 64-bit platforms
+  (D15, D32, D53). A scheduled workflow keeps the AUR packages current (D52).
+- `go test -race -timeout 30m ./...` passes, and fails when a command or a
+  file that a test needs is missing (D27). `./test.sh` draws each file in
+  `testdata/` (D11). The benchmarks in `ivcmd` compare releases (D26).
 
 ## Direction
 
@@ -85,7 +81,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D6](#d6-iv-selects-a-decoder-by-the-mime-type-of-the-content-decided-amended-by-d17) | iv selects a decoder by the mime type of the content | Decided. Amended by D17 |
 | [D7](#d7-an-external-command-is-found-in-path-when-a-decoder-first-uses-it-decided-amended-by-d18-amended-by-d47) | An external command is found in $PATH when a decoder first uses it | Decided. Amended by D18. Amended by D47 |
 | [D8](#d8-the-libvips-binding-is-cshumvipsgen-decided-amends-d5) | The libvips binding is cshum/vipsgen | Decided. Amends D5 |
-| [D9](#d9-iv-is-cgo-code-decided) | iv is cgo code | Decided |
+| [D9](#d9-iv-is-cgo-code-decided-amended-by-d28) | iv is cgo code | Decided. Amended by D28 |
 | [D10](#d10-decoders-and-encoders-register-themselves-and-one-pipeline-runs-them-decided) | Decoders and encoders register themselves, and one pipeline runs them | Decided |
 | [D11](#d11-test-data-has-one-folder-per-decoder-and-testsh-renders-all-of-it-decided) | Test data has one folder per decoder, and test.sh renders all of it | Decided |
 | [D12](#d12-a-test-skips-when-its-tool-its-library-support-or-its-file-is-missing-proposed-amended-by-d27) | A test skips when its tool, its library support or its file is missing | Proposed. Amended by D27 |
@@ -98,19 +94,19 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D19](#d19-iv-plays-one-animation-to-the-terminal-for-at-most-one-minute-decided-amended-by-d42-amended-by-d43) | iv plays one animation to the terminal, for at most one minute | Decided. Amended by D42. Amended by D43 |
 | [D20](#d20-the-go-directive-follows-the-newest-release-of-go-decided) | The go directive follows the newest release of Go | Decided |
 | [D21](#d21-iv-is-set-up-for-coding-agents-as-every-xo-repository-is-decided) | iv is set up for coding agents as every xo repository is | Decided |
-| [D22](#d22-an-image-reaches-the-encoder-in-the-form-that-it-already-has-decided-amended-by-d28-amended-by-d33) | An image reaches the encoder in the form that it already has | Decided. Amended by D28. Amended by D33 |
+| [D22](#d22-an-image-reaches-the-encoder-in-the-form-that-it-already-has-decided-amended-by-d28-amended-by-d33-amended-by-d42-amended-by-d43) | An image reaches the encoder in the form that it already has | Decided. Amended by D28. Amended by D33. Amended by D42. Amended by D43 |
 | [D23](#d23-a-jpeg-with-an-exif-orientation-a-cmyk-jpeg-and-an-animated-png-keep-no-bytes-decided) | A JPEG with an EXIF orientation, a CMYK JPEG and an animated PNG keep no bytes | Decided |
 | [D24](#d24---fg-and---border-set-the-colors-and-the-border-of-a-qr-code-decided) | --fg and --border set the colors and the border of a QR code | Decided |
 | [D25](#d25---mermaid-bg-sets-the-background-in-the-mermaid-renderer-decided) | --mermaid-bg sets the background in the mermaid renderer | Decided |
 | [D26](#d26-benchmarks-compare-the-releases-and-the-readme-holds-the-numbers-decided) | Benchmarks compare the releases, and the README holds the numbers | Decided |
-| [D27](#d27-a-test-fails-when-what-it-needs-is-missing-decided-amends-d12-amended-by-d34) | A test fails when what it needs is missing | Decided. Amends D12. Amended by D34 |
-| [D28](#d28-mupdf-is-removed-and-calibre-libgxps-oovpsd-and-poppler-take-its-formats-decided-amends-d22-amended-by-d49) | mupdf is removed, and calibre, libgxps, oov/psd and poppler take its formats | Decided. Amends D22. Amended by D49 |
+| [D27](#d27-a-test-fails-when-what-it-needs-is-missing-decided-amends-d12-amended-by-d34-amended-by-d47-amended-by-d49) | A test fails when what it needs is missing | Decided. Amends D12. Amended by D34. Amended by D47. Amended by D49 |
+| [D28](#d28-mupdf-is-removed-and-calibre-libgxps-oovpsd-and-poppler-take-its-formats-decided-amends-d9-amends-d22-amended-by-d49) | mupdf is removed, and calibre, libgxps, oov/psd and poppler take its formats | Decided. Amends D9. Amends D22. Amended by D49 |
 | [D29](#d29-golangci-lint-checks-the-code-in-ci-with-the-rules-of-the-xo-repositories-decided) | golangci-lint checks the code in CI, with the rules of the xo repositories | Decided |
 | [D30](#d30-a-png-or-a-jpeg-decodes-its-pixels-only-when-they-are-needed-decided) | A PNG or a JPEG decodes its pixels only when they are needed | Decided |
 | [D31](#d31-the-code-follows-go-pedantry-where-the-two-disagreed-decided) | The code follows go-pedantry where the two disagreed | Decided |
 | [D32](#d32-iv-is-built-for-64-bit-targets-only-and-has-no-static-build-decided) | iv is built for 64-bit targets only, and has no static build | Decided |
 | [D33](#d33-kitty-gets-raw-pixels-compressed-with-zlib-when-they-compress-well-decided-amends-d22) | Kitty gets raw pixels compressed with zlib when they compress well | Decided. Amends D22 |
-| [D34](#d34-a-test-file-that-crashes-a-command-on-one-system-is-not-decoded-there-decided-amends-d27) | A test file that crashes a command on one system is not decoded there | Decided. Amends D27 |
+| [D34](#d34-a-test-file-that-crashes-a-command-on-one-system-is-not-decoded-there-decided-amends-d27-amended-by-d49) | A test file that crashes a command on one system is not decoded there | Decided. Amends D27. Amended by D49 |
 | [D35](#d35-svg-renders-with-okage-a-port-of-resvg-to-go-decided-amends-d3) | SVG renders with okage, a port of resvg to Go | Decided. Amends D3 |
 | [D36](#d36-one-decoder-named-zuzu-draws-dot-and-mermaid-decided-amends-d18) | One decoder named zuzu draws DOT and Mermaid | Decided. Amends D18 |
 | [D37](#d37-a-minimum-size-given-on-the-command-line-is-a-hard-floor-decided) | A minimum size given on the command line is a hard floor | Decided |
@@ -118,17 +114,19 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D39](#d39-blitz-colors-the-code-blocks-of-markdown-with-transit-decided) | blitz colors the code blocks of Markdown with transit | Decided |
 | [D40](#d40-zuzu-draws-an-emoji-in-color-decided) | zuzu draws an emoji in color | Decided |
 | [D41](#d41-a-lottie-draws-with-the-lottie-package-of-okage-decided) | A lottie draws with the lottie package of okage | Decided |
-| [D42](#d42-a-kitty-terminal-that-can-play-an-animation-plays-it-itself-decided-amends-d19-amended-by-d43) | A Kitty terminal that can play an animation plays it itself | Decided. Amends D19. Amended by D43 |
-| [D43](#d43-a-video-plays-at-its-own-speed-and-a-kitty-image-shows-each-frame-decided-amends-d19-amends-d42) | A video plays at its own speed, and a Kitty image shows each frame | Decided. Amends D19. Amends D42 |
+| [D42](#d42-a-kitty-terminal-that-can-play-an-animation-plays-it-itself-decided-amends-d19-amends-d22-amended-by-d43) | A Kitty terminal that can play an animation plays it itself | Decided. Amends D19. Amends D22. Amended by D43 |
+| [D43](#d43-a-video-plays-at-its-own-speed-and-a-kitty-image-shows-each-frame-decided-amends-d19-amends-d22-amends-d42) | A video plays at its own speed, and a Kitty image shows each frame | Decided. Amends D19. Amends D22. Amends D42 |
 | [D44](#d44-zuzu-draws-a-vega-spec-and-reads-its-data-only-under-its-directory-decided-amended-by-d45-amended-by-d46) | zuzu draws a Vega spec, and reads its data only under its directory | Decided. Amended by D45. Amended by D46 |
 | [D45](#d45---zuzu-data-sets-the-directory-that-a-vega-spec-reads-its-data-from-decided-amends-d44) | --zuzu-data sets the directory that a Vega spec reads its data from | Decided. Amends D44 |
 | [D46](#d46-zuzu-draws-a-vega-lite-spec-as-it-draws-a-vega-spec-decided-amends-d44) | zuzu draws a Vega-Lite spec as it draws a Vega spec | Decided. Amends D44 |
-| [D47](#d47-the-binwalk-decoder-uses-the-walker-of-xomagic-decided-amends-d7) | The binwalk decoder uses the walker of xo/magic | Decided. Amends D7 |
+| [D47](#d47-the-binwalk-decoder-uses-the-walker-of-xomagic-decided-amends-d7-amends-d27) | The binwalk decoder uses the walker of xo/magic | Decided. Amends D7. Amends D27 |
 | [D48](#d48-okage-draws-font-previews-and-measures-the-text-of-the-cards-decided) | okage draws font previews, and measures the text of the cards | Decided |
-| [D49](#d49-xoivy-draws-documents-ebooks-and-page-descriptions-in-go-decided-amends-d28-amended-by-d50) | xo/ivy draws documents, ebooks and page descriptions in Go | Decided. Amends D28. Amended by D50 |
+| [D49](#d49-xoivy-draws-documents-ebooks-and-page-descriptions-in-go-decided-amends-d27-amends-d28-amends-d34-amended-by-d50) | xo/ivy draws documents, ebooks and page descriptions in Go | Decided. Amends D27. Amends D28. Amends D34. Amended by D50 |
 | [D50](#d50-ivy-draws-every-pdf-and-asks-for-a-missing-password-decided-amends-d49) | ivy draws every pdf, and asks for a missing password | Decided. Amends D49 |
 | [D51](#d51-a-spreadsheet-is-drawn-in-landscape-by-default-decided) | A spreadsheet is drawn in landscape by default | Decided |
 | [D52](#d52-a-scheduled-workflow-keeps-the-aur-packages-current-decided) | A scheduled workflow keeps the AUR packages current | Decided |
+| [D53](#d53-the-release-workflow-runs-only-for-a-version-tag-decided) | The Release workflow runs only for a version tag | Decided |
+| [D54](#d54-a-script-makes-the-screenshots-of-the-readme-in-ghostty-decided) | A script makes the screenshots of the README in Ghostty | Decided |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -209,7 +207,7 @@ option of zero. The nearest kernel is 0, so `Image.Resize` in `vips/` scaled
 small images with lanczos3 where `ivimg.Nearest` asked for nearest neighbor.
 `TestResizeNearest` fails when that happens again.
 
-### D9. iv is cgo code. Decided.
+### D9. iv is cgo code. Decided. Amended by D28.
 
 libvips arrived in `ff44958` (2024-04-11), and from then on `iv` links C
 libraries: libvips, mupdf through go-fitz, and fontconfig and freetype for
@@ -275,8 +273,8 @@ and `windows-latest`. `8e060d0` (2026-06-23) first moved Linux to 26.04, and
 8.15.
 
 Windows builds under MSYS2 in the UCRT64 environment (`2aaf573`).
-The reason is in the workflow and the README: the mupdf of go-fitz calls
-`__intrinsic_setjmpex`, and only the UCRT runtime has it.
+The reason was in the workflow and the README: the mupdf of go-fitz called
+`__intrinsic_setjmpex`, and only the UCRT runtime has it. D28 removed mupdf.
 
 ### D15. A release builds for Linux, macOS and Windows. Decided.
 
@@ -304,8 +302,9 @@ argument.
 `3a1e7b4` (2026-09-13) removed `mimetype` from `decoder/mime.go`,
 `decoder/winres` and `go.mod`. The commit that says it does this, `19c8f46`,
 changed only tests and `.gitignore`. `62ded31` moved to magic v0.2.1. A
-comment in `decoder/mime.go` gives one limit: the text analysis of libmagic
+comment in `decoder/mime.go` gave one limit: the text analysis of libmagic
 read out of bounds and stopped the process on the mermaid and dot test files.
+The port to Go in magic v0.5.0, below, removed that limit and the comment.
 
 On 2026-11-15, the database of libmagic was 10.8 MB of the 117.5 MB release
 build of `iv`. A maintainer asked the maintainers of xo/magic to compress
@@ -410,7 +409,7 @@ link, on a missing copy, on two copies that differ, and on a skill that
 and `TestEveryDecisionReferenceExists` fails on a bare reference to a decision
 that this document does not hold.
 
-### D22. An image reaches the encoder in the form that it already has. Decided. Amended by D28. Amended by D33.
+### D22. An image reaches the encoder in the form that it already has. Decided. Amended by D28. Amended by D33. Amended by D42. Amended by D43.
 
 A maintainer asked on 2026-10-15 for this pipeline, after `rasterm` v0.1.18
 began to send the bytes that an image holds without an encode. The `ivimg`
@@ -526,7 +525,7 @@ protocol that `TERM_GRAPHICS` selects. The method has the same signature from
 v0.17.0, so the same file runs against each release. The Performance section of
 `README.md` holds the results and the commands that made them.
 
-### D27. A test fails when what it needs is missing. Decided. Amends D12. Amended by D34.
+### D27. A test fails when what it needs is missing. Decided. Amends D12. Amended by D34. Amended by D47. Amended by D49.
 
 A maintainer decided on 2026-10-15 that a test fails, and does not skip, when
 an external command, libmagic, a test file or a libvips format is missing. A
@@ -547,7 +546,7 @@ system. `untested` in `ivcmd/decode_test.go` names each one with its reason:
 on Windows, LibreOffice and calibre have no MSYS2 package, and binwalk has no
 Windows package. CI installs every other command on every runner.
 
-### D28. mupdf is removed, and calibre, libgxps, oov/psd and poppler take its formats. Decided. Amends D22. Amended by D49.
+### D28. mupdf is removed, and calibre, libgxps, oov/psd and poppler take its formats. Decided. Amends D9. Amends D22. Amended by D49.
 
 A maintainer decided on 2026-10-15 to remove `github.com/gen2brain/go-fitz`,
 which linked a static mupdf, from a module of 258 MB. It decoded EPUB, MOBI,
@@ -633,7 +632,7 @@ flush, raw, and as a PNG all worked. rasterm v0.1.20 checks without a flush, so
 the stream is one plain stream of all the pixels, and a maintainer confirmed
 that it works in Ghostty.
 
-### D34. A test file that crashes a command on one system is not decoded there. Decided. Amends D27.
+### D34. A test file that crashes a command on one system is not decoded there. Decided. Amends D27. Amended by D49.
 
 On macOS, `ebook-convert` of calibre 9.16 sometimes crashes with a
 segmentation fault when it converts `calibre/sample.fb2`. It crashed in 2 of
@@ -948,7 +947,7 @@ animations of a dotLottie archive, and draws a frame at a size. `iv` keeps
 the mime types, the frame that a still shows, `--page`, `--fps` and the loop
 that plays the frames. The frames did not change.
 
-### D42. A Kitty terminal that can play an animation plays it itself. Decided. Amends D19. Amended by D43.
+### D42. A Kitty terminal that can play an animation plays it itself. Decided. Amends D19. Amends D22. Amended by D43.
 
 rasterm v0.2.0 changed its API (rasterm D26, rasterm D27), and added Kitty
 animation (rasterm D25, rasterm D28). On 2026-11-14, a maintainer asked to move
@@ -1033,7 +1032,7 @@ With `auto`, `fire.lottie` at 2619x1220 used the stream and drew all 65
 frames, and `sample_960x540.mp4` at 2000x1125 drew 156 of 160 frames. The
 stream was not tested in Ghostty.
 
-### D43. A video plays at its own speed, and a Kitty image shows each frame. Decided. Amends D19. Amends D42.
+### D43. A video plays at its own speed, and a Kitty image shows each frame. Decided. Amends D19. Amends D22. Amends D42.
 
 On 2026-11-14, a maintainer found that a long video played too fast. That was
 the sampling of D19: a video longer than a minute was cut into 720 frames,
@@ -1123,7 +1122,7 @@ data by url with the same loader as a Vega spec (D44), and `--zuzu-data`
 sets its root too (D45). `testdata/zuzu/sales.vl.json` is the chart of
 `sales.vg.json` in Vega-Lite, and reads the same data.
 
-### D47. The binwalk decoder uses the walker of xo/magic. Decided. Amends D7.
+### D47. The binwalk decoder uses the walker of xo/magic. Decided. Amends D7. Amends D27.
 
 The `binwalk` decoder ran the `binwalk` command with `--extract` into a
 temporary folder, and kept the extracted files that a builtin decoder reads
@@ -1218,7 +1217,7 @@ one collection in WOFF2. Each of its faces draws the same pixels as the same
 face of the collection that `woff2_decompress` gives. `pfb` left the extensions, because nothing
 read it.
 
-### D49. xo/ivy draws documents, ebooks and page descriptions in Go. Decided. Amends D28. Amended by D50.
+### D49. xo/ivy draws documents, ebooks and page descriptions in Go. Decided. Amends D27. Amends D28. Amends D34. Amended by D50.
 
 D28 gave the formats of mupdf to four outside commands and one package:
 `soffice` of LibreOffice, `ebook-convert` of calibre, `xpstopng` of libgxps,
@@ -1341,6 +1340,43 @@ move the bump to a workflow that runs on a schedule.
 - Announce Release keeps the Homebrew formula and the Discord announcement.
 - GitHub turns off a scheduled workflow in a public repository after 60 days
   with no activity. A maintainer then turns it on again on the Actions tab.
+
+### D53. The Release workflow runs only for a version tag. Decided.
+
+The Release workflow ran on each push. It built the binaries for Linux,
+macOS and Windows on seven runners, and drafted a release only when the push
+was a tag. On 2026-11-19, a maintainer asked that a push only be tested, to
+stay inside the limits of GitHub Actions.
+
+- The Release workflow runs only for a pushed tag that starts with `v`. Each
+  of its runs drafts a release.
+- The Test workflow runs on each push and each pull request, as D14 says. It
+  builds no binaries for a release. Its `go build ./...` step makes sure
+  that the code compiles.
+- A change to `build.sh` or to the Release workflow is tested only by the
+  next tag. The job that drafts the release needs every build, so a draft
+  is made only when every build passed.
+
+### D54. A script makes the screenshots of the README in Ghostty. Decided.
+
+On 2026-11-19, a maintainer asked for screenshots in `README.md` of what the
+output of `iv` looks like in Ghostty, made by a script.
+
+- `docs/screenshots/screenshots.sh` builds `iv`, and makes eight screenshots
+  of files in `testdata/`: a png, an svg, a Mermaid flowchart, a Vega-Lite
+  chart, a Markdown document, a Word document, a font and a WIFI code.
+- It runs on Sway. For each screenshot, it opens a Ghostty window of
+  1400x880 pixels with the default configuration of Ghostty, on a workspace
+  of its own, so that no other window covers it. It runs `iv` in the window,
+  captures the window with `grim`, and compresses the PNG with `optipng`.
+- Each window ends its command, and so closes with no confirmation, when
+  its screenshot is taken, or when the script ends early.
+- The window shows the command line of `iv`. The script gives `iv` a width
+  of one column less and a height of four rows less than the terminal, so
+  that the command line stays on screen, and the command line does not show
+  those options.
+- A screen lock makes each screenshot black, so the script must run while
+  the screen is not locked.
 
 ## Open questions for the maintainers
 

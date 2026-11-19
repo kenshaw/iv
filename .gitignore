@@ -38,8 +38,10 @@
 *.html
 
 # the patterns above are for stray output, not for fixtures: testdata holds
-# png, ico, ttf, xps, txt, xml and html files that are all meant to be tracked
+# png, ico, ttf, xps, txt, xml and html files that are all meant to be tracked,
+# and docs/screenshots holds the screenshots of the README
 !/testdata/**
+!/docs/screenshots/*.png
 
 # the linter configuration and the workflows, which *.yml would otherwise
 # ignore

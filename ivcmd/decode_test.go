@@ -190,8 +190,8 @@ func TestDecodeString(t *testing.T) {
 		size image.Point
 	}{
 		// a QR code is built outright, so it has no mime type of its own. The
-		// size follows from how much the uri encodes to, so each of these is
-		// its own number rather than a shared one
+		// size follows from the length of the uri, and uris of about the same
+		// length give the same size
 		"wifi":      {"", image.Pt(370, 370)},
 		"mailto":    {"", image.Pt(410, 410)},
 		"tel":       {"", image.Pt(290, 290)},

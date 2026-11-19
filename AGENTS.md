@@ -42,7 +42,8 @@ every other agent read the same rules. Edit this file, not that one.
 | changing the libvips code | `vips/`, `decoder/vips`, `encoder/vips`, D5, D8 and D22 |
 | measuring a change for speed | the Performance section of `README.md`, and D26 |
 | changing animation | `ivcmd/animate.go`, `decoder/anim.go`, D19, D42 and D43 |
-| changing a workflow | D14, D15 and D52, and the comments in `.github/workflows/` |
+| changing how the output of `iv` looks in a terminal | `docs/screenshots/screenshots.sh`. Run it, and look at each screenshot |
+| changing a workflow | D14, D15, D52 and D53, and the comments in `.github/workflows/` |
 | writing a document, a code comment, an error message or a commit message | the `simple-english` skill. Load it first |
 | writing or reviewing Go code | the `go-pedantry` skill. Load it first, then the Go conventions below |
 | adding or updating an agent skill | the Agent skills section of `CONTRIBUTING.md`, and D21 |
@@ -72,7 +73,8 @@ dbmeta D110. A bare number, as in D3, names a decision of this repository, in
   with xo/magic, a port of libmagic to Go (D17).
 - `decoder/<name>/` holds one decoder. It registers itself from `init` with
   `decoder.Register`, or with `decoder.RegisterBuiltin` for a format in the
-  `image.Decode` registry of Go. `decoder/png` is the smallest example.
+  `image.Decode` registry of Go. `decoder/png` is a small example that keeps
+  the bytes of its file.
 - `decoder/all/` imports every decoder. A new decoder must be added there.
 - `decoder/ivy/` registers a decoder for each format of xo/ivy that iv
   takes, such as `ivy-docx`, from the `Format` value of the format (D49).
@@ -89,6 +91,8 @@ dbmeta D110. A bare number, as in D3, names a decision of this repository, in
   them (D11). Git does not convert the line endings of these files (D13).
 - `test.sh` renders every file in `testdata/` through a built `iv`.
 - `build.sh` makes a release build. The release workflow calls it.
+- `docs/screenshots/` holds the screenshots in `README.md`, and
+  `screenshots.sh`, which makes them in Ghostty on Sway.
 
 ## Go conventions
 
@@ -110,11 +114,11 @@ These are the conventions that the code follows today.
 - libvips decodes when the pixels are asked for, which can be after the
   pipeline closed the file. Load a libvips image from bytes, never from a
   stream of the input (D22).
-- The svg decoder renders with the `svg.Renderer` of okage (D35). The
-  renderer loads the fonts of the system on its first render, and sets each
-  css generic family to the first of its candidates that is installed, such
-  as `svg.SerifCandidates`. Change a candidate list in okage, not in `iv`.
-  `TestSerifIsLatin` fails when the font families stop taking effect.
+- The `okage` decoder renders an svg with the `svg.Renderer` of okage (D35).
+  The renderer loads the fonts of the system on its first render, and sets
+  each css generic family to the first of its candidates that is installed,
+  such as `svg.SerifCandidates`. Change a candidate list in okage, not in
+  `iv`. `TestSerifIsLatin` fails when the font families stop taking effect.
 - Do not compare two `image.Image` values with `==`. A `rasterm.PNG` holds a
   slice, and the comparison panics. An encoder that encodes the pixels itself
   calls `ivimg.Unwrap` first, because the encoders of the standard library are
