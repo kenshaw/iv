@@ -27,8 +27,27 @@ the cover art of audio files, and it can write the result to a file.
 [iterm]: https://iterm2.com/documentation-images.html
 [sixel]: https://saitoha.github.io/libsixel/
 
+## Screenshots
+
+These are screenshots of `iv` in [Ghostty][ghostty] 1.4, with the files in
+`testdata/`. The script
+[`docs/screenshots/screenshots.sh`](docs/screenshots/screenshots.sh) makes
+them.
+
+| | |
+| --- | --- |
+| ![A photo](docs/screenshots/photo.png) | ![An SVG map](docs/screenshots/svg.png) |
+| A png image | An SVG map |
+| ![A Mermaid flowchart](docs/screenshots/mermaid.png) | ![A Vega-Lite chart](docs/screenshots/chart.png) |
+| A Mermaid flowchart | A Vega-Lite chart |
+| ![A Markdown document](docs/screenshots/markdown.png) | ![A Word document](docs/screenshots/docx.png) |
+| A Markdown document | A Word document |
+| ![A font preview](docs/screenshots/font.png) | ![A QR code of a WIFI code](docs/screenshots/wifi.png) |
+| A font preview | The QR code of a WIFI code |
+
 [Are We Sixel Yet?][arewesixelyet] lists the terminals that draw graphics.
 
+[ghostty]: https://ghostty.org
 [arewesixelyet]: https://www.arewesixelyet.com
 
 ## Installing
