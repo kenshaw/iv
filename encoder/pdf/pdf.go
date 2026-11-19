@@ -1,9 +1,10 @@
 // Package pdf supplies a pdf encoder for iv.
 //
-// A document that ivy opens, such as a docx or a pdf, writes its own pages,
-// with their paths and their images as vectors, through the PDF writer of
-// ivy (D55). The encoder puts any other image on a page with blitz. The page
-// is the size of the image, or --pdf-page with a margin of --pdf-margin.
+// A document that ivy opens, such as a docx or a pdf, writes its own pages
+// through the PDF writer of ivy, with their text as text and their paths and
+// their images as vectors (D55). The encoder puts any other image on a page
+// with blitz. The page is the size of the image, or --pdf-page with a margin
+// of --pdf-margin.
 //
 // See: https://github.com/xo/blitz
 package pdf

@@ -1230,7 +1230,8 @@ commit requires okage v0.10.0 and magic v0.7.0, and `iv` moved to them. Later
 on the same day, `iv` moved to the ivy commit `6e838f4`, okage v0.12.0 and
 magic v0.8.0. On 2026-11-19, `iv` moved to the ivy commit `72caf3e`, which
 requires okage v0.14.0 and magic v0.9.1. Later on that day, `iv` moved to the
-ivy commit `8bb9f50`, which requires okage v0.17.0.
+ivy commit `8bb9f50`, which requires okage v0.17.0, and then to the ivy commit
+`871c3f6`, which requires okage v0.18.0.
 
 `decoder/ivy` registers one decoder for each format of ivy that `iv` takes,
 named `ivy-` and the name of the format, from the `Format` value that the
@@ -1386,8 +1387,10 @@ output of `iv` looks like in Ghostty, made by a script.
 On 2026-11-19, a maintainer asked to write a pdf with the PDF writer of
 ivy. The ivy commit `8bb9f50` has it, in `pdf/pdfenc`. It writes the pages
 of a document through okage, with their paths and their images as vectors.
-In this version, the glyphs of the text are paths, so a reader cannot search
-or copy the text.
+In that commit, the glyphs of the text are paths, so a reader cannot search
+or copy the text. Later on that day, `iv` moved to the ivy commit `871c3f6`,
+which writes the text as text, in subsets of the fonts that it embeds. The
+glyphs of a pdf or a PostScript file are still paths.
 
 - `ivctx.Config.Encoder` names the encoder that writes the output. When it
   is `pdf`, `decoder/ivy` returns the page that it drew, wrapped in a type

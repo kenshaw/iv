@@ -387,8 +387,9 @@ changed is written as the bytes of its file.
 
 The `pdf` encoder writes a document that ivy opens, such as a docx, an epub
 or a pdf, with its pages as vectors. It writes every page, or only the page
-that `--page` selects. The text of such a pdf is drawn as paths, so a reader
-cannot search or copy it:
+that `--page` selects. The text is text in the fonts of the document, so a
+reader can search and copy it. The text of a pdf or a PostScript file is
+drawn as paths:
 
 ```sh
 $ iv -o report.pdf /path/to/report.docx

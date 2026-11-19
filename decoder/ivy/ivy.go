@@ -11,8 +11,9 @@
 // spreadsheet. A sheet whose file gives portrait stays in portrait (D51).
 //
 // When the output is a pdf, a format with pages writes its pages with the
-// PDF writer of ivy, with their paths and their images as vectors. It writes
-// every page, or the page that --page selects (D55).
+// PDF writer of ivy, with their text as text and their paths and their
+// images as vectors. It writes every page, or the page that --page selects
+// (D55).
 //
 // A document that a password protects, such as a pdf or a docx, opens with
 // --password. When that password is missing or wrong, the decoder asks for
