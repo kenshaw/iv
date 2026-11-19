@@ -446,6 +446,13 @@ $ sudo apt-get install -y libheif-plugin-libde265 libheif-plugin-x265 \
 $ brew install vips pkgconf
 ```
 
+The pkg-config file of libvips names libarchive. Homebrew does not link
+libarchive, because macOS has its own, so give pkg-config its directory:
+
+```sh
+$ export PKG_CONFIG_PATH="$(brew --prefix libarchive)/lib/pkgconfig"
+```
+
 If the build stops on `-Xpreprocessor`, which some builds of libvips put in
 their flags, allow it:
 
