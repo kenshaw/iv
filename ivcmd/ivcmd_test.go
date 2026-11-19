@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -289,6 +290,24 @@ func TestExecWritesOutputFile(t *testing.T) {
 	}
 	if stdout.Len() != 0 {
 		t.Errorf("expected nothing on stdout when writing to a file, got %q", stdout.String())
+	}
+}
+
+// TestExecWritesDocumentAsPDF checks that a document written to a pdf keeps
+// every page, and is not one image of the page shown (D55).
+func TestExecWritesDocumentAsPDF(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "out.pdf")
+	var stdout, stderr bytes.Buffer
+	args := &Args{Out: out, Quiet: true}
+	if err := args.Exec(context.Background(), &stdout, &stderr, []string{"../testdata/ivy/file-sample_100kB.docx"}); err != nil {
+		t.Fatalf("expected no error, got: %v (%s)", err, stderr.String())
+	}
+	buf, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if n := len(regexp.MustCompile(`/Type\s*/Page[^s]`).FindAll(buf, -1)); n != 4 {
+		t.Errorf("expected 4 pages, got %d", n)
 	}
 }
 

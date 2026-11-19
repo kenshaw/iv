@@ -1,5 +1,9 @@
-// Package pdf supplies a pdf encoder for iv, wrapping any decoded image in a
-// pdf document.
+// Package pdf supplies a pdf encoder for iv.
+//
+// A document that ivy opens, such as a docx or a pdf, writes its own pages,
+// with their paths and their images as vectors, through the PDF writer of
+// ivy (D55). The encoder puts any other image on a page with blitz. The page
+// is the size of the image, or --pdf-page with a margin of --pdf-margin.
 //
 // See: https://github.com/xo/blitz
 package pdf
@@ -22,8 +26,28 @@ func init() {
 	encoder.Register(
 		"pdf",
 		encoder.Desc("Portable Document Format"),
+		encoder.Source(source),
 		encoder.Encoder(encode),
 	)
+}
+
+// Writer is an image that writes itself as a pdf, such as a document that
+// ivy opens.
+type Writer interface {
+	WritePDF(ctx context.Context, w io.Writer) error
+}
+
+// source writes img as a pdf when img writes itself as one. A document is
+// paper, so it is not scaled to the display, and it has its own background.
+func source(ctx context.Context, w io.Writer, img image.Image) (bool, error) {
+	pw, ok := img.(Writer)
+	if !ok {
+		return false, nil
+	}
+	if err := pw.WritePDF(ctx, w); err != nil {
+		return true, fmt.Errorf("pdf encode: %w", err)
+	}
+	return true, nil
 }
 
 // pageSizes are the page geometries the encoder accepts, by name. The zero

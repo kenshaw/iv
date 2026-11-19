@@ -17,7 +17,7 @@ renderer (D1). Speed is not a goal (D2).
 
 ## Current state
 
-This is the state of 2026-11-19, after D54.
+This is the state of 2026-11-19, after D55.
 
 - One package for each format registers a decoder or an encoder from `init`,
   and a pipeline in `decoder` runs them (D10). `iv --list` names each one.
@@ -31,7 +31,8 @@ This is the state of 2026-11-19, after D54.
   (D5, D8, D22). blitz draws Markdown, HTML and web pages (D16). zuzu draws
   DOT graphs, Mermaid diagrams and Vega charts (D36). xo/ivy draws office
   documents, ebooks, PDF, XPS, Photoshop files and other formats, and asks
-  for a missing password (D49, D50, D51).
+  for a missing password (D49, D50, D51). A document that ivy opens is
+  written to a pdf as vectors (D55).
 - Two decoders run an external command from `$PATH` (D7): `ffmpeg` and `tag`
   run `ffmpeg` and `ffprobe`.
 - `iv` plays an animated gif, lottie or video (D19, D42, D43).
@@ -127,6 +128,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D52](#d52-a-scheduled-workflow-keeps-the-aur-packages-current-decided) | A scheduled workflow keeps the AUR packages current | Decided |
 | [D53](#d53-the-release-workflow-runs-only-for-a-version-tag-decided) | The Release workflow runs only for a version tag | Decided |
 | [D54](#d54-a-script-makes-the-screenshots-of-the-readme-in-ghostty-decided) | A script makes the screenshots of the README in Ghostty | Decided |
+| [D55](#d55-a-document-is-written-to-a-pdf-with-ivy-as-vectors-decided) | A document is written to a pdf with ivy, as vectors | Decided |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -1227,7 +1229,8 @@ ivy had no tag yet, so `iv` requires its pushed commit `e0b710b`. That
 commit requires okage v0.10.0 and magic v0.7.0, and `iv` moved to them. Later
 on the same day, `iv` moved to the ivy commit `6e838f4`, okage v0.12.0 and
 magic v0.8.0. On 2026-11-19, `iv` moved to the ivy commit `72caf3e`, which
-requires okage v0.14.0 and magic v0.9.1.
+requires okage v0.14.0 and magic v0.9.1. Later on that day, `iv` moved to the
+ivy commit `8bb9f50`, which requires okage v0.17.0.
 
 `decoder/ivy` registers one decoder for each format of ivy that `iv` takes,
 named `ivy-` and the name of the format, from the `Format` value that the
@@ -1377,6 +1380,29 @@ output of `iv` looks like in Ghostty, made by a script.
   those options.
 - A screen lock makes each screenshot black, so the script must run while
   the screen is not locked.
+
+### D55. A document is written to a pdf with ivy, as vectors. Decided.
+
+On 2026-11-19, a maintainer asked to write a pdf with the PDF writer of
+ivy. The ivy commit `8bb9f50` has it, in `pdf/pdfenc`. It writes the pages
+of a document through okage, with their paths and their images as vectors.
+In this version, the glyphs of the text are paths, so a reader cannot search
+or copy the text.
+
+- `ivctx.Config.Encoder` names the encoder that writes the output. When it
+  is `pdf`, `decoder/ivy` returns the page that it drew, wrapped in a type
+  that keeps the document open and writes it with `pdfenc`. For any other
+  encoder, the decoder returns the image as before, so that the terminal
+  encoder gets the concrete image type that it encodes fastest.
+- An encoder can take a decoded image before `ivimg.Prepare` scales and
+  composites it, through `encoder.Source`. The `pdf` encoder takes an image
+  that has a `WritePDF` method. A document is paper, so `-W`, `-H` and
+  `--bg` do not change it.
+- The pdf holds every page of the document, or only the page that `--page`
+  selects, when `--page` is given.
+- Any other image, and a format of ivy with no pages, such as a Visio
+  preview, goes on a page with blitz, as before. `--pdf-page` and
+  `--pdf-margin` apply only to such an image.
 
 ## Open questions for the maintainers
 

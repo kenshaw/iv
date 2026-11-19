@@ -62,8 +62,8 @@ type Args struct {
 	MermaidBg       *colors.Color `ox:"mermaid background - the theme background when not set"`
 	ZuzuData        string        `ox:"directory that a vega spec reads its data from - empty is the directory of the spec"`
 	BlitzDark       bool          `ox:"render documents and pages dark"`
-	PDFPage         string        `ox:"pdf page size - fit/a4/letter,default:fit,name:pdf-page"`
-	PDFMargin       uint          `ox:"pdf page margin in points,default:36,name:pdf-margin"`
+	PDFPage         string        `ox:"pdf page size of an image - fit/a4/letter,default:fit,name:pdf-page"`
+	PDFMargin       uint          `ox:"pdf page margin of an image in points,default:36,name:pdf-margin"`
 	Password        string        `ox:"password for encrypted documents"`
 	ForceMime       string        `ox:"force mime type"`
 	Out             string        `ox:"write to file instead of the terminal,short:o"`
@@ -157,6 +157,7 @@ func (a *Args) Exec(ctx context.Context, stdout, stderr io.Writer, cliargs []str
 		return err
 	}
 	c := a.Config(stderr)
+	c.Encoder = enc.Name
 	ctx = ivctx.WithConfig(ctx, c)
 	if enc.Term {
 		if err := a.detect(ctx, c, stdout); err != nil {
@@ -315,15 +316,6 @@ func (a *Args) render(ctx context.Context, stdout io.Writer, enc *encoder.Entry,
 		return err
 	}
 	defer ivimg.Close(img)
-	// scaled before the background is composited, so the compositing runs
-	// over the pixels that are actually displayed rather than all of them
-	prepared, err := ivimg.Prepare(ctx, mime, img)
-	if err != nil {
-		return err
-	}
-	// a step that made a new image made one that holds its own memory, and
-	// closing an image twice does nothing
-	defer ivimg.Close(prepared)
 	w := stdout
 	if a.Out != "" {
 		f, err := os.Create(a.Out)
@@ -334,6 +326,26 @@ func (a *Args) render(ctx context.Context, stdout io.Writer, enc *encoder.Entry,
 		w = f
 	}
 	encStart := time.Now()
+	// an encoder can take the decoded image as it is, such as the pdf
+	// encoder that writes a document as vectors
+	switch ok, err := enc.EncodeSource(ctx, w, img); {
+	case err != nil:
+		return err
+	case ok:
+		ivctx.Logf(ctx, "%s encode: %v", enc.Name, time.Since(encStart))
+		ivctx.Logf(ctx, "total: %v", time.Since(start))
+		return nil
+	}
+	// scaled before the background is composited, so the compositing runs
+	// over the pixels that are actually displayed rather than all of them
+	prepared, err := ivimg.Prepare(ctx, mime, img)
+	if err != nil {
+		return err
+	}
+	// a step that made a new image made one that holds its own memory, and
+	// closing an image twice does nothing
+	defer ivimg.Close(prepared)
+	encStart = time.Now()
 	if err := enc.Encode(ctx, w, prepared); err != nil {
 		return err
 	}

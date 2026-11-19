@@ -28,6 +28,11 @@ var (
 // EncodeFunc encodes an image to a writer.
 type EncodeFunc func(context.Context, io.Writer, image.Image) error
 
+// SourceFunc writes a decoded image to a writer before the image is scaled
+// and composited, such as a document that keeps its vectors. It returns false
+// when it does not take the image, and has then written nothing.
+type SourceFunc func(context.Context, io.Writer, image.Image) (bool, error)
+
 var (
 	mu       sync.RWMutex
 	encoders = make(map[string]*Entry)
@@ -47,6 +52,7 @@ type Entry struct {
 	Term bool
 
 	encode EncodeFunc
+	source SourceFunc
 }
 
 // String satisfies the [fmt.Stringer] interface.
@@ -68,6 +74,17 @@ func (e *Entry) Encode(ctx context.Context, w io.Writer, img image.Image) error 
 		return err
 	}
 	return ivimg.Err(img)
+}
+
+// EncodeSource writes the decoded image to the writer, before the image is
+// scaled and composited, when the encoder takes it as it is (see [Source]).
+// It returns false when the encoder does not take it, and has then written
+// nothing. The image is then prepared, and given to [Entry.Encode].
+func (e *Entry) EncodeSource(ctx context.Context, w io.Writer, img image.Image) (bool, error) {
+	if e.source == nil {
+		return false, nil
+	}
+	return e.source(ctx, w, img)
 }
 
 // Register registers an encoder. It panics when name is empty or already

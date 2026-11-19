@@ -25,6 +25,14 @@ func Encoder(f EncodeFunc) Option {
 	}
 }
 
+// Source is an encoder option to set the func that writes a decoded image
+// before it is scaled and composited. See [Entry.EncodeSource].
+func Source(f SourceFunc) Option {
+	return func(e *Entry) {
+		e.source = f
+	}
+}
+
 // ImageEncoder is an encoder option setting the encoding func from a plain
 // image encoder, such as [png.Encode]. The encoder gets the pixels under each
 // wrapper of the image (see [ivimg.Unwrap]), because the encoders of the

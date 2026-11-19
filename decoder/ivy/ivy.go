@@ -10,6 +10,10 @@
 // US Letter: a csv or tsv table, an Excel workbook, or an OpenDocument
 // spreadsheet. A sheet whose file gives portrait stays in portrait (D51).
 //
+// When the output is a pdf, a format with pages writes its pages with the
+// PDF writer of ivy, with their paths and their images as vectors. It writes
+// every page, or the page that --page selects (D55).
+//
 // A document that a password protects, such as a pdf or a docx, opens with
 // --password. When that password is missing or wrong, the decoder asks for
 // the password at the terminal (D50).
@@ -51,6 +55,7 @@ import (
 	"github.com/xo/ivy/odf"
 	"github.com/xo/ivy/ora"
 	"github.com/xo/ivy/pdf"
+	"github.com/xo/ivy/pdf/pdfenc"
 	"github.com/xo/ivy/pptx"
 	"github.com/xo/ivy/ps"
 	"github.com/xo/ivy/psd"
@@ -181,17 +186,65 @@ func decodeFunc(f ivy.Format) decoder.DecodeFunc {
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", f.Name, err)
 		}
-		defer doc.Close()
 		describe(ctx, f, doc)
-		if pager, ok := doc.(ivy.Pager); ok {
-			return renderPage(ctx, f, pager)
+		pager, ok := doc.(ivy.Pager)
+		if !ok {
+			defer doc.Close()
+			img, err := ivy.BestPreview(ctx, doc, displaySize(ctx))
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", f.Name, err)
+			}
+			return img, nil
 		}
-		img, err := ivy.BestPreview(ctx, doc, displaySize(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", f.Name, err)
+		img, n, err := renderPage(ctx, f, pager)
+		if err != nil || c.Encoder != "pdf" {
+			return img, errors.Join(err, doc.Close())
 		}
-		return img, nil
+		// the pdf encoder writes the pages from the document, which stays
+		// open until the image is closed
+		return &document{Image: img, f: f, doc: doc, cfg: cfg, page: n}, nil
 	}
+}
+
+// document is a page of a document, drawn as an image, that writes the
+// pages of its document as a pdf, as vectors (D55). Close closes the
+// document.
+type document struct {
+	image.Image
+
+	f    ivy.Format
+	doc  ivy.Document
+	cfg  ivy.Config
+	page int
+}
+
+// Unwrap returns the image of the page.
+func (d *document) Unwrap() image.Image {
+	return d.Image
+}
+
+// Close satisfies the [io.Closer] interface.
+func (d *document) Close() error {
+	return d.doc.Close()
+}
+
+// WritePDF writes the pages of the document to w as a pdf. It writes every
+// page, or the page that --page selects. A page that draws only in part is
+// written with the part, and a warning.
+func (d *document) WritePDF(ctx context.Context, w io.Writer) error {
+	opts := []pdfenc.Option{pdfenc.WithConfig(d.cfg)}
+	if ivctx.Get(ctx).Page != 0 {
+		opts = append(opts, pdfenc.WithPages(d.page))
+	}
+	err := pdfenc.Encode(ctx, w, d.doc, opts...)
+	var partial *ivy.PartialError
+	switch {
+	case errors.As(err, &partial):
+		ivctx.Warnf(ctx, "%s: drawn in part: %v", d.f.Name, partial)
+	case err != nil:
+		return fmt.Errorf("%s: %w", d.f.Name, err)
+	}
+	return nil
 }
 
 // sheets are the formats that hold only spreadsheets. The odf format holds
@@ -229,24 +282,25 @@ func isODS(buf []byte) bool {
 	return bytes.HasPrefix(data, []byte(odsMime))
 }
 
-// renderPage draws the page that --page selects.
+// renderPage draws the page that --page selects, and returns its number,
+// from 0.
 //
 // A page of a raster image draws at its own size. Any other page draws at
 // --dpi, or at a lower resolution when that is larger than the size that the
 // page is shown at, so that it is drawn at the size that it is shown at and
 // is not scaled after.
-func renderPage(ctx context.Context, f ivy.Format, pager ivy.Pager) (image.Image, error) {
+func renderPage(ctx context.Context, f ivy.Format, pager ivy.Pager) (image.Image, int, error) {
 	count, err := pager.PageCount(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", f.Name, err)
+		return nil, 0, fmt.Errorf("%s: %w", f.Name, err)
 	}
 	if count == 0 {
-		return nil, fmt.Errorf("%s: %w", f.Name, ErrNoPages)
+		return nil, 0, fmt.Errorf("%s: %w", f.Name, ErrNoPages)
 	}
 	n := ivctx.Page(ctx, count)
 	page, err := pager.Page(ctx, n)
 	if err != nil {
-		return nil, fmt.Errorf("%s page %d: %w", f.Name, n+1, err)
+		return nil, 0, fmt.Errorf("%s page %d: %w", f.Name, n+1, err)
 	}
 	// a page of a document is paper, and is white under its content. A
 	// raster image keeps its transparent pixels, as any other image does, so
@@ -262,9 +316,9 @@ func renderPage(ctx context.Context, f ivy.Format, pager ivy.Pager) (image.Image
 	case errors.As(err, &partial):
 		ivctx.Warnf(ctx, "%s page %d: drawn in part: %v", f.Name, n+1, partial.Err)
 	case err != nil:
-		return nil, fmt.Errorf("%s page %d: %w", f.Name, n+1, err)
+		return nil, 0, fmt.Errorf("%s page %d: %w", f.Name, n+1, err)
 	}
-	return img, nil
+	return img, n, nil
 }
 
 // ErrNoPages is the error of a document with no pages.

@@ -382,10 +382,22 @@ With `--out`, `iv` writes a file in the format of its extension.
 | `tiff`    | `vips-tiff`  |
 | `pdf`     | `pdf`        |
 
-`--encoder vips-webp` writes webp with libvips. The `pdf` encoder puts the
-image on one page of its own size. `--pdf-page a4` or `--pdf-page letter`
-puts it on pages of that size, with a margin of `--pdf-margin` points. A png
-or a jpeg that is not changed is written as the bytes of its file.
+`--encoder vips-webp` writes webp with libvips. A png or a jpeg that is not
+changed is written as the bytes of its file.
+
+The `pdf` encoder writes a document that ivy opens, such as a docx, an epub
+or a pdf, with its pages as vectors. It writes every page, or only the page
+that `--page` selects. The text of such a pdf is drawn as paths, so a reader
+cannot search or copy it:
+
+```sh
+$ iv -o report.pdf /path/to/report.docx
+$ iv -p 2 -o page2.pdf /path/to/report.docx
+```
+
+The `pdf` encoder puts any other image on one page of its own size.
+`--pdf-page a4` or `--pdf-page letter` puts it on pages of that size, with a
+margin of `--pdf-margin` points.
 
 ## Building
 

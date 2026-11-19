@@ -66,6 +66,12 @@ type Config struct {
 	// the terminal has no graphics (D42).
 	Terminal rasterm.Terminal
 
+	// Encoder is the name of the encoder that writes the output, such as
+	// rasterm or pdf. A decoder can give a form that only that encoder
+	// takes, such as a document that the pdf encoder writes as vectors
+	// (D55).
+	Encoder string
+
 	// Logger is the verbose logger. Always non-nil after [Config.Init].
 	Logger func(string, ...any)
 	// Warner reports something the user should see whether or not they asked

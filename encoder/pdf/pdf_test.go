@@ -5,6 +5,7 @@ import (
 	"context"
 	"image"
 	"image/color"
+	"io"
 	"regexp"
 	"strings"
 	"testing"
@@ -126,5 +127,37 @@ func TestNonRGBA(t *testing.T) {
 	}
 	if rgba := toRGBA(img); rgba.Bounds().Size() != img.Bounds().Size() {
 		t.Errorf("expected the conversion to keep the size, got %v", rgba.Bounds().Size())
+	}
+}
+
+// writer is an image that writes itself as a pdf.
+type writer struct {
+	image.Image
+}
+
+// WritePDF satisfies the [Writer] interface.
+func (writer) WritePDF(_ context.Context, w io.Writer) error {
+	_, err := io.WriteString(w, "%PDF-writer")
+	return err
+}
+
+// TestSource checks that the encoder takes an image that writes itself as a
+// pdf before it is prepared, and leaves any other image to encode (D55).
+func TestSource(t *testing.T) {
+	ctx := ivctx.WithConfig(context.Background(), ivctx.New())
+	img := image.NewRGBA(image.Rect(0, 0, 8, 8))
+	var b bytes.Buffer
+	switch ok, err := source(ctx, &b, writer{img}); {
+	case err != nil:
+		t.Fatalf("expected no error, got: %v", err)
+	case !ok || b.String() != "%PDF-writer":
+		t.Errorf("expected the image to write itself, got %t %q", ok, b.String())
+	}
+	b.Reset()
+	switch ok, err := source(ctx, &b, img); {
+	case err != nil:
+		t.Fatalf("expected no error, got: %v", err)
+	case ok || b.Len() != 0:
+		t.Errorf("expected an image to be left to encode, got %t %q", ok, b.String())
 	}
 }

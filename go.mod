@@ -17,11 +17,11 @@ require (
 	github.com/tc-hib/winres v0.3.1
 	github.com/ulikunitz/xz v0.5.17
 	github.com/xo/blitz v0.5.0
-	github.com/xo/ivy v0.0.0-20261118201757-72caf3ed5208
+	github.com/xo/ivy v0.0.0-20261119025826-8bb9f50ee98d
 	github.com/xo/magic v0.9.1
 	github.com/xo/magic/compress/xz v0.6.0
 	github.com/xo/magic/compress/zstd v0.6.0
-	github.com/xo/okage v0.14.0
+	github.com/xo/okage v0.17.0
 	github.com/xo/ox v0.0.0-20260927161223-bb2641a91b18
 	github.com/xo/transit v0.7.8
 	github.com/xo/transit/grammars/bash v0.7.8

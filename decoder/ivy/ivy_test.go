@@ -14,6 +14,7 @@ import (
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/ivctx"
 	"github.com/xo/ivy"
+	"github.com/xo/ivy/pdf"
 	"github.com/xo/okage"
 )
 
@@ -67,6 +68,59 @@ func TestPage(t *testing.T) {
 	case !bytes.Equal(pages[0], pages[2]):
 		t.Error("expected page 99 to be page 1")
 	}
+}
+
+// TestWritePDF checks that a document writes every page as a pdf when the
+// output is a pdf, and only the page that --page selects when it is given.
+// For any other output, the document is drawn as an image (D55).
+func TestWritePDF(t *testing.T) {
+	tests := []struct {
+		page  uint
+		pages int
+	}{
+		{0, 4},
+		{2, 1},
+		{99, 1},
+	}
+	for _, test := range tests {
+		ctx := testContext(t)
+		c := ivctx.Get(ctx)
+		c.Encoder, c.Page = "pdf", test.page
+		img := testDecode(t, ctx, "file-sample_100kB.docx")
+		d, ok := img.(*document)
+		if !ok {
+			t.Fatalf("expected a *document, got %T", img)
+		}
+		var buf bytes.Buffer
+		if err := d.WritePDF(ctx, &buf); err != nil {
+			t.Fatalf("expected no error, got: %v", err)
+		}
+		if err := d.Close(); err != nil {
+			t.Errorf("expected no error, got: %v", err)
+		}
+		if n := pdfPages(t, buf.Bytes()); n != test.pages {
+			t.Errorf("page %d: expected %d pages, got %d", test.page, test.pages, n)
+		}
+	}
+	img := testDecode(t, testContext(t), "file-sample_100kB.docx")
+	if _, ok := img.(*document); ok {
+		t.Error("expected an image for the terminal, got a *document")
+	}
+}
+
+// pdfPages returns the number of pages of a pdf, as ivy reads it.
+func pdfPages(t *testing.T, buf []byte) int {
+	t.Helper()
+	doc, err := pdf.Format.Open(t.Context(), bytes.NewReader(buf), ivy.Config{})
+	if err != nil {
+		t.Fatalf("expected a pdf, got: %v", err)
+	}
+	defer doc.Close()
+	n, err := doc.(ivy.Pager).PageCount(t.Context())
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	return n
 }
 
 // TestPaper checks that a spreadsheet whose file gives no orientation is
