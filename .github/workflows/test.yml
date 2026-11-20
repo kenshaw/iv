@@ -7,8 +7,6 @@ permissions:
 env:
   GO_VERSION: stable
   CGO_ENABLED: '1'
-  # libvips' pkg-config cflags include -Xpreprocessor on macOS
-  CGO_CFLAGS_ALLOW: '-Xpreprocessor'
 
 jobs:
   test:
@@ -18,8 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # 26.04 rather than 24.04 (ubuntu-latest): vipsgen's bindings are
-          # generated against libvips 8.18, and 24.04 only has 8.15
+          # 26.04 rather than 24.04 (ubuntu-latest): libvips needed 8.18,
+          # which 24.04 does not have. libvips is gone (D56), and 24.04 is
+          # untested since (see docs/BACKLOG.md)
           - os: ubuntu-26.04
             shell: bash
           - os: ubuntu-26.04-arm
@@ -35,24 +34,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      # debian/ubuntu ship libheif without any codec, so heic/avif need the
-      # plugin packages on top -- brew's and msys2's libheif bundle theirs.
-      # blitz links fontconfig and freetype directly; libvips-dev happens to
-      # pull both in, but blitz is the one that needs them
+      # blitz is the only C code. It links fontconfig and freetype on Linux,
+      # and only the libraries of the system on macOS and Windows
       - name: Install build dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get -qq update
           sudo apt-get install -y --no-install-recommends \
             build-essential \
-            pkg-config \
-            libvips-dev \
             libfontconfig-dev \
-            libfreetype-dev \
-            libheif-plugin-libde265 \
-            libheif-plugin-x265 \
-            libheif-plugin-aomdec \
-            libheif-plugin-aomenc
+            libfreetype-dev
 
       # the external commands that the decoders run. A test fails when one of
       # them is missing (D27), so every runner installs what it has a
@@ -62,16 +53,6 @@ jobs:
         run: |
           sudo apt-get install -y --no-install-recommends \
             ffmpeg
-
-      - name: Install build dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install --quiet vips
-          command -v pkg-config >/dev/null || brew install --quiet pkgconf
-          # the pkg-config file of the vips of brew names libarchive. brew
-          # does not link libarchive, because macOS has its own, so its
-          # pkg-config file is not on the search path
-          echo "PKG_CONFIG_PATH=$(brew --prefix libarchive)/lib/pkgconfig" >> "$GITHUB_ENV"
 
       - name: Install decoder commands (macOS)
         if: runner.os == 'macOS'
@@ -91,36 +72,17 @@ jobs:
           path-type: inherit
           install: >-
             mingw-w64-ucrt-x86_64-gcc
-            mingw-w64-ucrt-x86_64-pkgconf
-            mingw-w64-ucrt-x86_64-libvips
-            mingw-w64-ucrt-x86_64-libheif
-            mingw-w64-ucrt-x86_64-libjxl
-            mingw-w64-ucrt-x86_64-imagemagick
             mingw-w64-ucrt-x86_64-ffmpeg
-
-      # setup-go keys its cache of compiled packages on go.sum only. A package
-      # that links libvips keeps the paths that pkg-config gave when it was
-      # compiled, and on macOS a path names the version of the Homebrew
-      # bottle, as in Cellar/vips/8.18.7_1. The flags are part of the key, so
-      # that a new bottle does not restore a package that names a path that
-      # is gone
-      - name: Record the libvips flags
-        run: |
-          pkg-config --cflags --libs vips | tee vips-flags.txt
 
       - name: Install Go
         uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: |
-            go.sum
-            vips-flags.txt
 
       - name: Versions
         run: |
           go version
           go env CC CGO_ENABLED
-          pkg-config --modversion vips
 
       - name: Build
         run: |
@@ -144,15 +106,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      # libvips and the libraries of blitz are cgo, and the linter type
-      # checks the packages that link them
+      # blitz is cgo, and the linter type checks the packages that link it
       - name: Install build dependencies
         run: |
           sudo apt-get -qq update
           sudo apt-get install -y --no-install-recommends \
             build-essential \
-            pkg-config \
-            libvips-dev \
             libfontconfig-dev \
             libfreetype-dev
 

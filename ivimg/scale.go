@@ -12,9 +12,8 @@ import (
 // Fit returns img scaled to the size that the configuration on the context
 // displays it at. See [ivctx.Scale] for the size.
 //
-// If the size does not change, Fit returns img as it is. If img is a
-// [Resizer], it resizes itself. Otherwise the pixels are scaled into a new
-// [image.NRGBA].
+// If the size does not change, Fit returns img as it is. Otherwise the pixels
+// are scaled into a new [image.NRGBA].
 func Fit(ctx context.Context, img image.Image) (image.Image, error) {
 	b := img.Bounds()
 	w, h := ivctx.Scale(ctx, b.Dx(), b.Dy())
@@ -29,14 +28,6 @@ func Resize(ctx context.Context, img image.Image, w, h int) (image.Image, error)
 		return img, nil
 	}
 	start := time.Now()
-	if r, ok := img.(Resizer); ok {
-		dst, err := r.Resize(ctx, w, h)
-		if err != nil {
-			return nil, err
-		}
-		ivctx.Logf(ctx, "resize: %T %dx%d -> %dx%d: %v", img, b.Dx(), b.Dy(), w, h, time.Since(start))
-		return dst, nil
-	}
 	src := Unwrap(img)
 	if err := Err(img); err != nil {
 		return nil, err
@@ -49,8 +40,7 @@ func Resize(ctx context.Context, img image.Image, w, h int) (image.Image, error)
 
 // Nearest returns true when scaling sw x sh to w x h magnifies a small image
 // by a whole number. Pixel replication then keeps icon art and pixel art
-// crisp, where a smooth kernel blurs it into nothing recognizable. A
-// [Resizer] uses it to choose its kernel the same way.
+// crisp, where a smooth kernel blurs it into nothing recognizable.
 func Nearest(sw, sh, w, h int) bool {
 	return max(sw, sh) <= ivctx.Small && w >= sw && h >= sh &&
 		w%sw == 0 && h%sh == 0 && w/sw == h/sh && w/sw >= 2

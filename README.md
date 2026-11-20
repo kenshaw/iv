@@ -230,8 +230,8 @@ A file with only one frame, such as a jpeg, is not animated, and
 ## Formats
 
 `iv --list` shows the decoders of the binary that you have. The tables below
-are for a default build. The formats of libvips depend on how libvips was
-built, and the decoders that need `ffmpeg` work only when it is installed.
+are for a default build. The decoders that need `ffmpeg` work only when it is
+installed.
 
 ### Images
 
@@ -249,10 +249,19 @@ built, and the decoders that need `ffmpeg` work only when it is installed.
 | Photoshop, the merged image                    | `psd` `psb`                                                                   | `ivy-psd`    |
 | OpenRaster and Krita, the merged image         | `ora` `kra`                                                                   | `ivy-ora`    |
 | Camera RAW, the preview that the camera embeds | `cr2` `cr3` `nef` `nrw` `arw` `srf` `sr2` `dng` `orf` `rw2` `pef` `srw` `raf` | `ivy-camera` |
-| HEIC, HEIF and AVIF                            | `heic` `heif` `avif`                                                          | `vips`       |
-| JPEG 2000 and JPEG XL                          | `jp2` `jpf` `j2k` `jxl` `jxs`                                                 | `vips`       |
-| OpenEXR, Radiance HDR and PFM                  | `exr` `hdr` `pfm` `rad`                                                       | `vips`       |
-| FITS, MATLAB, NIfTI and the format of vips     | `fits` `mat` `nii` `v`                                                        | `vips`       |
+| HEIC and HEIF                                  | `heic` `heif` `hif`                                                           | `heic`       |
+| AVIF                                           | `avif` `avifs`                                                                | `avif`       |
+| JPEG XL                                        | `jxl`                                                                         | `jxl`        |
+| JPEG 2000, and its raw codestream              | `jp2` `jpf` `jpx` `j2k` `j2c` `jpc`                                           | `jpeg2000`   |
+| OpenEXR                                        | `exr`                                                                         | `exr`        |
+| Radiance HDR and Portable Float Map            | `hdr` `rad` `pfm`                                                             | `hdr`        |
+| MATLAB arrays, version 5                       | `mat`                                                                         | `matlab`     |
+| The file format of libvips                     | `v` `vips`                                                                    | `vipsfile`   |
+
+A format with linear light, such as OpenEXR, is clipped to the range of the
+display, as libvips did. The decoders do not convert colors with an ICC
+profile yet, so an image in a wide gamut, or a CMYK image with a profile,
+shows its colors as sRGB.
 
 ### Vector graphics and diagrams
 
@@ -393,16 +402,19 @@ With `--out`, `iv` writes a file in the format of its extension.
 | `png`     | `png`        |
 | `jpg`     | `jpeg`       |
 | `webp`    | `nativewebp` |
-| `avif`    | `vips-avif`  |
-| `gif`     | `vips-gif`   |
-| `heic`    | `vips-heif`  |
-| `jp2`     | `vips-jp2k`  |
-| `jxl`     | `vips-jxl`   |
-| `tiff`    | `vips-tiff`  |
+| `avif`    | `avif`       |
+| `gif`     | `gif`        |
+| `heic`    | `heic`       |
+| `jp2`     | `jpeg2000`   |
+| `jxl`     | `jxl`        |
+| `tiff`    | `tiff`       |
 | `pdf`     | `pdf`        |
 
-`--encoder vips-webp` writes webp with libvips. A png or a jpeg that is not
-changed is written as the bytes of its file.
+The `nativewebp` encoder writes a webp with no loss, and `--encoder vpx`
+writes a lossy webp. The `avif` encoder writes 8 bits for each channel. The
+`jxl` encoder writes no alpha. The `gif` encoder reduces an image to 256
+fixed colors, with dithering. A png or a jpeg that is not changed is written
+as the bytes of its file.
 
 The `pdf` encoder writes a document that ivy opens, such as a docx, an epub
 or a pdf, with its pages as vectors. It writes every page, or only the page
@@ -421,43 +433,23 @@ margin of `--pdf-margin` points.
 
 ## Building
 
-`iv` is cgo code. It links libvips for the image formats that the Go
-decoders do not read, and fontconfig and freetype for blitz. It needs Go
-1.27 or later, libvips 8.18 or later, and the packages below.
+`iv` is cgo code, because blitz is. blitz links fontconfig and freetype on
+Linux, and only the libraries of the system on macOS and Windows. Every other
+decoder and encoder is pure Go. `iv` needs Go 1.27 or later, a C compiler,
+and the packages below.
 
 ### Linux
 
 ```sh
-$ sudo apt-get install -y build-essential pkg-config libvips-dev \
-    libfontconfig-dev libfreetype-dev
-```
-
-Ubuntu 24.04 and earlier have a libvips that is too old. Debian and Ubuntu
-build libheif with no codec, so HEIC and AVIF also need these plugins:
-
-```sh
-$ sudo apt-get install -y libheif-plugin-libde265 libheif-plugin-x265 \
-    libheif-plugin-aomdec libheif-plugin-aomenc
+$ sudo apt-get install -y build-essential libfontconfig-dev libfreetype-dev
 ```
 
 ### macOS
 
-```sh
-$ brew install vips pkgconf
-```
-
-The pkg-config file of libvips names libarchive. Homebrew does not link
-libarchive, because macOS has its own, so give pkg-config its directory:
+Install the command line tools of Xcode, which have the C compiler:
 
 ```sh
-$ export PKG_CONFIG_PATH="$(brew --prefix libarchive)/lib/pkgconfig"
-```
-
-If the build stops on `-Xpreprocessor`, which some builds of libvips put in
-their flags, allow it:
-
-```sh
-$ export CGO_CFLAGS_ALLOW='-Xpreprocessor'
+$ xcode-select --install
 ```
 
 ### Windows
@@ -466,8 +458,7 @@ Build in the UCRT64 environment of [MSYS2][msys2]. CI builds there, and
 nothing tests MINGW64.
 
 ```sh
-$ pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-pkgconf \
-    mingw-w64-ucrt-x86_64-libvips
+$ pacman -S mingw-w64-ucrt-x86_64-gcc
 ```
 
 [msys2]: https://www.msys2.org/
@@ -507,7 +498,8 @@ take that form:
 | ----------------------------------------------------------------------------------------- | -------------------------- | --------------------------- | ------- |
 | A png that is not scaled, from a file, a `data:` URL, ffmpeg, a web page or an archive   | The bytes of the file      | The bytes of the file       | Encoded |
 | A jpeg that is not scaled                                                                 | Raw RGB                    | The bytes of the file       | Encoded |
-| An image that libvips decodes, such as heic, avif or jxl                                  | A PNG that libvips encodes | A JPEG that libvips encodes | Encoded |
+| An image that a codec decodes, such as heic, avif or jxl, at 8 bits                       | Raw RGBA                   | Encoded                     | Encoded |
+| The same at more than 8 bits, or an image from an HDR format                              | A PNG that rasterm encodes | Encoded                     | Encoded |
 | An image that a renderer draws, such as svg, lottie, a document, a font or a psd          | Raw RGBA                   | Encoded                     | Encoded |
 | Any other image, such as a gif or a QR code                                               | A PNG that rasterm encodes | Encoded                     | Encoded |
 
@@ -539,6 +531,29 @@ v0.17.3:
 Sixel encodes each image from its pixels, so its row shows the cost of
 decoding and scaling, which did not change. D26 in
 [`docs/PLAN.md`](docs/PLAN.md) has the method.
+
+On 2026-11-20, the benchmarks compared libvips 8.18.7 with the pure Go
+codecs that replaced it (D56), on the 10 files of `testdata/` that both read:
+2 heic, 2 avif, a jxl, a jp2, an exr, a Radiance HDR, a PFM and a `.v` file.
+`BenchmarkEncode` wrote one photo in the 9 formats of `--out`:
+
+| Benchmark       | libvips  | Pure Go  | Ratio |
+| --------------- | -------- | -------- | ----- |
+| Render, Kitty   | 9.86 ms  | 8.68 ms  | 0.88x |
+| Render, iTerm   | 7.79 ms  | 10.01 ms | 1.29x |
+| Render, Sixel   | 37.39 ms | 37.59 ms | 1.01x |
+| Encode, 9 files | 71.98 ms | 95.61 ms | 1.33x |
+
+libvips decoded the pixels only when an encoder asked for them, so a
+benchmark of the decode alone does not compare the two. For Kitty, the Go
+codecs are faster on most files, and send raw pixels where libvips sent a
+PNG. For iTerm, libvips encoded a JPEG itself, and rasterm encodes it now.
+A JPEG 2000 file decodes 3.6 times slower. The `avif` and `jxl` encoders
+are 5 and 2.7 times faster, and the `gif` encoder is 4.4 times slower. The
+`jpeg2000` encoder at its default quality writes a file 16 times larger than
+libvips did. The `tiff` encoder compresses with deflate, where libvips did
+not, so it takes 32 ms in place of 1 ms, and writes 1.5 MiB in place of
+3.7 MiB.
 
 ### Running the benchmarks
 

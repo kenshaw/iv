@@ -18,9 +18,7 @@ import (
 // AddBackground returns img as it is in three cases: the background is
 // transparent, the image is an svg, which draws its own background, or the
 // image has no transparent pixels, which [Opaque] reads from the image
-// format. If img is a [Flattener] and the background is opaque, img
-// composites itself. Otherwise the pixels are composited into a new
-// [image.NRGBA].
+// format. Otherwise the pixels are composited into a new [image.NRGBA].
 func AddBackground(ctx context.Context, mime string, img image.Image) (image.Image, error) {
 	bg := ivctx.Get(ctx).Bg
 	switch {
@@ -28,15 +26,6 @@ func AddBackground(ctx context.Context, mime string, img image.Image) (image.Ima
 		return img, nil
 	}
 	start := time.Now()
-	if f, ok := img.(Flattener); ok && bg.A == 0xff {
-		n := bg.NRGBA()
-		dst, err := f.Flatten(ctx, n.R, n.G, n.B)
-		if err != nil {
-			return nil, err
-		}
-		ivctx.Logf(ctx, "add bg: %T: %v", img, time.Since(start))
-		return dst, nil
-	}
 	src := Unwrap(img)
 	if err := Err(img); err != nil {
 		return nil, err
@@ -60,8 +49,8 @@ func transparent(c *colors.Color) bool {
 // transparent pixels.
 //
 // The bytes of a PNG name its color type and whether it holds a tRNS chunk.
-// An image that has an Opaque method, such as an image that libvips holds,
-// answers for itself. The Go image types without an alpha channel are opaque.
+// An image that has an Opaque method answers for itself, unless the method
+// looks at each pixel. The Go image types without an alpha channel are opaque.
 func Opaque(img image.Image) bool {
 	if opaque, ok := opaqueFile(img); ok {
 		return opaque

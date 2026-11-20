@@ -15,8 +15,7 @@ import (
 // For the Kitty protocol:
 //
 //   - An image that holds its own encoding as a [rasterm.PNGImage] is
-//     returned as it is, and rasterm sends the encoding. An image that libvips
-//     holds encodes its PNG then.
+//     returned as it is, and rasterm sends the encoding.
 //   - A JPEG offers its pixels as RGB, because Kitty cannot take a JPEG.
 //   - A tight [image.NRGBA] is sent as RGBA, with nothing copied. It is what
 //     the scaler and the compositor of this package leave.
@@ -26,29 +25,15 @@ import (
 //     paletted or a gray image makes a small PNG, and the PNG is faster than
 //     the conversion to raw pixels.
 //
-// For the iTerm protocol, an opaque [JPEGEncoder] that does not hold the bytes
-// of a file, such as an image that libvips holds, is sent as the JPEG that it
-// encodes, at the quality of [rasterm.DefaultJPEGQuality]. rasterm sends a
-// JPEG for any image that is not paletted, and for a 896x1080 photo the JPEG of
-// libvips took 3.5 ms and 229 KiB, where its PNG took 33 ms and 1498 KiB. Any
-// other image is returned as it is.
-//
-// For the other protocols, img is returned as it is.
+// For the other protocols, img is returned as it is. rasterm sends the bytes
+// of a PNG or a JPEG file to iTerm as they are.
 //
 // The pixels are converted only when the encoder asks for them, and the
 // wrappers unwrap to img, so that an encoder that falls back to the pixels
 // finds them.
 func Raw(p rasterm.Protocol, img image.Image) image.Image {
-	switch p {
-	case rasterm.Kitty:
+	if p == rasterm.Kitty {
 		return kittyRaw(img)
-	case rasterm.ITerm:
-		if _, ok := pngOf(img); ok {
-			return img
-		}
-		if j, ok := img.(JPEGEncoder); ok && Opaque(img) {
-			return &encodedJPEG{Image: img, enc: j}
-		}
 	}
 	return img
 }
@@ -75,40 +60,6 @@ func kittyRaw(img image.Image) image.Image {
 		return &rgba{Image: img}
 	}
 	return img
-}
-
-// JPEGEncoder is an image that can encode itself as a JPEG, such as an image
-// that libvips holds.
-type JPEGEncoder interface {
-	image.Image
-	// EncodeJPEG returns the image encoded as a JPEG of the quality, from 1
-	// to 100.
-	EncodeJPEG(quality int) ([]byte, error)
-}
-
-// encodedJPEG is an image that encodes itself as a JPEG when it is first asked
-// for its bytes. It satisfies the [rasterm.JPEGImage] interface, and has no
-// PNG method, so that the iTerm encoder of rasterm sends the JPEG.
-type encodedJPEG struct {
-	image.Image
-
-	enc  JPEGEncoder
-	once sync.Once
-	data []byte
-}
-
-// JPEG satisfies the [rasterm.JPEGImage] interface. If the encode fails, it
-// returns nil, and rasterm encodes the pixels.
-func (j *encodedJPEG) JPEG() []byte {
-	j.once.Do(func() {
-		j.data, _ = j.enc.EncodeJPEG(rasterm.DefaultJPEGQuality)
-	})
-	return j.data
-}
-
-// Unwrap returns the image that j wraps.
-func (j *encodedJPEG) Unwrap() image.Image {
-	return j.Image
 }
 
 // tight returns true when an image with the bounds r and the stride holds its

@@ -20,9 +20,6 @@ import (
 var (
 	// ErrNotRegistered is returned when no encoder is registered under a name.
 	ErrNotRegistered = errors.New("encoder not registered")
-	// ErrUnsupportedFormat is returned when an encoder is registered but the
-	// underlying library was not built with support for its output format.
-	ErrUnsupportedFormat = errors.New("format not supported by this build")
 )
 
 // EncodeFunc encodes an image to a writer.

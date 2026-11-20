@@ -39,7 +39,7 @@ every other agent read the same rules. Edit this file, not that one.
 | adding a decoder that runs an external command | `internal/cmd`, D7 and the "Optional tools" section of `README.md` |
 | changing mime detection | `decoder/mime.go`, D6 and D17 |
 | changing how an image is scaled, composited or handed to an encoder | the package comment of `ivimg`, then D22 and D23 |
-| changing the libvips code | `vips/`, `decoder/vips`, `encoder/vips`, D5, D8 and D22 |
+| adding or changing a codec of a raster format, such as heic or avif | D56, and a decoder or an encoder of the same kind |
 | measuring a change for speed | the Performance section of `README.md`, and D26 |
 | changing animation | `ivcmd/animate.go`, `decoder/anim.go`, D19, D42 and D43 |
 | changing how the output of `iv` looks in a terminal | `docs/screenshots/screenshots.sh`. Run it, and look at each screenshot |
@@ -81,12 +81,10 @@ dbmeta D110. A bare number, as in D3, names a decision of this repository, in
 - `encoder/` and `encoder/<name>/` do the same for the encoders, and
   `encoder/all/` imports every encoder. `encoder/rasterm` draws to the
   terminal.
-- `vips/` holds the libvips code that `decoder/vips` and `encoder/vips` share
-  (D8). Its `Image` keeps a decoded image in libvips, and scales,
-  composites and encodes it there (D22).
 - `internal/cmd/` finds an external command in `$PATH` on first use and runs
   it (D7). `internal/font/` finds the font that the generated cards use, and
-  measures text in it.
+  measures text in it. `internal/scrgb/` converts the linear light of an HDR
+  format to sRGB.
 - `testdata/` holds one folder per decoder, and `testdata/README.md` lists
   them (D11). Git does not convert the line endings of these files (D13).
 - `test.sh` renders every file in `testdata/` through a built `iv`.
@@ -98,8 +96,9 @@ dbmeta D110. A bare number, as in D3, names a decision of this repository, in
 
 These are the conventions that the code follows today.
 
-- `iv` is cgo code (D9). It needs libvips 8.18 or later, and fontconfig and
-  freetype. `README.md` names the packages for each platform.
+- `iv` is cgo code, because blitz is (D9, D56). On Linux it needs fontconfig
+  and freetype. Every codec of a raster format is pure Go, and has no C
+  library (D56). `README.md` names the packages for each platform.
 - A package comment starts with "Package <name> supplies a ... decoder for
   iv", or the same for an encoder.
 - A decoder or an encoder registers itself from `init` and never from a
@@ -111,9 +110,6 @@ These are the conventions that the code follows today.
   of the file with the image, through `decoder.BytesDecoder` and
   `ivimg.DecodePNG` or `ivimg.DecodeJPEG`. A step that changes the pixels
   returns a new image that holds no bytes (D22).
-- libvips decodes when the pixels are asked for, which can be after the
-  pipeline closed the file. Load a libvips image from bytes, never from a
-  stream of the input (D22).
 - The `okage` decoder renders an svg with the `svg.Renderer` of okage (D35).
   The renderer loads the fonts of the system on its first render, and sets
   each css generic family to the first of its candidates that is installed,
@@ -129,18 +125,15 @@ These are the conventions that the code follows today.
 - A sentinel error is a package variable made with `errors.New`, with the
   `Err` prefix, such as `decoder.ErrNotSupported`. Compare errors with
   `errors.Is`.
-- If a library cannot handle a format in this build, return
-  `ErrUnsupportedFormat` from `decoder` or `encoder`, so that a test can skip.
 - Code that works only on some platforms uses a build constraint in the file
   name or a `//go:build` line, as `decoder/blitz/link_windows.go` and
   `ivctx/term_unix.go` do.
 - A test is in the package that it tests, not in an `_test` package.
-- A test fails when an external command, a test file or a libvips format is
-  missing (D27). It does not skip. Three maps in
-  `ivcmd/decode_test.go` name the exceptions, each with its reason, for each
-  operating system: `untested` for a command that CI does not install,
-  `unsupported` for a libvips operation that the libvips of CI does not have,
-  and `untestedFiles` for a test file that crashes a command (D34). No test
+- A test fails when an external command or a test file is missing (D27). It
+  does not skip. Two maps in `ivcmd/decode_test.go` name the exceptions, each
+  with its reason, for each operating system: `untested` for a command that
+  CI does not install, and `untestedFiles` for a test file that crashes a
+  command (D34). No test
   reaches the network. A test that needs a web server runs one with
   `httptest`.
 - A comment inside a function is usually lower case, with no period at the

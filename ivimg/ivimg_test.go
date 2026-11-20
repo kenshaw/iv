@@ -402,21 +402,9 @@ func withOrientation(buf []byte, orientation uint16) []byte {
 	return append(out, buf[2:]...)
 }
 
-// TestRawITerm checks that an opaque image that can encode itself goes to iTerm
-// as its JPEG, and one that holds the bytes of a PNG as the PNG.
+// TestRawITerm checks that an image that holds the bytes of a PNG goes to
+// iTerm as the PNG.
 func TestRawITerm(t *testing.T) {
-	img := &testEncoder{NRGBA: opaqueNRGBA(2, 2)}
-	got := Raw(rasterm.ITerm, img)
-	if _, ok := got.(rasterm.PNGImage); ok {
-		t.Fatal("expected no PNG method, so that iTerm sends the JPEG")
-	}
-	j, ok := got.(rasterm.JPEGImage)
-	if !ok || string(j.JPEG()) != "jpeg" {
-		t.Fatalf("expected the JPEG of the image, got %T", got)
-	}
-	if img.quality != rasterm.DefaultJPEGQuality {
-		t.Errorf("expected quality %d, got %d", rasterm.DefaultJPEGQuality, img.quality)
-	}
 	png, err := DecodePNG(encodePNG(t, opaqueNRGBA(2, 2)))
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
@@ -424,22 +412,4 @@ func TestRawITerm(t *testing.T) {
 	if !same(Raw(rasterm.ITerm, png), png) {
 		t.Error("expected a PNG as it is")
 	}
-}
-
-// testEncoder is an opaque image that encodes itself as a JPEG.
-type testEncoder struct {
-	*image.NRGBA
-
-	quality int
-}
-
-// Opaque returns true.
-func (e *testEncoder) Opaque() bool {
-	return true
-}
-
-// EncodeJPEG satisfies the [JPEGEncoder] interface.
-func (e *testEncoder) EncodeJPEG(quality int) ([]byte, error) {
-	e.quality = quality
-	return []byte("jpeg"), nil
 }

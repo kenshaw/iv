@@ -12,17 +12,24 @@ result and not its size. `encoder/pdf` tests the pages, and needs no file.
 | Directory    | Decoder      | Contents                                                      |
 | ------------ | ------------ | ------------------------------------------------------------- |
 | `archives`   | `archives`   | One comic of two pages, as cbz, cbr and cbt                   |
+| `avif`       | `avif`       | 8, 10 and 12 bits, alpha, a grid, a turned image, BT.2020     |
 | `binwalk`    | `binwalk`    | An Affinity Designer file with a png in it                    |
 | `blitz`      | `blitz`      | Markdown and HTML documents                                   |
 | `bmp`        | `bmp`        |                                                               |
+| `exr`        | `exr`        | OpenEXR, half and float, in five compressions                 |
 | `ffmpeg`     | `ffmpeg`     | One clip as mkv and mp4, and a test pattern, plain and turned |
 | `fontimg`    | `fontimg`    | Static, variable and monospace fonts, WOFF, WOFF2, collection |
 | `gif`        | `gif`        | Still and animated                                            |
+| `hdr`        | `hdr`        | Radiance HDR and Portable Float Map                           |
+| `heic`       | `heic`       | heic and heif, 10 bits, 4:4:4, alpha and grids                |
 | `icns`       | `icns`       | An Apple icon image with eight sizes, from 32 to 1024         |
 | `ico`        | `ico`        | Icons with one image and with many                            |
 | `ivy`        | `ivy-*`      | Documents, ebooks, XPS and Photoshop files that xo/ivy reads  |
 | `jpeg`       | `jpeg`       |                                                               |
+| `jpeg2000`   | `jpeg2000`   | jp2 files and a raw codestream                                |
+| `jxl`        | `jxl`        | Color, gray, squeeze and Display P3                           |
 | `lottie`     | `lottie`     | Noto animated emoji, as json, `.lot` and dotLottie            |
+| `matlab`     | `matlab`     | MAT-files of version 5                                        |
 | `nativewebp` | `nativewebp` | Lossy and lossless webp, each with its png reference          |
 | `netpbm`     | `netpbm`     | pbm, pgm, ppm and pam, raw and plain                          |
 | `okage`      | `okage`      | SVGs, plain and gzipped, from a rectangle to a large map      |
@@ -31,7 +38,7 @@ result and not its size. `encoder/pdf` tests the pages, and needs no file.
 | `tag`        | `tag`        | Silent audio with cover art                                   |
 | `tiff`       | `tiff`       | One file for each compression that the Go encoder writes      |
 | `vcard`      | `vcard`      | Contacts, drawn as a business card with a QR code             |
-| `vips`       | `vips`       | heic, heif, avif and jxl                                      |
+| `vipsfile`   | `vipsfile`   | A file in the format of libvips                               |
 | `winres`     | `winres`     | A Windows executable with icons                               |
 | `zuzu`       | `zuzu`       | DOT graphs, Mermaid diagrams, and Vega charts with their data |
 
@@ -113,8 +120,23 @@ password `password`. `encPassword` in `ivcmd/decode_test.go` and
   and a `-lossless` file is lossless. The `.png` next to each one is its
   reference decode.
 - `png/precision.png`, `jpeg/precision.jpg`, `nativewebp/precision.webp`,
-  `vips/precision.avif` and `vips/precision.jxl`: one image of the
+  `avif/precision.avif` and `jxl/precision.jxl`: one image of the
   [JPEG XL test page][jxl-test] in five formats.
+- The other files of `heic/`: the test data of [gen2brain/h265][h265], under
+  the MIT license.
+- The other files of `avif/`: the test data of [gen2brain/gav1d][gav1d],
+  under the BSD 2-Clause license.
+- The other files of `jxl/`: the test streams of [gen2brain/jxl][jxl], under
+  the BSD 3-Clause license.
+- `jpeg2000/8bit_GRAY_DWT.jp2`: the test data of
+  [mrjoshuak/go-jpeg2000][go-jpeg2000], under the Apache License 2.0.
+- `exr/` except `rose.exr`: the test data and the conformance files of
+  [mrjoshuak/go-openexr][go-openexr], under the Apache License 2.0.
+  `sample.exr` has only a G and a Z channel, so it is drawn in green.
+  `tiled.exr` holds noise, with NaN, negative and very large values.
+- `matlab/testdouble_7.4_GLNX86.mat`: the test data of
+  [scigolib/matlab][scigolib-matlab], which took it from SciPy, under the MIT
+  license. It is one row of nine numbers.
 - `bmp/rose.bmp`: the rose of the gallery, as a bmp.
 - `ico/Mathijssen-Tuxlets-Test-Dummy-Tux.ico`: Mathijssen Tuxlets Test Dummy
   Tux.
@@ -164,7 +186,8 @@ password `password`. `encPassword` in `ivcmd/decode_test.go` and
   ```
 
 The source of `okage/choropleth.svg`, `okage/folder.svg`,
-`okage/sunburst-book.svg` and `ffmpeg/sample_960x540.*` is not recorded.
+`okage/sunburst-book.svg`, `ffmpeg/sample_960x540.*`, `heic/cyberpunk.heic`,
+`heic/dome.heic` and `heic/sample1.heif` is not recorded.
 
 ## Markdown and HTML
 
@@ -270,6 +293,26 @@ draws each one.
   Only PAM keeps an alpha channel. libmagic spells the grayscale type
   `image/x-portable-greymap`, so the decoder registers both spellings.
 
+- `jpeg2000/rose.jp2` is `png/rose.png`, saved by libvips 8.18.7.
+  `rose.j2k` is the codestream of its `jp2c` box, with nothing around it.
+- The rose files of `hdr/`, `exr/`, `matlab/` and `vipsfile/` are
+  `png/rose.png`, made 128 pixels wide with `vips thumbnail`:
+
+  | File                 | Made by                                                   |
+  | -------------------- | --------------------------------------------------------- |
+  | `hdr/rose.hdr`       | mdouchement/hdr, from linear light, over black            |
+  | `hdr/rose.pfm`       | libvips, from linear light (scRGB), over black            |
+  | `exr/rose.exr`       | go-openexr, from linear light, premultiplied, with alpha  |
+  | `matlab/rose-v5.mat` | scigolib/matlab, as an array of uint8 of 96 by 128 by 3   |
+  | `vipsfile/rose.v`    | `vips vipssave`, as 8-bit sRGB with alpha                 |
+
+  Each one draws the image that it was made from, so a decoder that turns,
+  darkens or flips it fails to look like `png/rose.png`. libvips writes a
+  Radiance HDR file 255 times too bright, so `rose.hdr` is made in Go.
+  libvips writes a comment line in the header of a PFM, which the format does
+  not have, and the `hdr` decoder skips it. scigolib/matlab writes a header
+  that starts with `MATLAB MAT-file`, and libvips reads only one that starts
+  with `MATLAB 5.0 MAT-file`, so the text of the header was changed to that.
 - `tag/` holds ten seconds of silence in five containers, each with
   `png/tux.png` as its cover art:
 
@@ -298,3 +341,9 @@ draws each one.
 [xo/lottie]: https://github.com/xo/lottie
 [cc-by-4]: https://creativecommons.org/licenses/by/4.0/
 [zuzu]: https://github.com/xo/zuzu
+[h265]: https://github.com/gen2brain/h265
+[gav1d]: https://github.com/gen2brain/gav1d
+[jxl]: https://github.com/gen2brain/jxl
+[go-jpeg2000]: https://github.com/mrjoshuak/go-jpeg2000
+[go-openexr]: https://github.com/mrjoshuak/go-openexr
+[scigolib-matlab]: https://github.com/scigolib/matlab

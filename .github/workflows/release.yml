@@ -9,8 +9,6 @@ env:
   APP: iv
   VER: ${{ github.ref_name }}
   GO_VERSION: stable
-  # libvips' pkg-config cflags include -Xpreprocessor on macOS
-  CGO_CFLAGS_ALLOW: '-Xpreprocessor'
 
 jobs:
   build_for_linux:
@@ -19,16 +17,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 26.04 rather than 24.04 (ubuntu-latest): vipsgen's bindings are
-        # generated against libvips 8.18, and 24.04 only has 8.15
+        # 26.04 rather than 24.04 (ubuntu-latest): libvips needed 8.18, which
+        # 24.04 does not have. libvips is gone (D56), and 24.04 is untested
+        # since (see docs/BACKLOG.md)
         include:
           - arch: amd64
             os: ubuntu-26.04
           - arch: arm64
             os: ubuntu-26.04-arm
     steps:
-      # blitz links fontconfig and freetype directly; libvips-dev happens to
-      # pull both in, but blitz is the one that needs them
+      # blitz is the only C code, and it links fontconfig and freetype
       - name: Install build dependencies
         run: |
           sudo apt-get -qq update
@@ -36,43 +34,13 @@ jobs:
             build-essential \
             file \
             libfontconfig-dev \
-            libfreetype-dev \
-            libvips \
-            libvips-dev \
-            libgtk2.0-dev \
-            libfftw3-dev \
-            libopenexr-dev \
-            libgsf-1-dev \
-            libglib2.0-dev \
-            liborc-dev \
-            libopenslide-dev \
-            libmatio-dev \
-            libwebp-dev \
-            libjpeg-turbo8-dev \
-            libexpat1-dev \
-            libexif-dev \
-            libtiff5-dev \
-            libpng-dev \
-            libarchive-dev \
-            libcgif-dev \
-            libjxl-dev \
-            libcfitsio-dev \
-            libpoppler-glib-dev \
-            librsvg2-dev \
-            libpango1.0-dev \
-            libopenjp2-7-dev \
-            liblcms2-dev \
-            libimagequant-dev
+            libfreetype-dev
       - name: Checkout
         uses: actions/checkout@v7
       - name: Setup Go
         uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
-          # a release builds from nothing: a cached package keeps the link
-          # flags of the libvips that it was built with, and brew removes
-          # that libvips when it installs a newer one
-          cache: false
       - name: Build ${{ matrix.arch }}
         run: |
           ./build.sh -v $VER -a ${{ matrix.arch }}
@@ -89,8 +57,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # each arch builds natively: cross compiling cgo against libvips would
-        # need a libvips for the other arch, which brew won't install
+        # each arch builds natively, with the C compiler of its runner, for
+        # the archives of blitz
         include:
           - arch: amd64
             os: macos-15-intel
@@ -98,25 +66,16 @@ jobs:
             os: macos-latest
     steps:
       # build.sh packs with gtar and reports with sha256sum, neither of which
-      # macos ships
+      # macos ships. blitz links only the frameworks of macOS
       - name: Install build dependencies
         run: |
-          brew install --quiet coreutils gnu-tar vips
-          command -v pkg-config >/dev/null || brew install --quiet pkgconf
-          # the pkg-config file of the vips of brew names libarchive. brew
-          # does not link libarchive, because macOS has its own, so its
-          # pkg-config file is not on the search path
-          echo "PKG_CONFIG_PATH=$(brew --prefix libarchive)/lib/pkgconfig" >> "$GITHUB_ENV"
+          brew install --quiet coreutils gnu-tar
       - name: Checkout
         uses: actions/checkout@v7
       - name: Setup Go
         uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
-          # a release builds from nothing: a cached package keeps the link
-          # flags of the libvips that it was built with, and brew removes
-          # that libvips when it installs a newer one
-          cache: false
       - name: Build ${{ matrix.arch }}
         run: |
           ./build.sh -v $VER -a ${{ matrix.arch }}
@@ -189,8 +148,6 @@ jobs:
           path-type: inherit
           install: >-
             mingw-w64-ucrt-x86_64-gcc
-            mingw-w64-ucrt-x86_64-pkgconf
-            mingw-w64-ucrt-x86_64-libvips
             zip
             unzip
       - name: Checkout
@@ -199,10 +156,6 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
-          # a release builds from nothing: a cached package keeps the link
-          # flags of the libvips that it was built with, and brew removes
-          # that libvips when it installs a newer one
-          cache: false
       - name: Build amd64
         run: |
           ./build.sh -v $VER

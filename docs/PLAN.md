@@ -17,18 +17,19 @@ renderer (D1). Speed is not a goal (D2).
 
 ## Current state
 
-This is the state of 2026-11-19, after D55.
+This is the state of 2026-11-20, after D56.
 
 - One package for each format registers a decoder or an encoder from `init`,
   and a pipeline in `decoder` runs them (D10). `iv --list` names each one.
 - `iv` selects a decoder by the mime type that xo/magic, a port of libmagic
   to Go, finds in the content (D6, D17).
 - An image reaches the encoder in the form that it already has: the bytes of
-  its PNG or JPEG file, or the image that libvips holds, until a step changes
-  its pixels (D22, D30). `ivimg.Prepare` scales and composites stills and
+  its PNG or JPEG file, until a step changes its pixels (D22, D30). `ivimg.Prepare` scales and composites stills and
   animation frames alike.
-- libvips decodes, scales and encodes the formats that no Go package covers
-  (D5, D8, D22). blitz draws Markdown, HTML and web pages (D16). zuzu draws
+- Pure Go codecs decode HEIC, AVIF, JPEG XL, JPEG 2000, OpenEXR, Radiance
+  HDR, PFM and MATLAB files, and encode AVIF, HEIC, JPEG XL, JPEG 2000, TIFF,
+  WebP and GIF. libvips is gone, and blitz is the only C code (D56).
+  blitz draws Markdown, HTML and web pages (D16). zuzu draws
   DOT graphs, Mermaid diagrams and Vega charts (D36). xo/ivy draws office
   documents, ebooks, PDF, XPS, Photoshop files and other formats, and asks
   for a missing password (D49, D50, D51). A document that ivy opens is
@@ -78,11 +79,11 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D2](#d2-speed-is-not-a-goal-decided) | Speed is not a goal | Decided |
 | [D3](#d3-svg-renders-with-xoresvg-decided-amended-by-d35) | SVG renders with xo/resvg | Decided. Amended by D35 |
 | [D4](#d4-the-command-line-is-parsed-with-xoox-decided) | The command line is parsed with xo/ox | Decided |
-| [D5](#d5-libvips-decodes-the-formats-that-no-go-package-covers-decided-amended-by-d8) | libvips decodes the formats that no Go package covers | Decided. Amended by D8 |
+| [D5](#d5-libvips-decodes-the-formats-that-no-go-package-covers-decided-amended-by-d8-amended-by-d56) | libvips decodes the formats that no Go package covers | Decided. Amended by D8. Amended by D56 |
 | [D6](#d6-iv-selects-a-decoder-by-the-mime-type-of-the-content-decided-amended-by-d17) | iv selects a decoder by the mime type of the content | Decided. Amended by D17 |
 | [D7](#d7-an-external-command-is-found-in-path-when-a-decoder-first-uses-it-decided-amended-by-d18-amended-by-d47) | An external command is found in $PATH when a decoder first uses it | Decided. Amended by D18. Amended by D47 |
-| [D8](#d8-the-libvips-binding-is-cshumvipsgen-decided-amends-d5) | The libvips binding is cshum/vipsgen | Decided. Amends D5 |
-| [D9](#d9-iv-is-cgo-code-decided-amended-by-d28) | iv is cgo code | Decided. Amended by D28 |
+| [D8](#d8-the-libvips-binding-is-cshumvipsgen-decided-amends-d5-amended-by-d56) | The libvips binding is cshum/vipsgen | Decided. Amends D5. Amended by D56 |
+| [D9](#d9-iv-is-cgo-code-decided-amended-by-d28-amended-by-d56) | iv is cgo code | Decided. Amended by D28. Amended by D56 |
 | [D10](#d10-decoders-and-encoders-register-themselves-and-one-pipeline-runs-them-decided) | Decoders and encoders register themselves, and one pipeline runs them | Decided |
 | [D11](#d11-test-data-has-one-folder-per-decoder-and-testsh-renders-all-of-it-decided) | Test data has one folder per decoder, and test.sh renders all of it | Decided |
 | [D12](#d12-a-test-skips-when-its-tool-its-library-support-or-its-file-is-missing-proposed-amended-by-d27) | A test skips when its tool, its library support or its file is missing | Proposed. Amended by D27 |
@@ -95,12 +96,12 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D19](#d19-iv-plays-one-animation-to-the-terminal-for-at-most-one-minute-decided-amended-by-d42-amended-by-d43) | iv plays one animation to the terminal, for at most one minute | Decided. Amended by D42. Amended by D43 |
 | [D20](#d20-the-go-directive-follows-the-newest-release-of-go-decided) | The go directive follows the newest release of Go | Decided |
 | [D21](#d21-iv-is-set-up-for-coding-agents-as-every-xo-repository-is-decided) | iv is set up for coding agents as every xo repository is | Decided |
-| [D22](#d22-an-image-reaches-the-encoder-in-the-form-that-it-already-has-decided-amended-by-d28-amended-by-d33-amended-by-d42-amended-by-d43) | An image reaches the encoder in the form that it already has | Decided. Amended by D28. Amended by D33. Amended by D42. Amended by D43 |
+| [D22](#d22-an-image-reaches-the-encoder-in-the-form-that-it-already-has-decided-amended-by-d28-amended-by-d33-amended-by-d42-amended-by-d43-amended-by-d56) | An image reaches the encoder in the form that it already has | Decided. Amended by D28. Amended by D33. Amended by D42. Amended by D43. Amended by D56 |
 | [D23](#d23-a-jpeg-with-an-exif-orientation-a-cmyk-jpeg-and-an-animated-png-keep-no-bytes-decided) | A JPEG with an EXIF orientation, a CMYK JPEG and an animated PNG keep no bytes | Decided |
 | [D24](#d24---fg-and---border-set-the-colors-and-the-border-of-a-qr-code-decided) | --fg and --border set the colors and the border of a QR code | Decided |
 | [D25](#d25---mermaid-bg-sets-the-background-in-the-mermaid-renderer-decided) | --mermaid-bg sets the background in the mermaid renderer | Decided |
 | [D26](#d26-benchmarks-compare-the-releases-and-the-readme-holds-the-numbers-decided) | Benchmarks compare the releases, and the README holds the numbers | Decided |
-| [D27](#d27-a-test-fails-when-what-it-needs-is-missing-decided-amends-d12-amended-by-d34-amended-by-d47-amended-by-d49) | A test fails when what it needs is missing | Decided. Amends D12. Amended by D34. Amended by D47. Amended by D49 |
+| [D27](#d27-a-test-fails-when-what-it-needs-is-missing-decided-amends-d12-amended-by-d34-amended-by-d47-amended-by-d49-amended-by-d56) | A test fails when what it needs is missing | Decided. Amends D12. Amended by D34. Amended by D47. Amended by D49. Amended by D56 |
 | [D28](#d28-mupdf-is-removed-and-calibre-libgxps-oovpsd-and-poppler-take-its-formats-decided-amends-d9-amends-d22-amended-by-d49) | mupdf is removed, and calibre, libgxps, oov/psd and poppler take its formats | Decided. Amends D9. Amends D22. Amended by D49 |
 | [D29](#d29-golangci-lint-checks-the-code-in-ci-with-the-rules-of-the-xo-repositories-decided) | golangci-lint checks the code in CI, with the rules of the xo repositories | Decided |
 | [D30](#d30-a-png-or-a-jpeg-decodes-its-pixels-only-when-they-are-needed-decided) | A PNG or a JPEG decodes its pixels only when they are needed | Decided |
@@ -129,6 +130,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D53](#d53-the-release-workflow-runs-only-for-a-version-tag-decided) | The Release workflow runs only for a version tag | Decided |
 | [D54](#d54-a-script-makes-the-screenshots-of-the-readme-in-ghostty-decided) | A script makes the screenshots of the README in Ghostty | Decided |
 | [D55](#d55-a-document-is-written-to-a-pdf-with-ivy-as-vectors-decided) | A document is written to a pdf with ivy, as vectors | Decided |
+| [D56](#d56-pure-go-codecs-replace-libvips-decided-amends-d5-amends-d8-amends-d9-amends-d22-amends-d27) | Pure Go codecs replace libvips | Decided. Amends D5. Amends D8. Amends D9. Amends D22. Amends D27 |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -163,7 +165,7 @@ and `be6b7fe` (2025-05-27) moved the version to `ox.VersionString`. The flags
 are the `ox` struct tags on `ivcmd.Args`, and `ivctx` registers its own types
 with `ox`. Reason not recorded.
 
-### D5. libvips decodes the formats that no Go package covers. Decided. Amended by D8.
+### D5. libvips decodes the formats that no Go package covers. Decided. Amended by D8. Amended by D56.
 
 `b7f68c3` (2024-02-08) added `github.com/xo/heif`, "not yet fully working", and
 `34d692f` (2024-03-30) removed it. `ff44958` (2024-04-11) added libvips
@@ -193,7 +195,7 @@ command: the file fails to render with `<command> not in path`, and is not
 skipped without a message. The audio card is the exception. Without
 `ffmpeg`, it is drawn with no waveform.
 
-### D8. The libvips binding is cshum/vipsgen. Decided. Amends D5.
+### D8. The libvips binding is cshum/vipsgen. Decided. Amends D5. Amended by D56.
 
 `ad71d8f` (2026-02-01), "Change vips package", replaced `davidbyttow/govips`
 with `github.com/cshum/vipsgen`. The commit gives no reason. The README gives
@@ -209,7 +211,7 @@ option of zero. The nearest kernel is 0, so `Image.Resize` in `vips/` scaled
 small images with lanczos3 where `ivimg.Nearest` asked for nearest neighbor.
 `TestResizeNearest` fails when that happens again.
 
-### D9. iv is cgo code. Decided. Amended by D28.
+### D9. iv is cgo code. Decided. Amended by D28. Amended by D56.
 
 libvips arrived in `ff44958` (2024-04-11), and from then on `iv` links C
 libraries: libvips, mupdf through go-fitz, and fontconfig and freetype for
@@ -411,7 +413,7 @@ link, on a missing copy, on two copies that differ, and on a skill that
 and `TestEveryDecisionReferenceExists` fails on a bare reference to a decision
 that this document does not hold.
 
-### D22. An image reaches the encoder in the form that it already has. Decided. Amended by D28. Amended by D33. Amended by D42. Amended by D43.
+### D22. An image reaches the encoder in the form that it already has. Decided. Amended by D28. Amended by D33. Amended by D42. Amended by D43. Amended by D56.
 
 A maintainer asked on 2026-10-15 for this pipeline, after `rasterm` v0.1.18
 began to send the bytes that an image holds without an encode. The `ivimg`
@@ -527,7 +529,7 @@ protocol that `TERM_GRAPHICS` selects. The method has the same signature from
 v0.17.0, so the same file runs against each release. The Performance section of
 `README.md` holds the results and the commands that made them.
 
-### D27. A test fails when what it needs is missing. Decided. Amends D12. Amended by D34. Amended by D47. Amended by D49.
+### D27. A test fails when what it needs is missing. Decided. Amends D12. Amended by D34. Amended by D47. Amended by D49. Amended by D56.
 
 A maintainer decided on 2026-10-15 that a test fails, and does not skip, when
 an external command, libmagic, a test file or a libvips format is missing. A
@@ -1406,6 +1408,64 @@ glyphs of a pdf or a PostScript file are still paths.
 - Any other image, and a format of ivy with no pages, such as a Visio
   preview, goes on a page with blitz, as before. `--pdf-page` and
   `--pdf-margin` apply only to such an image.
+
+### D56. Pure Go codecs replace libvips. Decided. Amends D5. Amends D8. Amends D9. Amends D22. Amends D27.
+
+On 2026-11-20, a maintainer asked to replace libvips with pure Go packages,
+many of them written with coding agents in 2026, and to measure them against
+libvips first. The maintainer chose to drop FITS, NIfTI and JPEG XS, which
+have no maintained pure Go package, and to keep OpenEXR, Radiance HDR, PFM,
+MATLAB and the file format of libvips.
+
+| Decoder    | Encoder    | Package                                     |
+| ---------- | ---------- | ------------------------------------------- |
+| `heic`     | `heic`     | `github.com/gen2brain/h265`                 |
+| `avif`     | `avif`     | `github.com/gen2brain/gav1d`                |
+| `jxl`      | `jxl`      | `github.com/gen2brain/jxl`                  |
+|            | `vpx`      | `github.com/gen2brain/vpx`, a lossy webp    |
+| `jpeg2000` | `jpeg2000` | `github.com/mrjoshuak/go-jpeg2000`          |
+| `exr`      |            | `github.com/mrjoshuak/go-openexr`           |
+| `hdr`      |            | `github.com/mdouchement/hdr`, HDR and PFM   |
+| `matlab`   |            | `github.com/scigolib/matlab`                |
+| `vipsfile` |            | written in `iv`                             |
+|            | `tiff`     | `golang.org/x/image/tiff`                   |
+|            | `gif`      | `image/gif`                                 |
+
+- The test files come from the test data of these packages, or were made
+  from `png/rose.png`. `testdata/README.md` names each one.
+- `vips/`, `decoder/vips`, `encoder/vips` and `--vips-concurrency` are gone.
+  So are `ivimg.Resizer`, `ivimg.Flattener` and `ivimg.JPEGEncoder`, which
+  only the image of libvips implemented, the `ErrUnsupportedFormat` errors,
+  the `unsupported` map of `ivcmd/decode_test.go`, and
+  `TestEncodeAfterDecode`. The `bmp` decoder no longer hands a bitmap that it
+  cannot read to libvips.
+- `iv` is still cgo code, because blitz is. CI installs fontconfig and
+  freetype on Linux, nothing on macOS, and gcc on Windows. The Go cache of CI
+  no longer has the flags of libvips in its key.
+- `internal/scrgb` encodes the linear light of OpenEXR, Radiance HDR, PFM
+  and a float `.v` file as sRGB, and clips it, as libvips did.
+- The `exr` decoder takes the color out of the alpha, as OpenEXR stores it.
+  libvips read OpenEXR through ImageMagick, which did not, and drew a file
+  with only a G channel in gray. `exr/rose.exr` matches its source to 90 dB
+  with the new decoder, and to 17 dB with libvips.
+- The PFM reader of mdouchement/hdr returns the rows from the bottom up, as
+  the file stores them, and stops at a comment line, which libvips writes.
+  The `hdr` decoder turns the rows over and skips the comment.
+- `iv` routed only an `image/` mime type to libvips, so it never drew a
+  MATLAB file. scigolib/matlab v0.3.19 reads version 5, and returns each array
+  of a version 7.3 file with one dimension, so a version 7.3 file has no
+  image (see `docs/BACKLOG.md`).
+- The decoders do not convert colors with an ICC profile or the CICP values
+  of a file, as libvips did. ivy has the code, but not in a package that `iv`
+  can import (see `docs/BACKLOG.md`).
+- The tag v1.5.12 of go-jpeg2000 on GitHub differs from the code that the
+  checksum database recorded, so `go get` with `GOPROXY=direct` fails. The
+  module proxy serves the recorded code.
+
+On 10 files that both read, a render to Kitty took 0.88 times as long as
+with libvips, a render to iTerm 1.29 times, and a render to Sixel the same.
+Encoding a photo in 9 formats took 1.33 times as long. The Measures section
+of `README.md` has the numbers.
 
 ## Open questions for the maintainers
 

@@ -24,37 +24,36 @@ func init() {
 // Config is the iv pipeline configuration. A nil or absent config behaves as
 // [New], so that decoders can always be exercised without a command line.
 type Config struct {
-	Verbose         bool
-	Quiet           bool
-	Mode            *Mode
-	Width           uint
-	Height          uint
-	MinWidth        uint
-	MinHeight       uint
-	DPI             uint
-	Page            uint
-	Fg              *colors.Color
-	Bg              *colors.Color
-	Border          uint
-	FontSize        uint
-	FontWeight      uint
-	FontItalic      bool
-	FontFg          *colors.Color
-	FontBg          *colors.Color
-	FontDPI         uint
-	FontMargin      uint
-	TimeCode        time.Duration
-	Animate         bool
-	AnimateFPS      uint
-	VipsConcurrency uint
-	MermaidTheme    string
-	MermaidBg       *colors.Color
-	ZuzuData        string
-	BlitzDark       bool
-	PDFPage         string
-	PDFMargin       uint
-	Password        string
-	ForceMime       string
+	Verbose      bool
+	Quiet        bool
+	Mode         *Mode
+	Width        uint
+	Height       uint
+	MinWidth     uint
+	MinHeight    uint
+	DPI          uint
+	Page         uint
+	Fg           *colors.Color
+	Bg           *colors.Color
+	Border       uint
+	FontSize     uint
+	FontWeight   uint
+	FontItalic   bool
+	FontFg       *colors.Color
+	FontBg       *colors.Color
+	FontDPI      uint
+	FontMargin   uint
+	TimeCode     time.Duration
+	Animate      bool
+	AnimateFPS   uint
+	MermaidTheme string
+	MermaidBg    *colors.Color
+	ZuzuData     string
+	BlitzDark    bool
+	PDFPage      string
+	PDFMargin    uint
+	Password     string
+	ForceMime    string
 
 	// MinWidthSet and MinHeightSet report that the minimum was given on the
 	// command line. A minimum that was given is a hard floor (D37).

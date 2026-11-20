@@ -145,8 +145,6 @@ func init() {
 			decoder.Matcher(func(mime, ext string) bool {
 				return slices.Contains(containers, mime) && slices.Contains(exts, ext)
 			}),
-			// libvips also reads a psd, and is tried after ivy
-			decoder.Before("vips"),
 			decoder.Decoder(decodeFunc(f.format)),
 		}
 		if len(mimes) != 0 {

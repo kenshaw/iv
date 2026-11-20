@@ -66,8 +66,40 @@ func TestDecodeFile(t *testing.T) {
 		{"woff", "fontimg/NotoMono-Regular.woff", "font/woff", "fontimg", ""},
 		{"woff2", "fontimg/NotoMono-Regular.woff2", "font/woff2", "fontimg", ""},
 		{"woff2 collection", "fontimg/IBMPlexSans.woff2", "font/woff2", "fontimg", ""},
-		{"jxl", "vips/precision.jxl", "image/jxl", "vips", ""},
-		{"heic", "vips/cyberpunk.heic", "image/heic", "vips", ""},
+		// libmagic gives image/heic to a heif file too
+		{"heic", "heic/cyberpunk.heic", "image/heic", "heic", ""},
+		{"heic dome", "heic/dome.heic", "image/heic", "heic", ""},
+		{"heif", "heic/sample1.heif", "image/heic", "heic", ""},
+		{"heic alpha", "heic/alpha.heic", "image/heic", "heic", ""},
+		{"heic 4:4:4", "heic/chroma444.heic", "image/heic", "heic", ""},
+		{"heic grid alpha", "heic/grid_alpha.heic", "image/heic", "heic", ""},
+		{"heic 10-bit", "heic/main10.heic", "image/heic", "heic", ""},
+		{"avif", "avif/precision.avif", "image/avif", "avif", ""},
+		{"avif alpha", "avif/alpha-444.avif", "image/avif", "avif", ""},
+		{"avif bt2020", "avif/bt2020-422.avif", "image/avif", "avif", ""},
+		{"avif grid", "avif/grid-2x2.avif", "image/avif", "avif", ""},
+		{"avif rotated", "avif/irot3-imir1.avif", "image/avif", "avif", ""},
+		{"avif 12-bit gray", "avif/mono-12.avif", "image/avif", "avif", ""},
+		{"avif 10-bit", "avif/yuv420-10.avif", "image/avif", "avif", ""},
+		{"jxl", "jxl/precision.jxl", "image/jxl", "jxl", ""},
+		{"jxl gray", "jxl/dct_gray.jxl", "image/jxl", "jxl", ""},
+		{"jxl squeeze", "jxl/rgb_squeeze.jxl", "image/jxl", "jxl", ""},
+		{"jxl p3", "jxl/xyb_p3.jxl", "image/jxl", "jxl", ""},
+		{"jp2", "jpeg2000/rose.jp2", "image/jp2", "jpeg2000", ""},
+		{"jp2 gray", "jpeg2000/8bit_GRAY_DWT.jp2", "image/jp2", "jpeg2000", ""},
+		{"j2k", "jpeg2000/rose.j2k", "image/x-jp2-codestream", "jpeg2000", ""},
+		{"exr", "exr/sample.exr", "image/x-exr", "exr", ""},
+		{"exr tiled", "exr/tiled.exr", "image/x-exr", "exr", ""},
+		{"exr float dwab", "exr/grad_float_dwab.exr", "image/x-exr", "exr", ""},
+		{"exr half piz", "exr/noise_half_piz.exr", "image/x-exr", "exr", ""},
+		{"exr b44", "exr/mixed_b44.exr", "image/x-exr", "exr", ""},
+		{"radiance hdr", "hdr/rose.hdr", "image/vnd.radiance", "hdr", ""},
+		// libmagic does not know a pfm, so the extension decides
+		{"pfm", "hdr/rose.pfm", "application/octet-stream", "hdr", ""},
+		{"matlab v5", "matlab/testdouble_7.4_GLNX86.mat", "application/x-matlab-data", "matlab", ""},
+		{"matlab v5 image", "matlab/rose-v5.mat", "application/x-matlab-data", "matlab", ""},
+		// libmagic does not know a file of libvips, so the extension decides
+		{"vips", "vipsfile/rose.v", "application/octet-stream", "vipsfile", ""},
 		{"pdf", "ivy/file-sample_150kB.pdf", "application/pdf", "ivy-pdf", ""},
 		{"pdf encrypted", "ivy/file-sample_150kB.enc.pdf", "application/pdf", "ivy-pdf", ""},
 		// libmagic does not recognize this one at all, so it routes on its
@@ -566,7 +598,6 @@ func TestRoundTrip(t *testing.T) {
 		t.Run(e.Name, func(t *testing.T) {
 			var buf bytes.Buffer
 			if err := e.Encode(ctx, &buf, img); err != nil {
-				requireFormat(t, err)
 				t.Fatalf("expected no error, got: %v", err)
 			}
 			if buf.Len() == 0 {
@@ -608,32 +639,6 @@ var untested = map[string]map[string]string{}
 // system, with the reason. The test of one of them still checks its mime type
 // and its decoder, and skips the decode on that system (D34).
 var untestedFiles = map[string]map[string]string{}
-
-// unsupported names the libvips operations that the libvips of CI is built
-// without on an operating system, with the reason. A test that needs one of
-// them skips on that system, and a missing operation fails the test on any
-// other (D27).
-var unsupported = map[string]map[string]string{
-	"windows": {
-		"gifsave_buffer": "the libvips of MSYS2 is built without cgif",
-	},
-}
-
-// requireFormat skips the test when err is [encoder.ErrUnsupportedFormat] or
-// [decoder.ErrUnsupportedFormat] for an operation that [unsupported] names for
-// this operating system. It does nothing for any other error, and the caller
-// then fails the test.
-func requireFormat(t *testing.T, err error) {
-	t.Helper()
-	if !errors.Is(err, encoder.ErrUnsupportedFormat) && !errors.Is(err, decoder.ErrUnsupportedFormat) {
-		return
-	}
-	for op, reason := range unsupported[runtime.GOOS] {
-		if strings.Contains(err.Error(), op) {
-			t.Skipf("%s is not tested on %s: %s", op, runtime.GOOS, reason)
-		}
-	}
-}
 
 // requireTool fails the test when the command is not usable, unless
 // [untested] names it for this operating system.

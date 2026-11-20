@@ -2,13 +2,8 @@
 // between the decoder and the encoder.
 //
 // An image moves through the pipeline as an [image.Image], and the value can
-// carry more than its pixels:
-//
-//   - The bytes of the file that it was decoded from, as a [rasterm.PNG] or a
-//     [rasterm.JPEG]. [DecodePNG] and [DecodeJPEG] keep them.
-//   - The image that libvips holds, which can resize itself, composite itself
-//     over a background, and encode itself as a PNG only when an encoder asks
-//     for one. See the vips package of iv.
+// carry the bytes of the file that it was decoded from, as a [rasterm.PNG] or
+// a [rasterm.JPEG]. [DecodePNG] and [DecodeJPEG] keep them.
 //
 // [Prepare] scales an image to the size it is displayed at and composites it
 // over the background. If a step does not change the pixels, it returns the
@@ -27,22 +22,6 @@ import (
 	"image"
 	"io"
 )
-
-// Resizer is an image that can resize itself.
-type Resizer interface {
-	image.Image
-	// Resize returns the image scaled to w x h. The image it is called on
-	// does not change.
-	Resize(ctx context.Context, w, h int) (image.Image, error)
-}
-
-// Flattener is an image that can composite itself over a background color.
-type Flattener interface {
-	image.Image
-	// Flatten returns the image composited over the opaque color bg. The
-	// image it is called on does not change.
-	Flatten(ctx context.Context, r, g, b uint8) (image.Image, error)
-}
 
 // Prepare returns img scaled to the size that the configuration on the
 // context displays it at, and composited over the configured background. The
@@ -73,8 +52,8 @@ func Unwrap(img image.Image) image.Image {
 }
 
 // Err returns the error that img kept from work that it did after it was
-// decoded, such as an image that libvips decodes only when its pixels are
-// asked for. It returns nil for any other image. An encoder entry calls it
+// decoded, such as a PNG that decodes its pixels only when they are asked
+// for. It returns nil for any other image. An encoder entry calls it
 // after an encode, because an image method such as At has no error to
 // return.
 func Err(img image.Image) error {
@@ -84,8 +63,8 @@ func Err(img image.Image) error {
 	return nil
 }
 
-// Close releases what img holds outside of Go memory, such as an image that
-// libvips holds. It does nothing for any other image.
+// Close releases what img holds, such as a document that stays open for the
+// pdf encoder. It does nothing for any other image.
 func Close(img image.Image) error {
 	if c, ok := img.(io.Closer); ok {
 		return c.Close()

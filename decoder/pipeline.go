@@ -22,9 +22,6 @@ var (
 	// ErrNotSupported is returned when no registered decoder handles the
 	// input.
 	ErrNotSupported = errors.New("not supported")
-	// ErrUnsupportedFormat is returned when a decoder handles the input's
-	// format but the underlying library was not built with support for it.
-	ErrUnsupportedFormat = errors.New("format not supported by this build")
 	// ErrNotAnimated is returned when an animation was asked for and the
 	// input decoded to a still image instead.
 	ErrNotAnimated = errors.New("no animation")

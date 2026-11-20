@@ -33,42 +33,41 @@ const DefaultEncoder = "rasterm"
 
 // Args are the iv command arguments.
 type Args struct {
-	Verbose         bool          `ox:"enable verbose,short:v"`
-	Quiet           bool          `ox:"enable quiet,short:q"`
-	Mode            *ivctx.Mode   `ox:"scaling mode,short:m,default:best-fit"`
-	Width           uint          `ox:"display width in pixels - 0 takes it from the terminal,short:W"`
-	Height          uint          `ox:"display height in pixels - 0 takes it from the terminal,short:H"`
-	MinWidth        uint          `ox:"minimum width in pixels,short:w,default:64,set:MinWidthSet"`
-	MinHeight       uint          `ox:"minimum height in pixels,short:h,default:64,set:MinHeightSet"`
-	DPI             uint          `ox:"image dpi,default:300,name:dpi"`
-	Page            uint          `ox:"page to display,short:p"`
-	Fg              *colors.Color `ox:"qr code foreground color,default:black"`
-	Bg              *colors.Color `ox:"background color,default:transparent"`
-	Border          uint          `ox:"qr code border width in pixels,default:40"`
-	FontSize        uint          `ox:"font preview size,default:48"`
-	FontWeight      uint          `ox:"font preview weight from 1 to 1000 - 0 is the weight of the face"`
-	FontItalic      bool          `ox:"font preview in italic"`
-	FontFg          *colors.Color `ox:"font preview foreground color,default:black"`
-	FontBg          *colors.Color `ox:"font preview background color,default:white"`
-	FontDPI         uint          `ox:"font preview dpi,default:100,name:font-dpi"`
-	FontMargin      uint          `ox:"font preview margin,default:5"`
-	TimeCode        time.Duration `ox:"video time code,short:t"`
-	Animate         bool          `ox:"play the animation in an animated file,short:a"`
-	Loop            bool          `ox:"repeat the animation until interrupted - implies --animate,short:l"`
-	FPS             uint          `ox:"animation frames per second - 0 takes it from the animation,name:fps"`
-	AnimateMode     string        `ox:"animation playback - auto/kitty/stream/frames - any but auto implies --animate,default:auto"`
-	VipsConcurrency uint          `ox:"vips concurrency,default:$NUMCPU"`
-	MermaidTheme    string        `ox:"mermaid theme - default/dark/forest/neutral/modern"`
-	MermaidBg       *colors.Color `ox:"mermaid background - the theme background when not set"`
-	ZuzuData        string        `ox:"directory that a vega spec reads its data from - empty is the directory of the spec"`
-	BlitzDark       bool          `ox:"render documents and pages dark"`
-	PDFPage         string        `ox:"pdf page size of an image - fit/a4/letter,default:fit,name:pdf-page"`
-	PDFMargin       uint          `ox:"pdf page margin of an image in points,default:36,name:pdf-margin"`
-	Password        string        `ox:"password for encrypted documents"`
-	ForceMime       string        `ox:"force mime type"`
-	Out             string        `ox:"write to file instead of the terminal,short:o"`
-	Encoder         string        `ox:"output encoder"`
-	List            bool          `ox:"list registered decoders and encoders"`
+	Verbose      bool          `ox:"enable verbose,short:v"`
+	Quiet        bool          `ox:"enable quiet,short:q"`
+	Mode         *ivctx.Mode   `ox:"scaling mode,short:m,default:best-fit"`
+	Width        uint          `ox:"display width in pixels - 0 takes it from the terminal,short:W"`
+	Height       uint          `ox:"display height in pixels - 0 takes it from the terminal,short:H"`
+	MinWidth     uint          `ox:"minimum width in pixels,short:w,default:64,set:MinWidthSet"`
+	MinHeight    uint          `ox:"minimum height in pixels,short:h,default:64,set:MinHeightSet"`
+	DPI          uint          `ox:"image dpi,default:300,name:dpi"`
+	Page         uint          `ox:"page to display,short:p"`
+	Fg           *colors.Color `ox:"qr code foreground color,default:black"`
+	Bg           *colors.Color `ox:"background color,default:transparent"`
+	Border       uint          `ox:"qr code border width in pixels,default:40"`
+	FontSize     uint          `ox:"font preview size,default:48"`
+	FontWeight   uint          `ox:"font preview weight from 1 to 1000 - 0 is the weight of the face"`
+	FontItalic   bool          `ox:"font preview in italic"`
+	FontFg       *colors.Color `ox:"font preview foreground color,default:black"`
+	FontBg       *colors.Color `ox:"font preview background color,default:white"`
+	FontDPI      uint          `ox:"font preview dpi,default:100,name:font-dpi"`
+	FontMargin   uint          `ox:"font preview margin,default:5"`
+	TimeCode     time.Duration `ox:"video time code,short:t"`
+	Animate      bool          `ox:"play the animation in an animated file,short:a"`
+	Loop         bool          `ox:"repeat the animation until interrupted - implies --animate,short:l"`
+	FPS          uint          `ox:"animation frames per second - 0 takes it from the animation,name:fps"`
+	AnimateMode  string        `ox:"animation playback - auto/kitty/stream/frames - any but auto implies --animate,default:auto"`
+	MermaidTheme string        `ox:"mermaid theme - default/dark/forest/neutral/modern"`
+	MermaidBg    *colors.Color `ox:"mermaid background - the theme background when not set"`
+	ZuzuData     string        `ox:"directory that a vega spec reads its data from - empty is the directory of the spec"`
+	BlitzDark    bool          `ox:"render documents and pages dark"`
+	PDFPage      string        `ox:"pdf page size of an image - fit/a4/letter,default:fit,name:pdf-page"`
+	PDFMargin    uint          `ox:"pdf page margin of an image in points,default:36,name:pdf-margin"`
+	Password     string        `ox:"password for encrypted documents"`
+	ForceMime    string        `ox:"force mime type"`
+	Out          string        `ox:"write to file instead of the terminal,short:o"`
+	Encoder      string        `ox:"output encoder"`
+	List         bool          `ox:"list registered decoders and encoders"`
 
 	// ox sets these when the flag is given on the command line
 	MinWidthSet  bool
@@ -83,39 +82,38 @@ func New() *Args {
 // Config builds the pipeline config from the command arguments.
 func (a *Args) Config(stderr io.Writer) *ivctx.Config {
 	c := &ivctx.Config{
-		Verbose:         a.Verbose,
-		Quiet:           a.Quiet,
-		Mode:            a.Mode,
-		Width:           a.Width,
-		Height:          a.Height,
-		MinWidth:        a.MinWidth,
-		MinHeight:       a.MinHeight,
-		DPI:             a.DPI,
-		Page:            a.Page,
-		Fg:              a.Fg,
-		Bg:              a.Bg,
-		Border:          a.Border,
-		FontSize:        a.FontSize,
-		FontWeight:      a.FontWeight,
-		FontItalic:      a.FontItalic,
-		FontFg:          a.FontFg,
-		FontBg:          a.FontBg,
-		FontDPI:         a.FontDPI,
-		FontMargin:      a.FontMargin,
-		TimeCode:        a.TimeCode,
-		Animate:         a.Animate,
-		AnimateFPS:      a.FPS,
-		VipsConcurrency: a.VipsConcurrency,
-		MermaidTheme:    a.MermaidTheme,
-		MermaidBg:       a.MermaidBg,
-		ZuzuData:        a.ZuzuData,
-		BlitzDark:       a.BlitzDark,
-		PDFPage:         a.PDFPage,
-		PDFMargin:       a.PDFMargin,
-		Password:        a.Password,
-		ForceMime:       a.ForceMime,
-		MinWidthSet:     a.MinWidthSet,
-		MinHeightSet:    a.MinHeightSet,
+		Verbose:      a.Verbose,
+		Quiet:        a.Quiet,
+		Mode:         a.Mode,
+		Width:        a.Width,
+		Height:       a.Height,
+		MinWidth:     a.MinWidth,
+		MinHeight:    a.MinHeight,
+		DPI:          a.DPI,
+		Page:         a.Page,
+		Fg:           a.Fg,
+		Bg:           a.Bg,
+		Border:       a.Border,
+		FontSize:     a.FontSize,
+		FontWeight:   a.FontWeight,
+		FontItalic:   a.FontItalic,
+		FontFg:       a.FontFg,
+		FontBg:       a.FontBg,
+		FontDPI:      a.FontDPI,
+		FontMargin:   a.FontMargin,
+		TimeCode:     a.TimeCode,
+		Animate:      a.Animate,
+		AnimateFPS:   a.FPS,
+		MermaidTheme: a.MermaidTheme,
+		MermaidBg:    a.MermaidBg,
+		ZuzuData:     a.ZuzuData,
+		BlitzDark:    a.BlitzDark,
+		PDFPage:      a.PDFPage,
+		PDFMargin:    a.PDFMargin,
+		Password:     a.Password,
+		ForceMime:    a.ForceMime,
+		MinWidthSet:  a.MinWidthSet,
+		MinHeightSet: a.MinHeightSet,
 	}
 	if a.Verbose {
 		c.Logger = func(s string, v ...any) {

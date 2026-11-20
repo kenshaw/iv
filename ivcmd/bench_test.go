@@ -2,6 +2,8 @@ package ivcmd
 
 import (
 	"context"
+	"image"
+	"image/draw"
 	"io"
 	"os"
 	"path/filepath"
@@ -54,10 +56,18 @@ var benchTargets = []string{
 	"tag/silent.mp3",
 	"tiff/tux-deflate.tiff",
 	"vcard/john-doe.vcf",
-	"vips/dome.heic",
+	"heic/dome.heic",
+	"heic/grid_alpha.heic",
 	"ivy/file-sample_150kB.pdf",
-	"vips/precision.avif",
-	"vips/precision.jxl",
+	"avif/precision.avif",
+	"avif/yuv420-10.avif",
+	"jxl/precision.jxl",
+	"jpeg2000/rose.jp2",
+	"exr/tiled.exr",
+	"hdr/rose.hdr",
+	"hdr/rose.pfm",
+	"matlab/rose-v5.mat",
+	"vipsfile/rose.v",
 	"winres/go-winres.exe",
 }
 
@@ -116,6 +126,46 @@ func BenchmarkRender(b *testing.B) {
 			b.ResetTimer()
 			for b.Loop() {
 				if err := args.render(ctx, io.Discard, enc, t); err != nil {
+					b.Fatal(err)
+				}
+			}
+			b.ReportMetric(float64(size), "out-B/op")
+		})
+	}
+}
+
+// benchFormats are the file formats that BenchmarkEncode writes, by their
+// extension.
+var benchFormats = []string{"avif", "gif", "heic", "jp2", "jpg", "jxl", "png", "tiff", "webp"}
+
+// BenchmarkEncode measures the file encoders: from the pixels of a photo to
+// the bytes of a file. The encoder of each format is the one that --out
+// selects from the extension, so the benchmark compares two versions of iv
+// whose encoders have other names. The out-B/op metric is the size of the
+// file.
+func BenchmarkEncode(b *testing.B) {
+	ctx := benchContext(b)
+	img, _, err := decoder.DecodeFile(ctx, filepath.Join("..", "testdata", "jpeg", "precision.jpg"))
+	if err != nil {
+		b.Fatalf("expected no error, got: %v", err)
+	}
+	// each encoder gets the same pixels, and not the bytes of the jpeg
+	src := image.NewNRGBA(image.Rect(0, 0, img.Bounds().Dx(), img.Bounds().Dy()))
+	draw.Draw(src, src.Bounds(), img, img.Bounds().Min, draw.Src)
+	for _, ext := range benchFormats {
+		b.Run(ext, func(b *testing.B) {
+			enc, ok := encoder.ForExt(ext)
+			if !ok {
+				b.Skipf("no encoder for %q", ext)
+			}
+			var w counter
+			if err := enc.Encode(ctx, &w, src); err != nil {
+				b.Skipf("cannot encode: %v", err)
+			}
+			size := w.n
+			b.ResetTimer()
+			for b.Loop() {
+				if err := enc.Encode(ctx, io.Discard, src); err != nil {
 					b.Fatal(err)
 				}
 			}

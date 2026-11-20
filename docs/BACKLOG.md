@@ -13,6 +13,30 @@ sources that each one names.
 
 ## Formats
 
+### Convert colors with ICC profiles
+
+Source: D56. libvips converted a CMYK image, and the color space that an
+image names, to sRGB. The pure Go decoders do not. An image with an ICC
+profile, a wide gamut such as Display P3 or BT.2020, or HDR, shows its
+colors as if they were sRGB. ivy has a port of moxcms that converts colors,
+in `internal/moxcms`, which `iv` cannot import. A maintainer asked the ivy
+session to make it public. When it is, apply the profile, or the CICP values
+of an AVIF or a HEIC, in the decoders.
+
+### Read a MATLAB file of version 7.3
+
+Source: D56. scigolib/matlab v0.3.19 opens a MAT-file of version 7.3, but
+returns each array with one dimension, even an array that it wrote itself
+with two. The `matlab` decoder then finds no image. Report it to
+scigolib/matlab, and add a test file of version 7.3 when it is fixed.
+
+### Write alpha in a JPEG XL, and more than 8 bits in an AVIF
+
+Source: D56. The `jxl` encoder of gen2brain/jxl drops alpha, and treats each
+image as sRGB. The `avif` encoder of gen2brain/gav1d writes 8 bits.
+KarpelesLab/goavif writes 10 and 12 bits, but is young. Use a newer release
+of either when it closes the gap.
+
 ### Support glTF and other 3D models
 
 Source: `notes.txt`, a local file that is not tracked. Nothing decodes a 3D
@@ -40,6 +64,13 @@ packages, which keep no bytes. The terminal encoder then sends raw pixels in
 place of the PNG.
 
 ## Builds
+
+### Try Ubuntu 24.04 in CI and for the release
+
+Source: D56. CI and the release build on Ubuntu 26.04, because libvips 8.18
+was not in 24.04. libvips is gone. A build on 24.04 links an older glibc, so
+the release binary runs on more systems. Make sure that the archives of blitz
+link there first.
 
 ### Try MINGW64 on Windows
 
