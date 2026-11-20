@@ -5,6 +5,9 @@
 // carry the bytes of the file that it was decoded from, as a [rasterm.PNG] or
 // a [rasterm.JPEG]. [DecodePNG] and [DecodeJPEG] keep them.
 //
+// A JPEG that is shown smaller than its size is decoded at a fraction of its
+// size, as a [Reducer], which costs less than a decode at its own size.
+//
 // [Prepare] scales an image to the size it is displayed at and composites it
 // over the background. If a step does not change the pixels, it returns the
 // image as it was, so the bytes of the file stay with it. If a step changes
@@ -22,6 +25,15 @@ import (
 	"image"
 	"io"
 )
+
+// Reducer is an image that can decode itself at a smaller size, such as a
+// JPEG, for which that costs less than a decode at its own size (D62).
+type Reducer interface {
+	image.Image
+	// Reduce returns the image at a size of at least w x h, and at most its
+	// own size.
+	Reduce(w, h int) (image.Image, error)
+}
 
 // Prepare returns img scaled to the size that the configuration on the
 // context displays it at, and composited over the configured background. The

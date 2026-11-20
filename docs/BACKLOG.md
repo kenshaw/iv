@@ -13,15 +13,26 @@ sources that each one names.
 
 ## Formats
 
-### Convert colors with ICC profiles
+### Apply the profile of a png, an RGB jpeg and a tiff
 
-Source: D56. libvips converted a CMYK image, and the color space that an
-image names, to sRGB. The pure Go decoders do not. An image with an ICC
-profile, a wide gamut such as Display P3 or BT.2020, or HDR, shows its
-colors as if they were sRGB. ivy has a port of moxcms that converts colors,
-in `internal/moxcms`, which `iv` cannot import. A maintainer asked the ivy
-session to make it public. When it is, apply the profile, or the CICP values
-of an AVIF or a HEIC, in the decoders.
+Source: D57. A png and an RGB jpeg keep the bytes of their files, so that a
+terminal gets them as they are (D22), and their ICC profiles are not
+applied. Converting them makes new pixels, which costs the bytes. The Go
+tiff decoder gives no profile, and does not decode a CMYK tiff.
+
+### Skip a profile that describes sRGB
+
+Source: D57. A file that embeds a profile of sRGB, as many cameras and
+phones write, is converted to sRGB, which changes nothing. For
+`heic/dome.heic`, of 36 megapixels, that costs 340 ms. The `icc` package of
+ivy has no way to tell that a profile is sRGB. Ask for one, and skip such a
+profile in `internal/cms`.
+
+### Tone map an HDR image
+
+Source: D57. The `icc` package of ivy does no tone mapping, so an image with
+the PQ or the HLG transfer is shown as it was decoded, and its colors are
+wrong. An OpenEXR, Radiance HDR or PFM file is clipped at white.
 
 ### Read a MATLAB file of version 7.3
 
@@ -41,13 +52,6 @@ of either when it closes the gap.
 
 Source: `notes.txt`, a local file that is not tracked. Nothing decodes a 3D
 model today.
-
-### Play an animated WebP or APNG
-
-Source: found while writing D19. `--animate` plays a gif, a lottie file and a
-video. The `nativewebp` and `png` decoders register no animation, so an
-animated WebP or APNG shows its first frame only, as the Formats section of
-`README.md` now says.
 
 ### Add test files for ten ivy formats
 

@@ -4,10 +4,14 @@ go 1.27.4
 
 require (
 	github.com/HugoSmits86/nativewebp v1.3.0
+	github.com/andybalholm/brotli v1.3.0
+	github.com/bep/imagemeta v1.1.2
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/gen2brain/gav1d v0.2.10
 	github.com/gen2brain/h265 v0.2.7
+	github.com/gen2brain/jpegn v0.7.1
 	github.com/gen2brain/jxl v0.2.2
+	github.com/gen2brain/pngn v0.1.3
 	github.com/gen2brain/vpx v0.2.3
 	github.com/jackmordaunt/icns/v4 v4.2.0
 	github.com/kenshaw/colors v0.2.4
@@ -24,7 +28,7 @@ require (
 	github.com/tc-hib/winres v0.3.1
 	github.com/ulikunitz/xz v0.5.17
 	github.com/xo/blitz v0.5.0
-	github.com/xo/ivy v0.0.0-20261119072452-871c3f6bd84d
+	github.com/xo/ivy v0.0.0-20261120023758-c64d60092076
 	github.com/xo/magic v0.9.1
 	github.com/xo/magic/compress/xz v0.6.0
 	github.com/xo/magic/compress/zstd v0.6.0
@@ -49,11 +53,11 @@ require (
 	golang.org/x/image v0.48.0
 	golang.org/x/sys v0.50.0
 	golang.org/x/term v0.48.0
+	howett.net/plist v1.0.1
 )
 
 require (
 	github.com/STARRY-S/zip v0.2.3 // indirect
-	github.com/andybalholm/brotli v1.3.0 // indirect
 	github.com/bodgit/plumbing v1.3.0 // indirect
 	github.com/bodgit/sevenzip v1.6.5 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect

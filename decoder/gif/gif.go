@@ -9,6 +9,7 @@ import (
 	"image/draw"
 	"image/gif"
 	"io"
+	"iter"
 	"time"
 
 	"github.com/kenshaw/iv/decoder"
@@ -38,15 +39,22 @@ const (
 	slowDelay = 100 * time.Millisecond
 )
 
-// decode decodes the gif: the whole animation when one was asked for, and its
-// first frame otherwise.
+// decode decodes the gif: the whole animation when one was asked for, the
+// frame that --page selects, and its first frame otherwise (D61).
 func decode(ctx context.Context, r io.Reader) (any, error) {
-	if !ivctx.Animate(ctx) {
+	if !decoder.Animated(ctx) {
 		return gif.Decode(r)
 	}
 	g, err := gif.DecodeAll(r)
 	if err != nil {
 		return nil, err
+	}
+	if !ivctx.Animate(ctx) {
+		var frames []image.Image
+		for _, frame := range composite(g) {
+			frames = append(frames, frame)
+		}
+		return frames, nil
 	}
 	delays := make([]time.Duration, len(g.Image))
 	var total time.Duration
@@ -79,29 +87,41 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 // would play as a scatter of fragments, so each is drawn onto a canvas carried
 // from frame to frame and a copy of the canvas is what is displayed.
 func play(ctx context.Context, g *gif.GIF, delays []time.Duration, s *decoder.Sink) {
-	canvas := image.NewRGBA(bounds(g))
-	var saved *image.RGBA
-	for i, frame := range g.Image {
-		b := frame.Bounds()
-		disposal := byte(0)
-		if i < len(g.Disposal) {
-			disposal = g.Disposal[i]
-		}
-		if disposal == gif.DisposalPrevious {
-			saved = clone(canvas)
-		}
-		draw.Draw(canvas, b, frame, b.Min, draw.Over)
-		if !s.Send(ctx, clone(canvas), delays[i]) {
+	for i, frame := range composite(g) {
+		if !s.Send(ctx, frame, delays[i]) {
 			return
 		}
-		switch disposal {
-		case gif.DisposalBackground:
-			// the area the frame covered goes back to showing nothing, which
-			// for a gif displayed over anything but its own background means
-			// transparent
-			draw.Draw(canvas, b, image.Transparent, image.Point{}, draw.Src)
-		case gif.DisposalPrevious:
-			canvas = saved
+	}
+}
+
+// composite yields each frame of the gif, drawn onto the canvas of the frames
+// before it. See [play].
+func composite(g *gif.GIF) iter.Seq2[int, image.Image] {
+	return func(yield func(int, image.Image) bool) {
+		canvas := image.NewRGBA(bounds(g))
+		var saved *image.RGBA
+		for i, frame := range g.Image {
+			b := frame.Bounds()
+			disposal := byte(0)
+			if i < len(g.Disposal) {
+				disposal = g.Disposal[i]
+			}
+			if disposal == gif.DisposalPrevious {
+				saved = clone(canvas)
+			}
+			draw.Draw(canvas, b, frame, b.Min, draw.Over)
+			if !yield(i, clone(canvas)) {
+				return
+			}
+			switch disposal {
+			case gif.DisposalBackground:
+				// the area the frame covered goes back to showing nothing,
+				// which for a gif displayed over anything but its own
+				// background means transparent
+				draw.Draw(canvas, b, image.Transparent, image.Point{}, draw.Src)
+			case gif.DisposalPrevious:
+				canvas = saved
+			}
 		}
 	}
 }

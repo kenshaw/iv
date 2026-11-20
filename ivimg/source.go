@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/jpeg"
 	"image/png"
 	"io"
 
+	"github.com/gen2brain/jpegn"
 	"github.com/kenshaw/rasterm"
 )
 
@@ -27,7 +27,7 @@ const pngSignature = "\x89PNG\r\n\x1a\n"
 // its default image, and a terminal that reads the file can play the
 // animation instead of showing that image.
 func DecodePNG(buf []byte) (image.Image, error) {
-	if pngAnimated(buf) {
+	if PNGAnimated(buf) {
 		return png.Decode(bytes.NewReader(buf))
 	}
 	f, err := newFile(buf, png.DecodeConfig, png.Decode)
@@ -98,9 +98,9 @@ func pngChunks(buf []byte, f func(typ string, data []byte) bool) {
 	}
 }
 
-// pngAnimated returns true when the PNG in buf has an acTL chunk, which makes
+// PNGAnimated returns true when the PNG in buf has an acTL chunk, which makes
 // it an animated PNG. The chunk comes before the image data.
-func pngAnimated(buf []byte) bool {
+func PNGAnimated(buf []byte) bool {
 	var animated bool
 	pngChunks(buf, func(typ string, _ []byte) bool {
 		animated = typ == "acTL"
@@ -178,7 +178,7 @@ func PNGBytes(img image.Image) ([]byte, bool) {
 //   - A JPEG whose EXIF orientation is not 1. The Go decoder does not apply
 //     the orientation, so the image is turned here, which makes new pixels.
 func DecodeJPEG(buf []byte) (image.Image, error) {
-	f, err := newFile(buf, jpeg.DecodeConfig, jpeg.Decode)
+	f, err := newFile(buf, jpegn.DecodeConfig, decodeJPEG)
 	if err != nil {
 		return nil, err
 	}
@@ -186,11 +186,16 @@ func DecodeJPEG(buf []byte) (image.Image, error) {
 	if f.config.ColorModel != color.CMYKModel && (o == 0 || o == 1) {
 		return jpegFile{f}, nil
 	}
-	img, err := jpeg.Decode(bytes.NewReader(buf))
+	img, err := decodeJPEG(bytes.NewReader(buf))
 	if err != nil {
 		return nil, err
 	}
 	return orient(img, o), nil
+}
+
+// decodeJPEG decodes a JPEG with jpegn, in its own color space (D62).
+func decodeJPEG(r io.Reader) (image.Image, error) {
+	return jpegn.Decode(r)
 }
 
 // JPEGBytes returns the encoding of img as a JPEG when img holds one: it is a

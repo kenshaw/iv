@@ -131,6 +131,9 @@ $ iv --loop /path/to/animation.gif
 # write a file instead, in the format of its extension
 $ iv --out out.webp /path/to/image.heic
 
+# show how a file was decoded, with all of its metadata
+$ iv -v /path/to/photo.jpg
+
 # list the decoders, the encoders and the file extensions
 $ iv --list
 
@@ -142,6 +145,11 @@ $ iv --help
 over SSH and in tmux. In tmux, the Kitty and iTerm protocols need the
 `allow-passthrough` option of tmux. To choose the protocol yourself, set
 `TERM_GRAPHICS` to `kitty`, `iterm` or `sixel`.
+
+`-v` writes to stderr how `iv` found, decoded, scaled and encoded each file,
+and all of the metadata of an image file: each Exif, IPTC and XMP tag, the
+text chunks of a png, the comments of a jpeg or a gif, and the name of an
+ICC profile. The tags include the GPS position of a photo, when it has one.
 
 ### Sizing
 
@@ -186,13 +194,17 @@ limit its size.
 
 A file with more than one image shows one of them, and `-p N` selects it.
 That is a page of a document, an ebook or a comic archive, an icon in an icon
-file, a face in a font collection, or a frame of a lottie. A Markdown or HTML
+file, a face in a font collection, a frame of an animation, or an image of a
+heic or avif file that holds several, such as a burst of photos. Without `-p`, a
+heic or avif file shows its primary image. A dynamic wallpaper of macOS is a
+heic file with an image for each time of the day, or for the light and the
+dark appearance, and `-v` says which one the page is. A Markdown or HTML
 document that is taller than the terminal is cut into pages of the size of
-the terminal. An animated gif, webp or png shows its first frame.
+the terminal. Without `-p`, an animation shows its first frame.
 
 ### Animating
 
-`-a` or `--animate` plays an animated gif, lottie or video, and `-l` or
+`-a` or `--animate` plays an animation or a video, and `-l` or
 `--loop` plays it again and again until you press control-c. Each one takes
 exactly one file, and draws to the terminal only, so neither goes with
 `--out`. `iv` clears the screen, writes the file name at the top, and plays
@@ -200,7 +212,9 @@ the frames under it.
 
 | Format                      | What it plays                                                       |
 | --------------------------- | ------------------------------------------------------------------- |
-| Animated GIF                | Each frame, at the delays of the file, for at most a minute         |
+| Animated GIF, PNG and WebP  | Each frame, at the delays of the file, for at most a minute         |
+| Animated JPEG XL            | Each frame, at the delays of the file, for at most a minute         |
+| HEIC and AVIF sequences     | Each frame, at the delays of the file, for at most a minute         |
 | Lottie, including dotLottie | The timeline, at the frame rate of the file, for at most a minute   |
 | Video (needs `ffmpeg`)      | The whole video, at its own speed, at most 30 frames a second       |
 
@@ -208,8 +222,9 @@ the frames under it.
 
 Each frame has a time at which it is due. A video frame that is not ready
 when the next frame is due is dropped, so the video keeps its own length on
-a slow terminal. A gif or lottie frame that is late is drawn late, so such an
-animation can play more slowly, but it shows each frame.
+a slow terminal. A frame of any other animation that is late is drawn late,
+so such an animation can play more slowly, but it shows each frame. A frame
+with no delay in its file is shown for a tenth of a second.
 
 `--animate-mode` selects how the frames go to the terminal:
 
@@ -237,10 +252,10 @@ installed.
 
 | Format                                         | Extensions                                                                    | Decoder      |
 | ---------------------------------------------- | ----------------------------------------------------------------------------- | ------------ |
-| PNG, including APNG                            | `png`                                                                         | `png`        |
-| JPEG                                           | `jpg` `jpeg` `jpe` `jif` `jfif` `jfi`                                         | `jpeg`       |
+| PNG, including APNG                            | `png` `apng`                                                                  | `png`        |
+| JPEG, baseline and progressive                 | `jpg` `jpeg` `jpe` `jif` `jfif` `jfi`                                         | `jpeg`       |
 | GIF                                            | `gif`                                                                         | `gif`        |
-| WebP, lossy and lossless                       | `webp`                                                                        | `nativewebp` |
+| WebP, lossy and lossless                       | `webp`                                                                        | `webp`       |
 | TIFF                                           | `tif` `tiff`                                                                  | `tiff`       |
 | Windows Bitmap                                 | `bmp` `dib`                                                                   | `bmp`        |
 | Netpbm, raw and plain                          | `pbm` `pgm` `ppm` `pnm` `pam`                                                 | `netpbm`     |
@@ -259,9 +274,11 @@ installed.
 | The file format of libvips                     | `v` `vips`                                                                    | `vipsfile`   |
 
 A format with linear light, such as OpenEXR, is clipped to the range of the
-display, as libvips did. The decoders do not convert colors with an ICC
-profile yet, so an image in a wide gamut, or a CMYK image with a profile,
-shows its colors as sRGB.
+display, as libvips did. A heic, avif, jxl or jp2 file, and a CMYK jpeg, is
+converted to sRGB with the ICC profile or the color space that the file
+names. An image in HDR, with the PQ or the HLG transfer, is not converted,
+because `iv` does no tone mapping. A png and an RGB jpeg are shown as their
+files hold them, and their profiles are not applied.
 
 ### Vector graphics and diagrams
 
@@ -504,7 +521,9 @@ take that form:
 | Any other image, such as a gif or a QR code                                               | A PNG that rasterm encodes | Encoded                     | Encoded |
 
 A png or a jpeg decodes its pixels only when something asks for them, so a
-file that goes out as its own bytes is never decoded. An image that is
+file that goes out as its own bytes is never decoded. A jpeg that is larger
+than the display is decoded at 1/2, 1/4 or 1/8 of its size, which takes a
+fifth of the time for a photo of 36 megapixels. An image that is
 scaled, or drawn over `--bg`, is encoded again, because its pixels changed.
 An animated png and a CMYK jpeg are encoded again too, because a terminal
 can show them differently. A jpeg with an EXIF orientation is turned the

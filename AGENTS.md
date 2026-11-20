@@ -84,7 +84,10 @@ dbmeta D110. A bare number, as in D3, names a decision of this repository, in
 - `internal/cmd/` finds an external command in `$PATH` on first use and runs
   it (D7). `internal/font/` finds the font that the generated cards use, and
   measures text in it. `internal/scrgb/` converts the linear light of an HDR
-  format to sRGB.
+  format to sRGB, and `internal/cms/` converts the colors of a decoded image
+  to sRGB with the `icc` package of ivy (D57). `internal/heif/` selects a
+  top-level image of a heic or avif file (D58). `internal/meta/` writes the
+  metadata of an image file to the verbose log (D60).
 - `testdata/` holds one folder per decoder, and `testdata/README.md` lists
   them (D11). Git does not convert the line endings of these files (D13).
 - `test.sh` renders every file in `testdata/` through a built `iv`.

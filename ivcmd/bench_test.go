@@ -45,7 +45,7 @@ var benchTargets = []string{
 	"jpeg/precision.jpg",
 	"lottie/rocket.json",
 	"zuzu/flowchart.mmd",
-	"nativewebp/dice-lossless.webp",
+	"webp/dice-lossless.webp",
 	"netpbm/tux.ppm",
 	"png/dice.png",
 	"png/precision.png",

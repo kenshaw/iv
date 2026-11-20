@@ -6,6 +6,8 @@ import (
 	"image/color"
 	"io"
 	"sync"
+
+	"github.com/gen2brain/jpegn"
 )
 
 // file is an image decoded from the bytes of a PNG or a JPEG file. It reads
@@ -106,6 +108,30 @@ type jpegFile struct {
 // JPEG satisfies the [rasterm.JPEGImage] interface.
 func (j jpegFile) JPEG() []byte {
 	return j.data
+}
+
+// Reduce satisfies the [Reducer] interface. jpegn decodes the JPEG at 1/2,
+// 1/4 or 1/8 of its size inside the inverse transform, which costs less than
+// a decode at its own size (D62).
+func (j jpegFile) Reduce(w, h int) (image.Image, error) {
+	b := j.Bounds()
+	denom := 1
+	for _, d := range []int{8, 4, 2} {
+		if ceilDiv(b.Dx(), d) >= w && ceilDiv(b.Dy(), d) >= h {
+			denom = d
+			break
+		}
+	}
+	if denom == 1 {
+		img := j.Unwrap()
+		return img, j.Err()
+	}
+	return jpegn.Decode(bytes.NewReader(j.data), &jpegn.Options{ScaleDenom: denom})
+}
+
+// ceilDiv returns a / b, rounded up.
+func ceilDiv(a, b int) int {
+	return (a + b - 1) / b
 }
 
 // orient returns img turned as the EXIF orientation o describes, from 1 to 8,

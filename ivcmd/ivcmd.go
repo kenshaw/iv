@@ -19,6 +19,7 @@ import (
 	// registers every decoder
 	_ "github.com/kenshaw/iv/decoder/all"
 	"github.com/kenshaw/iv/encoder"
+	"github.com/kenshaw/iv/internal/meta"
 	// registers every encoder
 	_ "github.com/kenshaw/iv/encoder/all"
 	"github.com/kenshaw/iv/ivctx"
@@ -314,6 +315,10 @@ func (a *Args) render(ctx context.Context, stdout io.Writer, enc *encoder.Entry,
 		return err
 	}
 	defer ivimg.Close(img)
+	if !t.IsString {
+		// -v writes the metadata of the file
+		meta.Log(ctx, mime, t.Name)
+	}
 	w := stdout
 	if a.Out != "" {
 		f, err := os.Create(a.Out)

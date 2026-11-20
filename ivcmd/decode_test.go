@@ -35,9 +35,16 @@ func TestDecodeFile(t *testing.T) {
 	}{
 		{"png", "png/rose.png", "image/png", "png", ""},
 		{"bmp", "bmp/rose.bmp", "image/bmp", "bmp", ""},
-		{"webp lossless", "nativewebp/rose-lossless.webp", "image/webp", "nativewebp", ""},
-		{"webp lossy", "nativewebp/rose-lossy.webp", "image/webp", "nativewebp", ""},
+		{"webp lossless", "webp/rose-lossless.webp", "image/webp", "webp", ""},
+		{"webp lossy", "webp/rose-lossy.webp", "image/webp", "webp", ""},
 		{"jpeg", "jpeg/precision.jpg", "image/jpeg", "jpeg", ""},
+		{"jpeg cmyk", "jpeg/rose-cmyk.jpg", "image/jpeg", "jpeg", ""},
+		{"jpeg with metadata", "jpeg/sunrise.jpg", "image/jpeg", "jpeg", ""},
+		{"png with metadata", "png/sunrise.png", "image/png", "png", ""},
+		{"webp with metadata", "webp/sunrise.webp", "image/webp", "webp", ""},
+		{"avif with metadata", "avif/sunrise.avif", "image/avif", "avif", ""},
+		{"jxl with metadata", "jxl/sunrise.jxl", "image/jxl", "jxl", ""},
+		{"jpeg cmyk with profile", "jpeg/rose-cmyk-icc.jpg", "image/jpeg", "jpeg", ""},
 		{"gif", "gif/tux.gif", "image/gif", "gif", ""},
 		{"gif animated", "gif/animated.gif", "image/gif", "gif", ""},
 		{"tiff uncompressed", "tiff/tux-uncompressed.tiff", "image/tiff", "tiff", ""},
@@ -683,4 +690,62 @@ func assertImage(t *testing.T, img image.Image) {
 	if b.Dx() <= 0 || b.Dy() <= 0 {
 		t.Fatalf("expected a non-empty image, got %v", b)
 	}
+}
+
+// TestDecodeAnimation checks that each animated format plays all of its
+// frames with --animate, and that --page selects one of them (D61). The
+// first four files are the same six frames.
+func TestDecodeAnimation(t *testing.T) {
+	tests := []struct {
+		file   string
+		frames int
+	}{
+		{"gif/animated.gif", 6},
+		{"png/animated.png", 6},
+		{"webp/animated.webp", 6},
+		{"jxl/animated.jxl", 6},
+		{"webp/anim-dispose.webp", 5},
+		{"avif/anim.avif", 5},
+	}
+	for _, test := range tests {
+		t.Run(test.file, func(t *testing.T) {
+			pathName := filepath.Join("..", "testdata", filepath.FromSlash(test.file))
+			ctx := testContext(t)
+			ivctx.Get(ctx).Animate = true
+			res, _, err := decoder.DecodeAnimFile(ctx, pathName)
+			if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
+			}
+			if res.Count != test.frames {
+				t.Errorf("expected %d frames, got %d", test.frames, res.Count)
+			}
+			n := 0
+			for _, err := range res.Frames(ctx) {
+				if err != nil {
+					t.Fatalf("expected no error, got: %v", err)
+				}
+				n++
+			}
+			if n != test.frames {
+				t.Errorf("expected %d frames played, got %d", test.frames, n)
+			}
+			// the second frame differs from the first
+			first, second := decodePage(t, pathName, 1), decodePage(t, pathName, 2)
+			if err := sameImage(first, second); err == nil {
+				t.Error("expected frame 2 to differ from frame 1")
+			}
+		})
+	}
+}
+
+// decodePage decodes the page of the file.
+func decodePage(t *testing.T, pathName string, page uint) image.Image {
+	t.Helper()
+	ctx := testContext(t)
+	ivctx.Get(ctx).Page = page
+	img, _, err := decoder.DecodeFile(ctx, pathName)
+	if err != nil {
+		t.Fatalf("page %d: expected no error, got: %v", page, err)
+	}
+	return img
 }

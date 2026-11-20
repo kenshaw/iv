@@ -17,18 +17,23 @@ renderer (D1). Speed is not a goal (D2).
 
 ## Current state
 
-This is the state of 2026-11-20, after D56.
+This is the state of 2026-11-20, after D62.
 
 - One package for each format registers a decoder or an encoder from `init`,
   and a pipeline in `decoder` runs them (D10). `iv --list` names each one.
 - `iv` selects a decoder by the mime type that xo/magic, a port of libmagic
   to Go, finds in the content (D6, D17).
 - An image reaches the encoder in the form that it already has: the bytes of
-  its PNG or JPEG file, until a step changes its pixels (D22, D30). `ivimg.Prepare` scales and composites stills and
+  its PNG or JPEG file, until a step changes its pixels (D22, D30). A large
+  JPEG is decoded at a fraction of its size when it is scaled down (D62). `ivimg.Prepare` scales and composites stills and
   animation frames alike.
 - Pure Go codecs decode HEIC, AVIF, JPEG XL, JPEG 2000, OpenEXR, Radiance
   HDR, PFM and MATLAB files, and encode AVIF, HEIC, JPEG XL, JPEG 2000, TIFF,
-  WebP and GIF. libvips is gone, and blitz is the only C code (D56).
+  WebP and GIF. libvips is gone, and blitz is the only C code (D56). The
+  `icc` package of ivy converts their colors, and those of a CMYK JPEG, to
+  sRGB (D57). `--page` selects an image of a heic or avif file, and `-v`
+  says which image of a dynamic wallpaper of macOS it is (D58, D59). `-v`
+  writes all of the metadata of an image file (D60).
   blitz draws Markdown, HTML and web pages (D16). zuzu draws
   DOT graphs, Mermaid diagrams and Vega charts (D36). xo/ivy draws office
   documents, ebooks, PDF, XPS, Photoshop files and other formats, and asks
@@ -36,7 +41,8 @@ This is the state of 2026-11-20, after D56.
   written to a pdf as vectors (D55).
 - Two decoders run an external command from `$PATH` (D7): `ffmpeg` and `tag`
   run `ffmpeg` and `ffprobe`.
-- `iv` plays an animated gif, lottie or video (D19, D42, D43).
+- `iv` plays an animated gif, png, webp or jpeg xl, a heic or avif sequence,
+  a lottie or a video, and `--page` selects a frame (D19, D42, D43, D61).
 - CI tests and lints each push on Linux amd64 and arm64, macOS and Windows
   (D14, D29). A version tag builds a release for the same 64-bit platforms
   (D15, D32, D53). A scheduled workflow keeps the AUR packages current (D52).
@@ -96,7 +102,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D19](#d19-iv-plays-one-animation-to-the-terminal-for-at-most-one-minute-decided-amended-by-d42-amended-by-d43) | iv plays one animation to the terminal, for at most one minute | Decided. Amended by D42. Amended by D43 |
 | [D20](#d20-the-go-directive-follows-the-newest-release-of-go-decided) | The go directive follows the newest release of Go | Decided |
 | [D21](#d21-iv-is-set-up-for-coding-agents-as-every-xo-repository-is-decided) | iv is set up for coding agents as every xo repository is | Decided |
-| [D22](#d22-an-image-reaches-the-encoder-in-the-form-that-it-already-has-decided-amended-by-d28-amended-by-d33-amended-by-d42-amended-by-d43-amended-by-d56) | An image reaches the encoder in the form that it already has | Decided. Amended by D28. Amended by D33. Amended by D42. Amended by D43. Amended by D56 |
+| [D22](#d22-an-image-reaches-the-encoder-in-the-form-that-it-already-has-decided-amended-by-d28-amended-by-d33-amended-by-d42-amended-by-d43-amended-by-d56-amended-by-d62) | An image reaches the encoder in the form that it already has | Decided. Amended by D28. Amended by D33. Amended by D42. Amended by D43. Amended by D56. Amended by D62 |
 | [D23](#d23-a-jpeg-with-an-exif-orientation-a-cmyk-jpeg-and-an-animated-png-keep-no-bytes-decided) | A JPEG with an EXIF orientation, a CMYK JPEG and an animated PNG keep no bytes | Decided |
 | [D24](#d24---fg-and---border-set-the-colors-and-the-border-of-a-qr-code-decided) | --fg and --border set the colors and the border of a QR code | Decided |
 | [D25](#d25---mermaid-bg-sets-the-background-in-the-mermaid-renderer-decided) | --mermaid-bg sets the background in the mermaid renderer | Decided |
@@ -130,7 +136,13 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D53](#d53-the-release-workflow-runs-only-for-a-version-tag-decided) | The Release workflow runs only for a version tag | Decided |
 | [D54](#d54-a-script-makes-the-screenshots-of-the-readme-in-ghostty-decided) | A script makes the screenshots of the README in Ghostty | Decided |
 | [D55](#d55-a-document-is-written-to-a-pdf-with-ivy-as-vectors-decided) | A document is written to a pdf with ivy, as vectors | Decided |
-| [D56](#d56-pure-go-codecs-replace-libvips-decided-amends-d5-amends-d8-amends-d9-amends-d22-amends-d27) | Pure Go codecs replace libvips | Decided. Amends D5. Amends D8. Amends D9. Amends D22. Amends D27 |
+| [D56](#d56-pure-go-codecs-replace-libvips-decided-amends-d5-amends-d8-amends-d9-amends-d22-amends-d27-amended-by-d57) | Pure Go codecs replace libvips | Decided. Amends D5. Amends D8. Amends D9. Amends D22. Amends D27. Amended by D57 |
+| [D57](#d57-the-decoders-convert-colors-to-srgb-with-the-icc-package-of-ivy-decided-amends-d56) | The decoders convert colors to sRGB with the icc package of ivy | Decided. Amends D56 |
+| [D58](#d58---page-selects-a-top-level-image-of-a-heic-or-avif-file-decided) | --page selects a top-level image of a heic or avif file | Decided |
+| [D59](#d59-the-verbose-output-says-which-image-of-a-dynamic-wallpaper-is-shown-decided) | The verbose output says which image of a dynamic wallpaper is shown | Decided |
+| [D60](#d60-the-verbose-output-holds-all-of-the-metadata-of-an-image-file-decided) | The verbose output holds all of the metadata of an image file | Decided |
+| [D61](#d61-every-animated-format-plays-and---page-selects-a-frame-decided) | Every animated format plays, and --page selects a frame | Decided |
+| [D62](#d62-jpegn-decodes-a-jpeg-and-a-large-one-at-a-fraction-of-its-size-decided-amends-d22) | jpegn decodes a JPEG, and a large one at a fraction of its size | Decided. Amends D22 |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -413,7 +425,7 @@ link, on a missing copy, on two copies that differ, and on a skill that
 and `TestEveryDecisionReferenceExists` fails on a bare reference to a decision
 that this document does not hold.
 
-### D22. An image reaches the encoder in the form that it already has. Decided. Amended by D28. Amended by D33. Amended by D42. Amended by D43. Amended by D56.
+### D22. An image reaches the encoder in the form that it already has. Decided. Amended by D28. Amended by D33. Amended by D42. Amended by D43. Amended by D56. Amended by D62.
 
 A maintainer asked on 2026-10-15 for this pipeline, after `rasterm` v0.1.18
 began to send the bytes that an image holds without an encode. The `ivimg`
@@ -1233,7 +1245,8 @@ on the same day, `iv` moved to the ivy commit `6e838f4`, okage v0.12.0 and
 magic v0.8.0. On 2026-11-19, `iv` moved to the ivy commit `72caf3e`, which
 requires okage v0.14.0 and magic v0.9.1. Later on that day, `iv` moved to the
 ivy commit `8bb9f50`, which requires okage v0.17.0, and then to the ivy commit
-`871c3f6`, which requires okage v0.18.0.
+`871c3f6`, which requires okage v0.18.0. On 2026-11-20, `iv` moved to the ivy
+commit `c64d600`, which has the package `icc` (D57).
 
 `decoder/ivy` registers one decoder for each format of ivy that `iv` takes,
 named `ivy-` and the name of the format, from the `Format` value that the
@@ -1409,7 +1422,7 @@ glyphs of a pdf or a PostScript file are still paths.
   preview, goes on a page with blitz, as before. `--pdf-page` and
   `--pdf-margin` apply only to such an image.
 
-### D56. Pure Go codecs replace libvips. Decided. Amends D5. Amends D8. Amends D9. Amends D22. Amends D27.
+### D56. Pure Go codecs replace libvips. Decided. Amends D5. Amends D8. Amends D9. Amends D22. Amends D27. Amended by D57.
 
 On 2026-11-20, a maintainer asked to replace libvips with pure Go packages,
 many of them written with coding agents in 2026, and to measure them against
@@ -1466,6 +1479,149 @@ On 10 files that both read, a render to Kitty took 0.88 times as long as
 with libvips, a render to iTerm 1.29 times, and a render to Sixel the same.
 Encoding a photo in 9 formats took 1.33 times as long. The Measures section
 of `README.md` has the numbers.
+
+### D57. The decoders convert colors to sRGB with the icc package of ivy. Decided. Amends D56.
+
+D56 left the colors of a file as they were decoded. On 2026-11-20, a
+maintainer asked the ivy session to make its port of moxcms public, and ivy
+`c64d600` has it as the package `icc`. `internal/cms` calls it for the
+decoders:
+
+- The `heic`, `avif` and `jxl` decoders give the ICC profile of the file, or
+  its CICP code points when it has no profile. The `jpeg2000` decoder gives
+  the profile of a jp2 file. go-jpeg2000 converts the color spaces of the
+  format to sRGB itself.
+- The `jpeg` decoder converts a CMYK or YCCK JPEG with the profile in its
+  APP2 segments, or with the default CMYK profile of ivy when it has none.
+  Before, the Go decoder converted CMYK with a formula and no profile.
+- An image in sRGB, or with no color space, is returned as it is. An image
+  with the PQ or the HLG transfer of HDR is returned as it is too. The `icc`
+  package does no tone mapping, and such an image would look dark.
+- The rendering intent is relative colorimetric, the default of libvips. A
+  profile that `icc` cannot use leaves the image as it is, with a warning.
+- A png and an RGB jpeg keep the bytes of their files (D22), and their
+  profiles are not applied. `x/image/tiff` does not decode a CMYK tiff.
+
+`jpeg/rose-cmyk-icc.jpg` is the rose in CMYK with the SWOP profile of colord.
+Its decode matches the conversion of lcms to 53.6 dB, where the decode of
+the Go formula reached 23.0 dB. `jxl/xyb_p3.jxl`, in DCI-P3, moved from 22.5
+dB to 34.7 dB of the conversion of libvips.
+
+The conversion costs time for a file that embeds a profile. A render to
+Kitty of `heic/dome.heic`, of 36 megapixels, took 930 ms in place of 590 ms,
+and of `avif/precision.avif` 18 ms in place of 9 ms. Both profiles describe
+sRGB, so the conversion does not change them (see `docs/BACKLOG.md`).
+
+### D58. --page selects a top-level image of a heic or avif file. Decided.
+
+A maintainer noted on 2026-11-20 that `heic/cyberpunk.heic` holds more than
+one image. libheif lists 12 top-level images in it, and 2 in
+`heic/dome.heic`. libvips loaded the image that `--page` selected, and D56
+lost that, because gen2brain/h265 and gen2brain/gav1d decode only the primary
+image, which the `pitm` box of the file names.
+
+- `internal/heif` reads the boxes `pitm`, `iinf` and `iref` of the file. An
+  image item is top level when it is not hidden, and is not a thumbnail, an
+  auxiliary image or a tile of a grid, as libheif reads it. The order is the
+  order of `iinf`. `TestParse` checks the list of each test file against the
+  list of `heif-info` of libheif 1.21.
+- For `--page N`, the decoder gives the codec a copy of the file whose `pitm`
+  box names the Nth top-level image. Without `--page`, or with a page past
+  the last image, the codec decodes the primary image, as libvips did.
+- The frames of an image sequence, such as an animated avif, are not pages
+  yet (see `docs/BACKLOG.md`).
+
+### D59. The verbose output says which image of a dynamic wallpaper is shown. Decided.
+
+A maintainer found on 2026-11-20 that `heic/dome.heic` and
+`heic/cyberpunk.heic` are dynamic wallpapers of macOS, and asked that `-v`
+show this metadata for the page that is shown.
+
+- The XMP of the primary image holds a property of the namespace
+  `apple_desktop`: `h24` names the time of the day of each image, `solar`
+  the position of the sun, and `apr` only the images of the light and the
+  dark appearance. Its value is a binary property list in base64, which
+  `howett.net/plist` reads.
+- The `heic` and `avif` decoders read the XMP with `RawXMP` of the codec,
+  from the file as it was, because the XMP belongs to the primary image.
+  `heif.Select` gives the index of the image that is shown.
+- `dome.heic` names its first image for the light appearance, from 00:00,
+  and its second for the dark appearance, from 12:00. `cyberpunk.heic` has 12
+  images, from 00:00 to 23:00, and names images 4 and 10 for the light and
+  the dark appearance.
+
+### D60. The verbose output holds all of the metadata of an image file. Decided.
+
+A maintainer asked on 2026-11-20 that `-v` show the metadata that each image
+format holds, with no field left out, and asked whether a known Exif package
+could do it.
+
+- `internal/meta` reads the file with `github.com/bep/imagemeta`, which Hugo
+  uses. It reads every Exif, IPTC and XMP tag of a JPEG, TIFF, PNG, WebP,
+  HEIC, AVIF or JPEG XL file and of a DNG, CR2, NEF, ARW or PEF file, and the
+  size and the frame count, and is tested against `exiftool -n -json`. Its
+  format detection is not implemented, so `iv` gives the format from the mime
+  type, or from the extension of a camera RAW file. A JPEG XL file can hold
+  its metadata compressed with brotli, which `andybalholm/brotli` reads.
+- The package adds what imagemeta does not read: the `tEXt`, `zTXt` and
+  `iTXt` chunks of a PNG, the COM segments of a JPEG, the comment extensions
+  of a GIF, and the description of an ICC profile in a JPEG, a PNG and a
+  WebP. A text chunk is read as UTF-8 when it is valid UTF-8, because many
+  programs write UTF-8 where the format says Latin-1.
+- Each tag is written as it is, with its source and its IFD or namespace,
+  and bytes in hexadecimal. The GPS tags are written too, as the maintainer
+  asked.
+- `internal/cms` names the profile that it converts with, as in "converted
+  to sRGB with the profile "SWOP TR003 Coated"".
+- An Exif reader of its own would take about 200 lines for the common
+  fields, and the tag tables of exiftool for all of them, so `iv` did not
+  write one.
+- The test files `sunrise.*` of bep/imagemeta hold full Exif, IPTC and XMP,
+  and the test checks a tag of each source.
+
+### D61. Every animated format plays, and --page selects a frame. Decided.
+
+A maintainer asked on 2026-11-20 for the decoders of gen2brain that were
+worth adding. Before, `--animate` played a gif, a lottie and a video, and an
+animated png, webp, jpeg xl, or a heic or avif sequence showed its first
+frame.
+
+- `decoder.Frames` takes the frames of an animation, each a whole image, with
+  their delays. For `--animate`, it returns an `Anim` that plays them.
+  Otherwise it returns the frames as a set of images, from which the pipeline
+  takes the frame that `--page` selects. A delay that is not positive is a
+  tenth of a second, as a browser shows it.
+- The `png` decoder decodes an APNG with `pngn.DecodeAll` of gen2brain/pngn,
+  when the frames are asked for. A still png keeps the bytes of its file.
+- The `webp` decoder decodes with gen2brain/vpx, which is a port of libwebp,
+  and replaces the decoder `nativewebp`. Its test files moved to
+  `testdata/webp` (D11). The `nativewebp` encoder stays.
+- The `jxl` decoder, and the `heic` and `avif` decoders for a file with one
+  top-level image, return the frames of `DecodeAll`, with their colors
+  converted (D57). In a heic or avif file with several top-level images,
+  `--page` selects an image (D58).
+- The `gif` decoder composites its frames for `--page` as for `--animate`.
+- `gif/animated.gif` was made again as an APNG, an animated webp and an
+  animated jpeg xl, and frames 1, 3 and 6 of each are the same pixels as the
+  frames of the gif.
+
+### D62. jpegn decodes a JPEG, and a large one at a fraction of its size. Decided. Amends D22.
+
+A maintainer asked on 2026-11-20 to adopt `gen2brain/jpegn` after the
+animations, if a benchmark showed that it pays off. jpegn is a pure Go JPEG
+codec with SIMD. It reads what `image/jpeg` reads, and can decode at 1/2,
+1/4 or 1/8 of the size inside the inverse transform.
+
+- `ivimg` decodes a JPEG with jpegn. A JPEG that is not scaled still goes to
+  the terminal as the bytes of its file (D22).
+- `ivimg.Reducer` is an image that can decode itself at a smaller size.
+  `ivimg.Resize` scales a `Reducer` that is made smaller from its reduced
+  decode. The JPEG of `ivimg` decodes at the smallest fraction that is still
+  at least the size that it is shown at.
+- To fit 1920x1200, a JPEG of 6016x6016 took 165 ms in place of 837 ms with
+  `image/jpeg`, and one of 4000x3000 took 112 ms in place of 315 ms. jpegn at
+  full size took 623 ms and 237 ms. The result matches the decode at full
+  size to 47 dB and 48 dB.
 
 ## Open questions for the maintainers
 

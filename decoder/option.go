@@ -114,6 +114,19 @@ func BytesDecoder(f func([]byte) (image.Image, error)) Option {
 	})
 }
 
+// BytesDecoderContext is [BytesDecoder] for a decoder that also needs the
+// context, such as one that converts the colors of the image, or one that
+// returns the frames of an animation (see [Frames]).
+func BytesDecoderContext(f func(context.Context, []byte) (any, error)) Option {
+	return Decoder(func(ctx context.Context, r io.Reader) (any, error) {
+		buf, err := readAll(r)
+		if err != nil {
+			return nil, err
+		}
+		return f(ctx, buf)
+	})
+}
+
 // readAll reads r to its end. The pipeline hands a decoder an [io.ReadSeeker]
 // at its start, so the size is known, and the bytes are read into one buffer
 // of that size. [io.ReadAll] grows its buffer as it reads, which copied a

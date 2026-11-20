@@ -23,7 +23,6 @@ import (
 	_ "github.com/kenshaw/iv/decoder/jxl"
 	_ "github.com/kenshaw/iv/decoder/lottie"
 	_ "github.com/kenshaw/iv/decoder/matlab"
-	_ "github.com/kenshaw/iv/decoder/nativewebp"
 	_ "github.com/kenshaw/iv/decoder/netpbm"
 	_ "github.com/kenshaw/iv/decoder/okage"
 	_ "github.com/kenshaw/iv/decoder/png"
@@ -32,6 +31,7 @@ import (
 	_ "github.com/kenshaw/iv/decoder/tiff"
 	_ "github.com/kenshaw/iv/decoder/vcard"
 	_ "github.com/kenshaw/iv/decoder/vipsfile"
+	_ "github.com/kenshaw/iv/decoder/webp"
 	_ "github.com/kenshaw/iv/decoder/winres"
 	_ "github.com/kenshaw/iv/decoder/zuzu"
 )

@@ -13,7 +13,8 @@ import (
 // displays it at. See [ivctx.Scale] for the size.
 //
 // If the size does not change, Fit returns img as it is. Otherwise the pixels
-// are scaled into a new [image.NRGBA].
+// are scaled into a new [image.NRGBA]. A [Reducer] that is made smaller is
+// scaled from its reduced decode.
 func Fit(ctx context.Context, img image.Image) (image.Image, error) {
 	b := img.Bounds()
 	w, h := ivctx.Scale(ctx, b.Dx(), b.Dy())
@@ -28,13 +29,22 @@ func Resize(ctx context.Context, img image.Image, w, h int) (image.Image, error)
 		return img, nil
 	}
 	start := time.Now()
-	src := Unwrap(img)
-	if err := Err(img); err != nil {
-		return nil, err
+	var src image.Image
+	if r, ok := img.(Reducer); ok && w < b.Dx() && h < b.Dy() {
+		var err error
+		if src, err = r.Reduce(w, h); err != nil {
+			return nil, err
+		}
+	} else {
+		src = Unwrap(img)
+		if err := Err(img); err != nil {
+			return nil, err
+		}
 	}
+	sb := src.Bounds()
 	dst := image.NewNRGBA(image.Rect(0, 0, w, h))
-	interpolator(b.Dx(), b.Dy(), w, h).Scale(dst, dst.Bounds(), src, b, xdraw.Src, nil)
-	ivctx.Logf(ctx, "resize: %T %dx%d -> %dx%d: %v", src, b.Dx(), b.Dy(), w, h, time.Since(start))
+	interpolator(sb.Dx(), sb.Dy(), w, h).Scale(dst, dst.Bounds(), src, sb, xdraw.Src, nil)
+	ivctx.Logf(ctx, "resize: %T %dx%d (decoded at %dx%d) -> %dx%d: %v", src, b.Dx(), b.Dy(), sb.Dx(), sb.Dy(), w, h, time.Since(start))
 	return dst, nil
 }
 

@@ -30,7 +30,6 @@ result and not its size. `encoder/pdf` tests the pages, and needs no file.
 | `jxl`        | `jxl`        | Color, gray, squeeze and Display P3                           |
 | `lottie`     | `lottie`     | Noto animated emoji, as json, `.lot` and dotLottie            |
 | `matlab`     | `matlab`     | MAT-files of version 5                                        |
-| `nativewebp` | `nativewebp` | Lossy and lossless webp, each with its png reference          |
 | `netpbm`     | `netpbm`     | pbm, pgm, ppm and pam, raw and plain                          |
 | `okage`      | `okage`      | SVGs, plain and gzipped, from a rectangle to a large map      |
 | `png`        | `png`        |                                                               |
@@ -39,6 +38,7 @@ result and not its size. `encoder/pdf` tests the pages, and needs no file.
 | `tiff`       | `tiff`       | One file for each compression that the Go encoder writes      |
 | `vcard`      | `vcard`      | Contacts, drawn as a business card with a QR code             |
 | `vipsfile`   | `vipsfile`   | A file in the format of libvips                               |
+| `webp`       | `webp`       | Lossy, lossless and animated webp, with png references        |
 | `winres`     | `winres`     | A Windows executable with icons                               |
 | `zuzu`       | `zuzu`       | DOT graphs, Mermaid diagrams, and Vega charts with their data |
 
@@ -115,11 +115,12 @@ password `password`. `encPassword` in `ivcmd/decode_test.go` and
 
 ## Sources
 
-- `png/{card,dice,logo,rose,tux}.png` and all of `nativewebp/`: the
+- `png/{card,dice,logo,rose,tux}.png`, and the `-lossy` and `-lossless`
+  files of `webp/` with the `.png` next to each one: the
   [Google WebP gallery][webp-gallery]. A `-lossy` file is lossy with alpha,
   and a `-lossless` file is lossless. The `.png` next to each one is its
   reference decode.
-- `png/precision.png`, `jpeg/precision.jpg`, `nativewebp/precision.webp`,
+- `png/precision.png`, `jpeg/precision.jpg`, `webp/precision.webp`,
   `avif/precision.avif` and `jxl/precision.jxl`: one image of the
   [JPEG XL test page][jxl-test] in five formats.
 - The other files of `heic/`: the test data of [gen2brain/h265][h265], under
@@ -138,6 +139,16 @@ password `password`. `encPassword` in `ivcmd/decode_test.go` and
   [scigolib/matlab][scigolib-matlab], which took it from SciPy, under the MIT
   license. It is one row of nine numbers.
 - `bmp/rose.bmp`: the rose of the gallery, as a bmp.
+- `webp/anim-dispose.webp`: the test data of [gen2brain/vpx][vpx], under
+  the BSD 3-Clause license. Its frames use each method of disposal.
+  `avif/anim.avif`: the test data of [gen2brain/gav1d][gav1d], an image
+  sequence of 5 frames.
+- `jpeg/sunrise.jpg`, `png/sunrise.png`, `webp/sunrise.webp`,
+  `avif/sunrise.avif` and `jxl/sunrise.jxl`: the test data of
+  [bep/imagemeta][imagemeta], copyright 2026 Bjørn Erik Pedersen, under
+  [CC BY-SA 4.0][cc-by-sa-4]. Each one holds the Exif, IPTC and XMP
+  metadata of the photo, with its GPS position. `TestLog` in
+  `internal/meta` checks it (D60).
 - `ico/Mathijssen-Tuxlets-Test-Dummy-Tux.ico`: Mathijssen Tuxlets Test Dummy
   Tux.
 - `okage/test.svg`: [SVG Repo][svg-repo]. `okage/rect.svgz` is
@@ -274,7 +285,11 @@ draws each one.
 
 - `gif/tux.gif` and `gif/test.gif` are stills of `png/tux.png` and
   `okage/test.svg`. `gif/animated.gif` has six frames of the two on white.
-  `iv` draws its first frame.
+  `png/animated.png` and `webp/animated.webp` are the same frames, made by
+  ffmpeg n9.0.2 as an APNG and as a lossless animated webp, and
+  `jxl/animated.jxl` is the APNG, made by cjxl with `-q 100`.
+  `TestDecodeAnimation` in `ivcmd` checks that each one plays its frames
+  (D61).
 - `tiff/` holds `tux-uncompressed.tiff`, `tux-deflate.tiff` and
   `test-deflate-predictor.tiff`. There is no LZW file, because
   `x/image/tiff` reads LZW but does not write it.
@@ -293,6 +308,12 @@ draws each one.
   Only PAM keeps an alpha channel. libmagic spells the grayscale type
   `image/x-portable-greymap`, so the decoder registers both spellings.
 
+- `jpeg/rose-cmyk-icc.jpg` is `png/rose.png`, 200 pixels wide over white,
+  converted to CMYK by ImageMagick with the sRGB profile and the
+  `SWOP_TR003_coated_3.icc` profile of colord, which is free of known
+  copyright restrictions. The file embeds the SWOP profile.
+  `rose-cmyk.jpg` is the same file with no profile, so the decoder uses the
+  default CMYK profile of ivy (D57).
 - `jpeg2000/rose.jp2` is `png/rose.png`, saved by libvips 8.18.7.
   `rose.j2k` is the codestream of its `jp2c` box, with nothing around it.
 - The rose files of `hdr/`, `exr/`, `matlab/` and `vipsfile/` are
@@ -342,6 +363,9 @@ draws each one.
 [cc-by-4]: https://creativecommons.org/licenses/by/4.0/
 [zuzu]: https://github.com/xo/zuzu
 [h265]: https://github.com/gen2brain/h265
+[vpx]: https://github.com/gen2brain/vpx
+[imagemeta]: https://github.com/bep/imagemeta
+[cc-by-sa-4]: https://creativecommons.org/licenses/by-sa/4.0/
 [gav1d]: https://github.com/gen2brain/gav1d
 [jxl]: https://github.com/gen2brain/jxl
 [go-jpeg2000]: https://github.com/mrjoshuak/go-jpeg2000
