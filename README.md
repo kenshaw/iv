@@ -418,7 +418,7 @@ With `--out`, `iv` writes a file in the format of its extension.
 | --------- | ------------ |
 | `png`     | `png`        |
 | `jpg`     | `jpeg`       |
-| `webp`    | `nativewebp` |
+| `webp`    | `webp`       |
 | `avif`    | `avif`       |
 | `gif`     | `gif`        |
 | `heic`    | `heic`       |
@@ -427,7 +427,7 @@ With `--out`, `iv` writes a file in the format of its extension.
 | `tiff`    | `tiff`       |
 | `pdf`     | `pdf`        |
 
-The `nativewebp` encoder writes a webp with no loss, and `--encoder vpx`
+The `webp` encoder writes a webp with no loss, and `--encoder webp-lossy`
 writes a lossy webp. The `avif` encoder writes 8 bits for each channel. The
 `jxl` encoder writes no alpha. The `gif` encoder reduces an image to 256
 fixed colors, with dithering. A png or a jpeg that is not changed is written

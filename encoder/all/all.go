@@ -9,10 +9,9 @@ import (
 	_ "github.com/kenshaw/iv/encoder/jpeg"
 	_ "github.com/kenshaw/iv/encoder/jpeg2000"
 	_ "github.com/kenshaw/iv/encoder/jxl"
-	_ "github.com/kenshaw/iv/encoder/nativewebp"
 	_ "github.com/kenshaw/iv/encoder/pdf"
 	_ "github.com/kenshaw/iv/encoder/png"
 	_ "github.com/kenshaw/iv/encoder/rasterm"
 	_ "github.com/kenshaw/iv/encoder/tiff"
-	_ "github.com/kenshaw/iv/encoder/vpx"
+	_ "github.com/kenshaw/iv/encoder/webp"
 )

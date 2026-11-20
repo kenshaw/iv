@@ -3,7 +3,6 @@ module github.com/kenshaw/iv
 go 1.27.4
 
 require (
-	github.com/HugoSmits86/nativewebp v1.3.0
 	github.com/andybalholm/brotli v1.3.0
 	github.com/bep/imagemeta v1.1.2
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8

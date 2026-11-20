@@ -147,7 +147,7 @@ func TestEncoderSelection(t *testing.T) {
 		{"explicit name", &Args{Encoder: "png"}, "png", false},
 		{"explicit name wins over out", &Args{Encoder: "png", Out: "x.jpg"}, "png", false},
 		{"from out extension", &Args{Out: "x.jpg"}, "jpeg", false},
-		{"from out webp extension", &Args{Out: "x.webp"}, "nativewebp", false},
+		{"from out webp extension", &Args{Out: "x.webp"}, "webp", false},
 		{"unknown encoder", &Args{Encoder: "nope"}, "", true},
 		{"unknown out extension", &Args{Out: "x.zzz"}, "", true},
 	} {

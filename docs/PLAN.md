@@ -17,7 +17,7 @@ renderer (D1). Speed is not a goal (D2).
 
 ## Current state
 
-This is the state of 2026-11-20, after D62.
+This is the state of 2026-11-20, after D63.
 
 - One package for each format registers a decoder or an encoder from `init`,
   and a pipeline in `decoder` runs them (D10). `iv --list` names each one.
@@ -141,8 +141,9 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D58](#d58---page-selects-a-top-level-image-of-a-heic-or-avif-file-decided) | --page selects a top-level image of a heic or avif file | Decided |
 | [D59](#d59-the-verbose-output-says-which-image-of-a-dynamic-wallpaper-is-shown-decided) | The verbose output says which image of a dynamic wallpaper is shown | Decided |
 | [D60](#d60-the-verbose-output-holds-all-of-the-metadata-of-an-image-file-decided) | The verbose output holds all of the metadata of an image file | Decided |
-| [D61](#d61-every-animated-format-plays-and---page-selects-a-frame-decided) | Every animated format plays, and --page selects a frame | Decided |
+| [D61](#d61-every-animated-format-plays-and---page-selects-a-frame-decided-amended-by-d63) | Every animated format plays, and --page selects a frame | Decided. Amended by D63 |
 | [D62](#d62-jpegn-decodes-a-jpeg-and-a-large-one-at-a-fraction-of-its-size-decided-amends-d22) | jpegn decodes a JPEG, and a large one at a fraction of its size | Decided. Amends D22 |
+| [D63](#d63-vpx-encodes-webp-and-nativewebp-is-gone-decided-amends-d61) | vpx encodes webp, and nativewebp is gone | Decided. Amends D61 |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -1579,7 +1580,7 @@ could do it.
 - The test files `sunrise.*` of bep/imagemeta hold full Exif, IPTC and XMP,
   and the test checks a tag of each source.
 
-### D61. Every animated format plays, and --page selects a frame. Decided.
+### D61. Every animated format plays, and --page selects a frame. Decided. Amended by D63.
 
 A maintainer asked on 2026-11-20 for the decoders of gen2brain that were
 worth adding. Before, `--animate` played a gif, a lottie and a video, and an
@@ -1595,7 +1596,7 @@ frame.
   when the frames are asked for. A still png keeps the bytes of its file.
 - The `webp` decoder decodes with gen2brain/vpx, which is a port of libwebp,
   and replaces the decoder `nativewebp`. Its test files moved to
-  `testdata/webp` (D11). The `nativewebp` encoder stays.
+  `testdata/webp` (D11). The `nativewebp` encoder stays (see D63).
 - The `jxl` decoder, and the `heic` and `avif` decoders for a file with one
   top-level image, return the frames of `DecodeAll`, with their colors
   converted (D57). In a heic or avif file with several top-level images,
@@ -1622,6 +1623,22 @@ codec with SIMD. It reads what `image/jpeg` reads, and can decode at 1/2,
   `image/jpeg`, and one of 4000x3000 took 112 ms in place of 315 ms. jpegn at
   full size took 623 ms and 237 ms. The result matches the decode at full
   size to 47 dB and 48 dB.
+
+### D63. vpx encodes webp, and nativewebp is gone. Decided. Amends D61.
+
+D61 moved the decoding of webp to gen2brain/vpx and kept the `nativewebp`
+encoder, which then was the only use of `github.com/HugoSmits86/nativewebp`.
+A maintainer asked on 2026-11-20 to drop it.
+
+- `encoder/webp` registers `webp`, which writes a webp with no loss, as
+  `nativewebp` did, and `webp-lossy`, which replaces the encoder `vpx`.
+  `--out` selects `webp` for the webp extension, because it comes first by
+  name.
+- For the photo of `BenchmarkEncode`, `nativewebp` took 249 ms for 791 KB,
+  and vpx with no loss took 276 ms for 731 KB. The file of vpx decodes to the
+  same pixels as the photo.
+- `--encoder nativewebp` is now `--encoder webp`, and `--encoder vpx` is now
+  `--encoder webp-lossy`.
 
 ## Open questions for the maintainers
 
