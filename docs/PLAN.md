@@ -17,7 +17,7 @@ renderer (D1). Speed is not a goal (D2).
 
 ## Current state
 
-This is the state of 2026-11-20, after D63.
+This is the state of 2026-11-21, after D64.
 
 - One package for each format registers a decoder or an encoder from `init`,
   and a pipeline in `decoder` runs them (D10). `iv --list` names each one.
@@ -35,8 +35,9 @@ This is the state of 2026-11-20, after D63.
   says which image of a dynamic wallpaper of macOS it is (D58, D59). `-v`
   writes all of the metadata of an image file (D60).
   blitz draws Markdown, HTML and web pages (D16). zuzu draws
-  DOT graphs, Mermaid diagrams and Vega charts (D36). xo/ivy draws office
-  documents, ebooks, PDF, XPS, Photoshop files and other formats, and asks
+  DOT graphs, Mermaid diagrams and Vega charts (D36), with the math of KaTeX
+  (D64). xo/ivy draws office documents, ebooks, PDF, XPS, Photoshop files,
+  LaTeX and other formats, and asks
   for a missing password (D49, D50, D51). A document that ivy opens is
   written to a pdf as vectors (D55).
 - Two decoders run an external command from `$PATH` (D7): `ffmpeg` and `tag`
@@ -144,6 +145,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D61](#d61-every-animated-format-plays-and---page-selects-a-frame-decided-amended-by-d63) | Every animated format plays, and --page selects a frame | Decided. Amended by D63 |
 | [D62](#d62-jpegn-decodes-a-jpeg-and-a-large-one-at-a-fraction-of-its-size-decided-amends-d22) | jpegn decodes a JPEG, and a large one at a fraction of its size | Decided. Amends D22 |
 | [D63](#d63-vpx-encodes-webp-and-nativewebp-is-gone-decided-amends-d61) | vpx encodes webp, and nativewebp is gone | Decided. Amends D61 |
+| [D64](#d64-ivy-draws-latex-and-plain-tex-and-zuzu-draws-the-math-of-katex-decided) | ivy draws LaTeX and plain TeX, and zuzu draws the math of KaTeX | Decided |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -829,7 +831,8 @@ zuzu v0.7.3 came on 2026-11-18. It changes no drawing, and requires okage
 v0.12.0, the version that `iv` uses with ivy (D49).
 
 zuzu v0.7.5 came on 2026-11-21, with okage v0.20.0 and the ivy commit
-f96aae4. It draws the math of KaTeX in the labels of a Mermaid diagram.
+f96aae4. It draws the math of KaTeX in the labels of a Mermaid diagram
+(D64).
 okage now reads fonts with its own copy of go-text, so the module
 go-text/typesetting left the `go.mod` of `iv`.
 
@@ -1644,6 +1647,32 @@ A maintainer asked on 2026-11-20 to drop it.
   same pixels as the photo.
 - `--encoder nativewebp` is now `--encoder webp`, and `--encoder vpx` is now
   `--encoder webp-lossy`.
+
+### D64. ivy draws LaTeX and plain TeX, and zuzu draws the math of KaTeX. Decided.
+
+The ivy commit f96aae4 added the package `latex`, a copy of the TeX engine
+of go-tex/engine, and zuzu v0.7.5 draws the math of KaTeX in a label of
+Mermaid. A maintainer asked on 2026-11-21 for test files of both.
+
+- `decoder/ivy` registers `ivy-latex` for the extensions `tex`, `latex` and
+  `ltx`. The engine sets a document in the Go fonts, and its math in STIX
+  Two Math, when it has no TeX fonts.
+- `iv` gives the engine no TeX files: no fonts, no TeX distribution, and not
+  the folder of the document. A document reads no class, package, figure or
+  `\input` file, and the engine skips a command that it does not know. The
+  three ways to give it those files are an item in `BACKLOG.md`.
+- libmagic gives `text/x-tex` to any text with commands of TeX in it, such
+  as a Mermaid diagram or a Markdown file with math. A TeX mime type routes a
+  file to `ivy-latex` only with a TeX extension, or with no extension, as
+  `text/csv` does for `ivy-csv` (D51). libmagic gives `text/plain` to a plain
+  TeX file, and its extension routes it.
+- The `zuzu` decoder gives each parse the math font of zuzu, STIX Two Math,
+  with `zuzu.WithMath`. Without it, zuzu draws a formula as its source, and
+  reports an issue. ivy already holds the same font, from okage, so `iv`
+  does not grow.
+- `testdata/ivy` holds `article.tex` and `plain.tex`, and `testdata/zuzu`
+  holds `flowchart-math.mmd` and `sequence-math.mmd`. `TestDecodeMath` in
+  `decoder/zuzu` fails when zuzu reports an issue for either diagram.
 
 ## Open questions for the maintainers
 

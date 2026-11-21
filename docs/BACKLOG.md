@@ -53,6 +53,23 @@ of either when it closes the gap.
 Source: `notes.txt`, a local file that is not tracked. Nothing decodes a 3D
 model today.
 
+### Give a TeX document its fonts, its classes and its folder
+
+Source: D64. `iv` gives the latex format of ivy no TeX files, so a document
+draws in the Go fonts, with no class or package, and with no file that
+`\input` or `\includegraphics` names. Three changes can follow, and a
+maintainer must decide each one:
+
+1. Import `github.com/xo/ivy/fonts` and give `fonts.TeX()` to the field
+   `TeX` of `ivy.Config`, so that a document draws in Latin Modern, as TeX
+   draws it. The module adds about 14.1 MB to `iv`.
+2. Give the field `TeX` the tree of an installed TeX distribution, such as
+   the folder that `kpsewhich -var-value TEXMFDIST` names, so that a
+   document reads its classes and its packages.
+3. Open a document with `latex.WithDir` and the folder of the file, so that
+   it reads its figures and its `\input` files, as a Vega spec reads its
+   data only from its own folder (D44).
+
 ### Add test files for ten ivy formats
 
 Source: a review of the documents on 2026-11-19. `testdata/ivy` holds no

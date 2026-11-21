@@ -1,0 +1,14 @@
+---
+title: The roots of a quadratic
+---
+flowchart LR
+  A["$$ax^2 + bx + c = 0$$"] --> B{"$$\Delta = b^2 - 4ac$$"}
+  B -->|"$$\Delta > 0$$"| C["Two roots: $$x = \frac{-b \pm \sqrt{\Delta}}{2a}$$"]
+  B -->|"$$\Delta = 0$$"| D["One root: $$x = -\frac{b}{2a}$$"]
+  B -->|"$$\Delta < 0$$"| E["No real root"]
+  subgraph S["$$\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}$$"]
+    F["$$\int_0^1 x^2\,dx = \frac{1}{3}$$"]
+    G["$$\begin{pmatrix} 1 & 2 \\ 3 & 4 \end{pmatrix}$$"]
+  end
+  C --> F
+  D --> G

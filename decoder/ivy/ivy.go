@@ -49,6 +49,7 @@ import (
 	"github.com/xo/ivy/epub"
 	"github.com/xo/ivy/fb2"
 	"github.com/xo/ivy/iwork"
+	"github.com/xo/ivy/latex"
 	"github.com/xo/ivy/mobi"
 	"github.com/xo/ivy/msdoc"
 	"github.com/xo/ivy/msppt"
@@ -85,6 +86,7 @@ var formats = []struct {
 	{epub.Format, "EPUB ebooks"},
 	{fb2.Format, "FictionBook ebooks"},
 	{iwork.Format, "Pages, Keynote and Numbers previews"},
+	{latex.Format, "LaTeX and plain TeX documents"},
 	{mobi.Format, "MOBI and Kindle ebooks"},
 	{msdoc.Format, "Word 97 to 2003 documents"},
 	{msppt.Format, "PowerPoint 97 to 2003 presentations"},
@@ -130,13 +132,20 @@ var containers = []string{
 	"application/vnd.ms-office",
 }
 
+// texMimes are the mime types that libmagic gives to a text with commands of
+// TeX in it. libmagic guesses them from the backslashes, and a Mermaid
+// diagram or a Markdown file with math gets one too, so they route a file to
+// the format latex only with its extension, or with no extension, as from a
+// pipe.
+var texMimes = []string{"text/x-tex", "application/x-tex", "text/x-latex", "application/x-latex"}
+
 // cache shares the fonts and the ICC profiles of the documents.
 var cache = ivy.NewCache()
 
 func init() {
 	for _, f := range formats {
 		mimes := slices.DeleteFunc(slices.Clone(f.format.Mimes), func(m string) bool {
-			return slices.Contains(generic, m)
+			return slices.Contains(generic, m) || slices.Contains(texMimes, m)
 		})
 		exts := f.format.Exts
 		opts := []decoder.Option{
@@ -157,6 +166,11 @@ func init() {
 			// as from a pipe, is
 			opts = append(opts, decoder.Matcher(func(mime, ext string) bool {
 				return ext == "" && (mime == "text/csv" || mime == "text/tab-separated-values")
+			}))
+		}
+		if f.format.Name == "latex" {
+			opts = append(opts, decoder.Matcher(func(mime, ext string) bool {
+				return slices.Contains(texMimes, mime) && (ext == "" || slices.Contains(exts, ext))
 			}))
 		}
 		decoder.Register("ivy-"+f.format.Name, opts...)

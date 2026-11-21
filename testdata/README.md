@@ -85,6 +85,7 @@ removed the live pages that the test fetched before.
 - two XPS documents and three Photoshop files
 - a pdf, and the same pdf with a password
 - a csv table
+- a LaTeX article and a plain TeX file
 
 `TestDecode` in `decoder/ivy` draws each one, and checks that an ivy decoder
 takes it.
@@ -180,6 +181,10 @@ password `password`. `encPassword` in `ivcmd/decode_test.go` and
 - `ivy/sales.csv`: written for `iv`, a table of eight columns with no
   orientation. `TestPaper` in `decoder/ivy` checks that it is drawn in
   landscape (D51).
+- `ivy/article.tex` and `ivy/plain.tex`: written for `iv`. `article.tex`
+  is a LaTeX article with sections, math, numbered equations, a footnote, a
+  list and a table. `plain.tex` is plain TeX with no class. libmagic gives
+  `text/plain` for it, so its extension selects the decoder.
 - `ivy/*.psd`: made with ImageMagick. `alpha.psd` is `png/tux.png`,
   `cmyk.psd` is `png/rose.png` in CMYK, and `deep16.psd` is `png/rose.png` at
   16 bits.
@@ -267,6 +272,11 @@ draws each one.
 - `aws.mmd` uses icons of the fa pack, such as `fa:fa-globe`.
 - `emoji.mmd` puts an emoji in each label. `TestDecodeEmoji` fails when zuzu
   draws one as nothing (D40).
+- `flowchart-math.mmd` and `sequence-math.mmd` are written for `iv`, with
+  the math of KaTeX in their labels. `TestDecodeMath` fails when zuzu draws
+  a formula as its source (D64). libmagic gives `text/x-tex` for
+  `flowchart-math.mmd`, which starts with front matter, so its extension
+  selects the decoder.
 - The other `.mmd` files show the hardest features of each kind of Mermaid
   diagram. They come from [mermaid-go-renderer][] at commit `9af8f11`, which
   took them from Mermaid 12.2.0. Both are under the MIT license, in

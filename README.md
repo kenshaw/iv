@@ -299,7 +299,8 @@ file whose name ends in `.vg.json` is a Vega spec, and one whose name ends in
 
 [zuzu][] draws DOT graphs, Mermaid diagrams, and Vega and Vega-Lite charts in
 Go. It draws each kind of diagram of Mermaid 12.3, with the icon packs fa,
-mdi, carbon and k8s, and draws emoji in color. `iv` finds a diagram by its
+mdi, carbon and k8s, and draws emoji in color. The math of KaTeX in a label
+of Mermaid, written as `$$...$$`, draws as math. `iv` finds a diagram by its
 content, or by its extension when the diagram starts with front matter.
 
 - `--mermaid-theme dark` draws a Mermaid diagram in dark colors, and any
@@ -333,6 +334,7 @@ content, or by its extension when the diagram starts with front matter.
 | PowerPoint 97 to 2003                                   | `ppt` `pps` `pot`                                                 | `ivy-msppt` |
 | OpenDocument                                            | `odt` `ott` `odm` `ods` `ots` `odp` `otp` `odg` `otg` `odc` `odf` | `ivy-odf`   |
 | RTF                                                     | `rtf`                                                             | `ivy-rtf`   |
+| LaTeX and plain TeX                                     | `tex` `latex` `ltx`                                               | `ivy-latex` |
 | CSV and TSV, as a table                                 | `csv` `tsv` `tab`                                                 | `ivy-csv`   |
 | Pages, Keynote and Numbers, the preview                 | `pages` `key` `numbers`                                           | `ivy-iwork` |
 | Visio, the preview                                      | `vsdx` `vsdm` `vstx` `vstm` `vssx` `vssm` `vsd` `vst` `vss`       | `ivy-vsdx`  |
@@ -350,6 +352,11 @@ content, or by its extension when the diagram starts with front matter.
   one, `iv` asks for it at the terminal, at most three times.
 - A spreadsheet, such as a csv, xlsx, xls or ods file, is drawn in landscape
   on US Letter, unless the file gives its own orientation.
+- The TeX engine of ivy sets a LaTeX or plain TeX document in the Go fonts,
+  and its math in STIX Two Math. `iv` gives the engine no TeX distribution,
+  so it reads no class, package, `\input` file or figure from the disk. The
+  engine skips a command that it does not know, and draws the page without
+  it.
 
 [blitz][] lays out Markdown and HTML. It colors the code blocks of a Markdown
 document with [transit][], in the colors of GitHub, for Bash, C, C++, Go,

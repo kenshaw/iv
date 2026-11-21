@@ -2,7 +2,8 @@
 // chart decoder for iv.
 //
 // zuzu draws a graph, a diagram or a chart in Go, with no external command
-// and no WebAssembly (D36, D44, D46).
+// and no WebAssembly (D36, D44, D46). The math of KaTeX in a label of
+// Mermaid, written as $$...$$, draws as math, in STIX Two Math (D64).
 //
 // See: https://github.com/xo/zuzu
 package zuzu
@@ -26,6 +27,7 @@ import (
 	"github.com/xo/zuzu/icons/k8s"
 	"github.com/xo/zuzu/icons/mdi"
 	"github.com/xo/zuzu/text/emoji"
+	"github.com/xo/zuzu/text/math"
 	"github.com/xo/zuzu/theme"
 )
 
@@ -149,7 +151,7 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 			opts = append(opts, zuzu.WithBackground(c.MermaidBg))
 		}
 	}
-	chart, report, err := zuzu.Parse(buf, zuzu.WithDialect(dialect))
+	chart, report, err := zuzu.Parse(buf, zuzu.WithDialect(dialect), zuzu.WithMath(math.Font()))
 	logReport(ctx, report)
 	if err != nil {
 		return nil, err

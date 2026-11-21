@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"image"
 	"image/color"
 	"os"
@@ -301,6 +302,27 @@ func TestDecodeEmoji(t *testing.T) {
 	renderFile(t, ctx, "emoji.mmd")
 	for _, err := range missing {
 		t.Errorf("expected every emoji to draw, got: %v", err)
+	}
+}
+
+// TestDecodeMath checks that the math of KaTeX in a label of Mermaid draws
+// as math (D64). Without a font of math, zuzu draws the source of each
+// formula, and reports an issue for each.
+func TestDecodeMath(t *testing.T) {
+	for _, name := range []string{"flowchart-math.mmd", "sequence-math.mmd"} {
+		t.Run(name, func(t *testing.T) {
+			ctx := testContext(t)
+			var issues []string
+			ivctx.Get(ctx).Logger = func(format string, v ...any) {
+				if strings.HasPrefix(format, "zuzu:") {
+					issues = append(issues, fmt.Sprintf(format, v...))
+				}
+			}
+			renderFile(t, ctx, name)
+			for _, issue := range issues {
+				t.Errorf("expected no issue, got: %s", issue)
+			}
+		})
 	}
 }
 

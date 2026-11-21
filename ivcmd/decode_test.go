@@ -143,10 +143,17 @@ func TestDecodeFile(t *testing.T) {
 		{"ods", "ivy/file_example_ODS_100.ods", "application/vnd.oasis.opendocument.spreadsheet", "ivy-odf", ""},
 		{"odp", "ivy/file_example_ODP_200kB.odp", "application/vnd.oasis.opendocument.presentation", "ivy-odf", ""},
 		{"ppt", "ivy/file_example_PPT_250kB.ppt", "application/x-ole-storage", "ivy-msppt", ""},
+		{"latex", "ivy/article.tex", "text/x-tex", "ivy-latex", ""},
+		// libmagic gives text/plain to plain tex, so the extension decides
+		{"plain tex", "ivy/plain.tex", "text/plain", "ivy-latex", ""},
 		{"mermaid", "zuzu/gantt.mmd", "text/vnd.mermaid", "zuzu", ""},
 		{"mermaid flowchart", "zuzu/flowchart.mmd", "text/vnd.mermaid", "zuzu", ""},
 		// a diagram with front matter routes on its extension
 		{"mermaid front matter", "zuzu/sankey.mmd", "text/plain", "zuzu", ""},
+		// libmagic takes the math in the labels for tex, and the extension
+		// decides
+		{"mermaid math", "zuzu/flowchart-math.mmd", "text/x-tex", "zuzu", ""},
+		{"mermaid sequence math", "zuzu/sequence-math.mmd", "text/vnd.mermaid", "zuzu", ""},
 		// a vega spec routes on the end of its name, and reads its data from
 		// a directory under it
 		{"vega", "zuzu/sales.vg.json", "application/vnd.vega+json", "zuzu", ""},

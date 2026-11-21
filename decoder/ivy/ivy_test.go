@@ -245,8 +245,8 @@ func TestPageDPI(t *testing.T) {
 
 // TestRouting checks the rules of routing: an Office 97 to 2003 file, which
 // libmagic types as a compound file, goes by its extension, and text that
-// libmagic takes for csv is a table only with the extension of a table, or
-// with no extension.
+// libmagic takes for csv or tex is a table or a TeX document only with its
+// extension, or with no extension.
 func TestRouting(t *testing.T) {
 	ctx := testContext(t)
 	for _, test := range []struct {
@@ -259,6 +259,11 @@ func TestRouting(t *testing.T) {
 		{"text/csv", "csv", "ivy-csv"},
 		{"text/csv", "", "ivy-csv"},
 		{"text/csv", "md", ""},
+		{"text/x-tex", "tex", "ivy-latex"},
+		{"text/x-tex", "", "ivy-latex"},
+		{"text/x-tex", "mmd", ""},
+		{"text/x-tex", "md", ""},
+		{"text/plain", "tex", "ivy-latex"},
 		{"text/plain", "txt", ""},
 	} {
 		t.Run(test.mime+" "+test.ext, func(t *testing.T) {
