@@ -828,6 +828,11 @@ and colors of Vega and Vega-Lite. Every test of `iv` passed with it.
 zuzu v0.7.3 came on 2026-11-18. It changes no drawing, and requires okage
 v0.12.0, the version that `iv` uses with ivy (D49).
 
+zuzu v0.7.5 came on 2026-11-21, with okage v0.20.0 and the ivy commit
+f96aae4. It draws the math of KaTeX in the labels of a Mermaid diagram.
+okage now reads fonts with its own copy of go-text, so the module
+go-text/typesetting left the `go.mod` of `iv`.
+
 ### D37. A minimum size given on the command line is a hard floor. Decided.
 
 `--min-width` and `--min-height` default to 64. With the defaults, `iv` grows
