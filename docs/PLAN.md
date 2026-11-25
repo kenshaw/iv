@@ -17,7 +17,7 @@ renderer (D1). Speed is not a goal (D2).
 
 ## Current state
 
-This is the state of 2026-11-21, after D64.
+This is the state of 2026-11-26, after D65.
 
 - One package for each format registers a decoder or an encoder from `init`,
   and a pipeline in `decoder` runs them (D10). `iv --list` names each one.
@@ -146,6 +146,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D62](#d62-jpegn-decodes-a-jpeg-and-a-large-one-at-a-fraction-of-its-size-decided-amends-d22) | jpegn decodes a JPEG, and a large one at a fraction of its size | Decided. Amends D22 |
 | [D63](#d63-vpx-encodes-webp-and-nativewebp-is-gone-decided-amends-d61) | vpx encodes webp, and nativewebp is gone | Decided. Amends D61 |
 | [D64](#d64-ivy-draws-latex-and-plain-tex-and-zuzu-draws-the-math-of-katex-decided) | ivy draws LaTeX and plain TeX, and zuzu draws the math of KaTeX | Decided |
+| [D65](#d65-zuzu-takes-the-emoji-font-and-the-time-when-it-parses-decided) | zuzu takes the emoji font and the time when it parses | Decided |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -835,6 +836,10 @@ f96aae4. It draws the math of KaTeX in the labels of a Mermaid diagram
 (D64).
 okage now reads fonts with its own copy of go-text, so the module
 go-text/typesetting left the `go.mod` of `iv`.
+
+zuzu v0.10.0 came on 2026-11-26, with okage v0.22.1 and ivy v0.3.0. zuzu
+lays out a Mermaid graph with a copy of dagre, draws Mermaid in new colors,
+and takes the emoji font and the time in its parse (D65).
 
 ### D37. A minimum size given on the command line is a hard floor. Decided.
 
@@ -1673,6 +1678,23 @@ Mermaid. A maintainer asked on 2026-11-21 for test files of both.
 - `testdata/ivy` holds `article.tex` and `plain.tex`, and `testdata/zuzu`
   holds `flowchart-math.mmd` and `sequence-math.mmd`. `TestDecodeMath` in
   `decoder/zuzu` fails when zuzu reports an issue for either diagram.
+
+### D65. zuzu takes the emoji font and the time when it parses. Decided.
+
+zuzu v0.10.0 accepts `zuzu.WithEmoji` in `zuzu.Parse`, because a sequence
+diagram, a pie and a mindmap lay out their labels when they compile, and
+adds `zuzu.WithNow` (zuzu D38). A maintainer asked on 2026-11-26 to take
+zuzu v0.10.0.
+
+- The `zuzu` decoder gives the emoji font to the parse, and no longer to the
+  render. The render uses the font of the chart. Before, a sequence diagram
+  measured an emoji with no font. `testdata/zuzu/emoji-sequence.mmd` drew
+  360 pixels wide then, and draws 420 pixels wide now, with more room
+  between its participants.
+- The decoder gives the parse the time of the run with `zuzu.WithNow`, so
+  that a gantt draws the marker of today, as Mermaid does. A gantt whose
+  dates do not hold today draws no marker. The same file can therefore draw
+  differently on another day, and no test compares the pixels of a gantt.
 
 ## Open questions for the maintainers
 

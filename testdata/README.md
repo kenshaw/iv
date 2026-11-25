@@ -270,8 +270,9 @@ draws each one.
   come from [xo/mermaid][], which `iv` used before zuzu (D36). `sankey.mmd`
   starts with front matter, so its extension selects the decoder.
 - `aws.mmd` uses icons of the fa pack, such as `fa:fa-globe`.
-- `emoji.mmd` puts an emoji in each label. `TestDecodeEmoji` fails when zuzu
-  draws one as nothing (D40).
+- `emoji.mmd` puts an emoji in each label, and `emoji-sequence.mmd`, written
+  for `iv`, does the same in a sequence diagram. `TestDecodeEmoji` fails
+  when zuzu draws one as nothing (D40, D65).
 - `flowchart-math.mmd` and `sequence-math.mmd` are written for `iv`, with
   the math of KaTeX in their labels. `TestDecodeMath` fails when zuzu draws
   a formula as its source (D64). libmagic gives `text/x-tex` for

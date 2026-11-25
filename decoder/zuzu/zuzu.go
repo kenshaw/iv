@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/kenshaw/iv/decoder"
 	"github.com/kenshaw/iv/ivctx"
@@ -126,9 +127,6 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 		zuzu.WithIcons("mdi", mdi.Pack()),
 		zuzu.WithIcons("carbon", carbon.Pack()),
 		zuzu.WithIcons("k8s", k8s.Pack()),
-		// an emoji draws in color with the font of noto color emoji. Without
-		// it, an emoji draws nothing
-		zuzu.WithEmoji(emoji.Font()),
 	}
 	switch dialect {
 	case zuzu.Vega, zuzu.VegaLite:
@@ -151,7 +149,17 @@ func decode(ctx context.Context, r io.Reader) (any, error) {
 			opts = append(opts, zuzu.WithBackground(c.MermaidBg))
 		}
 	}
-	chart, report, err := zuzu.Parse(buf, zuzu.WithDialect(dialect), zuzu.WithMath(math.Font()))
+	chart, report, err := zuzu.Parse(
+		buf,
+		zuzu.WithDialect(dialect),
+		zuzu.WithMath(math.Font()),
+		// an emoji draws in color with the font of noto color emoji. Without
+		// it, an emoji draws nothing. A sequence, a pie and a mindmap measure
+		// their labels in the parse, so the parse takes the font
+		zuzu.WithEmoji(emoji.Font()),
+		// a gantt draws the marker of today, as mermaid does
+		zuzu.WithNow(time.Now()),
+	)
 	logReport(ctx, report)
 	if err != nil {
 		return nil, err

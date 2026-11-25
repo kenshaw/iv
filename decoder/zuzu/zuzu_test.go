@@ -289,19 +289,25 @@ func TestDecodeBackground(t *testing.T) {
 
 // TestDecodeEmoji checks that an emoji draws, in the font of Noto Color
 // Emoji. zuzu reports a character that no font has, and draws nothing for it.
+// It draws a flowchart, and a sequence diagram, which lays out its labels
+// when zuzu parses it (D65).
 func TestDecodeEmoji(t *testing.T) {
-	ctx := testContext(t)
-	var missing []error
-	ivctx.Get(ctx).Logger = func(_ string, v ...any) {
-		for _, arg := range v {
-			if err, ok := arg.(error); ok && errors.Is(err, zuzu.ErrNoGlyph) {
-				missing = append(missing, err)
+	for _, name := range []string{"emoji.mmd", "emoji-sequence.mmd"} {
+		t.Run(name, func(t *testing.T) {
+			ctx := testContext(t)
+			var missing []error
+			ivctx.Get(ctx).Logger = func(_ string, v ...any) {
+				for _, arg := range v {
+					if err, ok := arg.(error); ok && errors.Is(err, zuzu.ErrNoGlyph) {
+						missing = append(missing, err)
+					}
+				}
 			}
-		}
-	}
-	renderFile(t, ctx, "emoji.mmd")
-	for _, err := range missing {
-		t.Errorf("expected every emoji to draw, got: %v", err)
+			renderFile(t, ctx, name)
+			for _, err := range missing {
+				t.Errorf("expected every emoji to draw, got: %v", err)
+			}
+		})
 	}
 }
 
