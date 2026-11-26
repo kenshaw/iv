@@ -1,0 +1,105 @@
+name: Homebrew
+# Keeps the formula in the kenshaw/homebrew-iv tap at the version of the latest
+# published release. It runs on a schedule, and not on the release event, for
+# the same reason as the AUR workflow: a release event that does not arrive, or
+# a bump that fails, leaves the formula behind until the next release (D66). A
+# run that finds the formula current changes nothing.
+on:
+  schedule:
+    # every 12 hours, 10 minutes after the AUR workflow. The minute is not 0,
+    # because many scheduled workflows start on the hour, and GitHub delays or
+    # drops runs then
+    - cron: '33 */12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# two runs at the same time could push the same version twice
+concurrency:
+  group: homebrew
+  cancel-in-progress: false
+
+env:
+  APP: iv
+  REPO: ${{ github.repository }}
+  TAP: kenshaw/homebrew-iv
+  AUTHOR_NAME: Kenneth Shaw
+  AUTHOR_EMAIL: kenshaw@gmail.com
+
+jobs:
+  bump:
+    name: Bump
+    runs-on: ubuntu-latest
+    steps:
+      # the latest release is the newest one that is published, and not a
+      # draft or a prerelease. The formula is behind when the version in its
+      # url is lower than the release, so a formula that a maintainer bumped
+      # past the release is left alone
+      - id: check
+        name: Compare the formula with the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -o pipefail
+          VER=$(gh release view --repo "$REPO" --json tagName --jq .tagName)
+          echo "latest release: $VER"
+          CUR=$(
+            gh api "repos/$TAP/contents/Formula/$APP.rb" --jq .content \
+              |base64 -d \
+              |sed -n 's%^ *url "https://github.com/.*/archive/v\(.*\)\.tar\.gz"$%\1%p'
+          )
+          if [ -z "$CUR" ]; then
+            echo "::error::$TAP: no version in the url of Formula/$APP.rb"
+            exit 1
+          fi
+          echo "formula: $CUR"
+          STALE=false
+          if dpkg --compare-versions "${VER#v}" gt "$CUR"; then
+            STALE=true
+          fi
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "stale=$STALE" >> "$GITHUB_OUTPUT"
+
+      - name: Bump the formula
+        if: steps.check.outputs.stale == 'true'
+        env:
+          VER: ${{ steps.check.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          HOMEBREW_REPO: https://kenshaw:${{ secrets.HOMEBREW_TOKEN }}@github.com/kenshaw/homebrew-iv.git
+        run: |
+          # without pipefail, a failed curl is hidden by jq, and the bump is
+          # pushed with no release notes
+          set -o pipefail
+          export WORKDIR=$(mktemp -d /tmp/homebrew.XXXXXX)
+          export REPO_PATH=$WORKDIR/homebrew
+          curl -fsSL -o $WORKDIR/archive.tar.gz https://github.com/$REPO/archive/$VER.tar.gz
+          SHA256SUM=$(sha256sum $WORKDIR/archive.tar.gz|awk '{print $1}')
+          # the token raises the rate limit of the GitHub API. Without it, a
+          # runner can share its address with other jobs that used up the
+          # limit, and the API gives a 403
+          CHANGELOG=$(
+            curl \
+              -fsS \
+              -H 'Accept: application/vnd.github+json' \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              https://api.github.com/repos/$REPO/releases/tags/$VER \
+              |jq -r '.body // empty' \
+              |sed -e 's/\r//g'
+          )
+          if [ -z "$CHANGELOG" ]; then
+            echo "::error::$VER: the release has no notes"
+            exit 1
+          fi
+          git clone $HOMEBREW_REPO $REPO_PATH
+          git -C $REPO_PATH config user.name "$AUTHOR_NAME"
+          git -C $REPO_PATH config user.email "$AUTHOR_EMAIL"
+          sed -i "s%url \".*$%url \"https://github.com/$REPO/archive/$VER.tar.gz\"%" $REPO_PATH/Formula/$APP.rb
+          sed -i "s/sha256 \".*$/sha256 \"$SHA256SUM\"/" $REPO_PATH/Formula/$APP.rb
+          git -C $REPO_PATH add Formula/$APP.rb
+          # git joins the two -m values with a blank line. The notes go in as
+          # they are, with no printf %b, so a backslash in them is kept. The
+          # aur-bump script of a maintainer writes the same message
+          git -C $REPO_PATH commit -m "Update $APP version to ${VER}" -m "$CHANGELOG"
+          git -C $REPO_PATH show -C
+          git -C $REPO_PATH push origin master

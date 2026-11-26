@@ -1,4 +1,6 @@
 name: Announce Release
+# The Homebrew and AUR workflows bump the formula and the packages on a
+# schedule (D52, D66). This workflow only announces the release.
 on:
   release:
     types: [published]
@@ -6,39 +8,8 @@ env:
   APP: iv
   VER: ${{ github.ref_name }}
   REPO: ${{ github.repository }}
-  AUTHOR_NAME: Kenneth Shaw
-  AUTHOR_EMAIL: kenshaw@gmail.com
-  HOMEBREW_REPO: https://kenshaw:${{ secrets.HOMEBREW_TOKEN }}@github.com/kenshaw/homebrew-iv.git
 
 jobs:
-  bump-homebrew-formula:
-    name: Bump Homebrew Formula
-    runs-on: ubuntu-latest
-    steps:
-      - name: Bump Homebrew Formula
-        run: |
-          export WORKDIR=$(mktemp -d /tmp/homebrew.XXXXXX)
-          export REPO_PATH=$WORKDIR/homebrew
-          wget -O $WORKDIR/archive.tar.gz https://github.com/$REPO/archive/$VER.tar.gz
-          export SHA256SUM=$(sha256sum $WORKDIR/archive.tar.gz|awk '{print $1}')
-          export CHANGELOG=$(
-            curl \
-              -s \
-              -H 'Accept: application/vnd.github+json' \
-              https://api.github.com/repos/$REPO/releases/tags/$VER \
-              |jq -r .body \
-              |sed -e 's/\r//g'
-          )
-          git clone $HOMEBREW_REPO $REPO_PATH
-          git -C $REPO_PATH config user.name "$AUTHOR_NAME"
-          git -C $REPO_PATH config user.email "$AUTHOR_EMAIL"
-          sed -i "s%url \".*$%url \"https://github.com/$REPO/archive/$VER.tar.gz\"%" $REPO_PATH/Formula/$APP.rb
-          sed -i "s/sha256 \".*$/sha256 \"$SHA256SUM\"/" $REPO_PATH/Formula/$APP.rb
-          git -C $REPO_PATH add Formula/$APP.rb
-          git -C $REPO_PATH commit -m "$(printf %b "Update $APP version to ${VER}\n\n${CHANGELOG}")"
-          git -C $REPO_PATH show -C
-          git -C $REPO_PATH push origin master
-
   announce-discord:
     name: Announce Discord
     runs-on: ubuntu-latest

@@ -17,7 +17,7 @@ renderer (D1). Speed is not a goal (D2).
 
 ## Current state
 
-This is the state of 2026-11-26, after D65.
+This is the state of 2026-11-27, after D66.
 
 - One package for each format registers a decoder or an encoder from `init`,
   and a pipeline in `decoder` runs them (D10). `iv --list` names each one.
@@ -46,7 +46,8 @@ This is the state of 2026-11-26, after D65.
   a lottie or a video, and `--page` selects a frame (D19, D42, D43, D61).
 - CI tests and lints each push on Linux amd64 and arm64, macOS and Windows
   (D14, D29). A version tag builds a release for the same 64-bit platforms
-  (D15, D32, D53). A scheduled workflow keeps the AUR packages current (D52).
+  (D15, D32, D53). Scheduled workflows keep the AUR packages and the Homebrew formula
+  current (D52, D66).
 - `go test -race -timeout 30m ./...` passes, and fails when a command or a
   file that a test needs is missing (D27). `./test.sh` draws each file in
   `testdata/` (D11). The benchmarks in `ivcmd` compare releases (D26).
@@ -133,7 +134,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D49](#d49-xoivy-draws-documents-ebooks-and-page-descriptions-in-go-decided-amends-d27-amends-d28-amends-d34-amended-by-d50) | xo/ivy draws documents, ebooks and page descriptions in Go | Decided. Amends D27. Amends D28. Amends D34. Amended by D50 |
 | [D50](#d50-ivy-draws-every-pdf-and-asks-for-a-missing-password-decided-amends-d49) | ivy draws every pdf, and asks for a missing password | Decided. Amends D49 |
 | [D51](#d51-a-spreadsheet-is-drawn-in-landscape-by-default-decided) | A spreadsheet is drawn in landscape by default | Decided |
-| [D52](#d52-a-scheduled-workflow-keeps-the-aur-packages-current-decided) | A scheduled workflow keeps the AUR packages current | Decided |
+| [D52](#d52-a-scheduled-workflow-keeps-the-aur-packages-current-decided-amended-by-d66) | A scheduled workflow keeps the AUR packages current | Decided. Amended by D66 |
 | [D53](#d53-the-release-workflow-runs-only-for-a-version-tag-decided) | The Release workflow runs only for a version tag | Decided |
 | [D54](#d54-a-script-makes-the-screenshots-of-the-readme-in-ghostty-decided) | A script makes the screenshots of the README in Ghostty | Decided |
 | [D55](#d55-a-document-is-written-to-a-pdf-with-ivy-as-vectors-decided) | A document is written to a pdf with ivy, as vectors | Decided |
@@ -147,6 +148,7 @@ dbmeta D110. A bare number, as in D3, names a decision in this document.
 | [D63](#d63-vpx-encodes-webp-and-nativewebp-is-gone-decided-amends-d61) | vpx encodes webp, and nativewebp is gone | Decided. Amends D61 |
 | [D64](#d64-ivy-draws-latex-and-plain-tex-and-zuzu-draws-the-math-of-katex-decided) | ivy draws LaTeX and plain TeX, and zuzu draws the math of KaTeX | Decided |
 | [D65](#d65-zuzu-takes-the-emoji-font-and-the-time-when-it-parses-decided) | zuzu takes the emoji font and the time when it parses | Decided |
+| [D66](#d66-a-scheduled-workflow-keeps-the-homebrew-formula-current-decided-amends-d52) | A scheduled workflow keeps the Homebrew formula current | Decided. Amends D52 |
 
 ### D1. iv draws images with terminal graphics and never as text. Decided.
 
@@ -1352,7 +1354,7 @@ maintainer asked to draw a spreadsheet in landscape by default.
 - `TestPaper` in `decoder/ivy` checks each case, with the new
   `testdata/ivy/sales.csv`. `TestIsODS` checks the test of the mime type.
 
-### D52. A scheduled workflow keeps the AUR packages current. Decided.
+### D52. A scheduled workflow keeps the AUR packages current. Decided. Amended by D66.
 
 The Announce Release workflow bumped the AUR packages `iv-cli` and
 `iv-cli-bin` when a release was published. Nothing tried a bump again when
@@ -1371,6 +1373,7 @@ move the bump to a workflow that runs on a schedule.
   container, as Announce Release did. It does not start when no package is
   behind. If a bump fails, the next run tries again.
 - Announce Release keeps the Homebrew formula and the Discord announcement.
+  D66 moves the Homebrew formula to a scheduled workflow.
 - GitHub turns off a scheduled workflow in a public repository after 60 days
   with no activity. A maintainer then turns it on again on the Actions tab.
 
@@ -1695,6 +1698,31 @@ zuzu v0.10.0.
   that a gantt draws the marker of today, as Mermaid does. A gantt whose
   dates do not hold today draws no marker. The same file can therefore draw
   differently on another day, and no test compares the pixels of a gantt.
+
+### D66. A scheduled workflow keeps the Homebrew formula current. Decided. Amends D52.
+
+Announce Release bumped the formula in the `kenshaw/homebrew-iv` tap when a
+release was published, as it did for the AUR packages before D52. Nothing
+tried the bump again when it failed, or when the event did not arrive. On
+2026-11-25, the AUR workflow pushed the v0.24.0 bump of `iv-cli-bin` with no
+release notes, because the GitHub API gave a 403 to a request with no token.
+Announce Release made the same request with no token, and did not stop on a
+failure. On 2026-11-27, a maintainer asked to move the Homebrew bump to a
+workflow that runs on a schedule, as the AUR bump does.
+
+- `.github/workflows/homebrew.yml` runs every 12 hours, at 00:33 and 12:33
+  UTC, and can also be started by hand. It does not run on the release
+  event.
+- It reads the tag of the latest published release with `gh`, and the
+  version in the `url` of `Formula/iv.rb` in the tap. The formula is behind
+  when that version is lower than the release. A formula that is at the
+  release, or past it, is left alone.
+- It bumps the formula only when it is behind. If a bump fails, the next run
+  tries again.
+- The Homebrew and AUR workflows send the token of the workflow when they
+  read the release notes from the GitHub API. A bump stops, and pushes
+  nothing, when the request fails or the release has no notes.
+- Announce Release keeps only the Discord announcement.
 
 ## Open questions for the maintainers
 

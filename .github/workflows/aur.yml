@@ -101,17 +101,31 @@ jobs:
             aur.archlinux.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLMiLrP8pVi5BFX2i3vepSUnpedeiewE5XptnUnau+ZoeUOPkpoCgZZuYfpaIQfhhJJI5qgnjJmr4hyJbe/zxow=
 
       - name: Bump ${{ matrix.package }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          # without pipefail, a failed curl is hidden by jq, and the bump is
+          # pushed with no release notes
+          set -o pipefail
           export WORKDIR=$(mktemp -d /tmp/${PACKAGE}.XXXXXX)
           export REPO_PATH=$WORKDIR/${PACKAGE}
-          export CHANGELOG=$(
+          # the token raises the rate limit of the GitHub API. Without it, a
+          # runner can share its address with other jobs that used up the
+          # limit, and the API gives a 403. On 2026-11-25, this pushed the
+          # v0.24.0 bump of iv-cli-bin with no release notes
+          CHANGELOG=$(
             curl \
               -fsS \
               -H 'Accept: application/vnd.github+json' \
+              -H "Authorization: Bearer $GH_TOKEN" \
               https://api.github.com/repos/$REPO/releases/tags/$VER \
-              |jq -r .body \
+              |jq -r '.body // empty' \
               |sed -e 's/\r//g'
           )
+          if [ -z "$CHANGELOG" ]; then
+            echo "::error::$VER: the release has no notes"
+            exit 1
+          fi
           git clone aur@aur.archlinux.org:${PACKAGE}.git $REPO_PATH
           git config --global --add safe.directory $REPO_PATH
           git -C $REPO_PATH config user.name "$AUTHOR_NAME"
@@ -128,6 +142,9 @@ jobs:
           sudo -u build bash -c 'makepkg --printsrcinfo > .SRCINFO'
           popd &> /dev/null
           git -C $REPO_PATH add PKGBUILD .SRCINFO
-          git -C $REPO_PATH commit -m "$(printf %b "Update $APP version to ${VER}\n\n${CHANGELOG}")"
+          # git joins the two -m values with a blank line. The notes go in as
+          # they are, with no printf %b, so a backslash in them is kept. The
+          # aur-bump script of a maintainer writes the same message
+          git -C $REPO_PATH commit -m "Update $APP version to ${VER}" -m "$CHANGELOG"
           git -C $REPO_PATH show -C
           git -C $REPO_PATH push origin master
